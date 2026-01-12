@@ -1,6 +1,6 @@
 import { Container, Section, TextArea } from '@infonomic/uikit/react'
 
-import { EditorChat } from '@/ui/components/editor-chat'
+import { EditorChat } from '@/modules/editor-chat/components/editor-chat'
 
 const Page = () => {
   return (
