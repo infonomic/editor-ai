@@ -16,11 +16,11 @@ export const EditorChat = () => {
     setEditorValue(value)
   }
 
-  const handlePromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPromptValue(event.target.value)
   }
 
-  const handleSubmit = async () => {
+  const handleOnSubmit = async () => {
     if (!promptValue.trim()) return
 
     setIsProcessing(true)
@@ -37,10 +37,10 @@ export const EditorChat = () => {
     }
   }
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
-      handleSubmit()
+      handleOnSubmit()
     }
   }
 
@@ -58,15 +58,15 @@ export const EditorChat = () => {
           name="input"
           rows={5}
           value={promptValue}
-          onChange={handlePromptChange}
-          onKeyDown={handleKeyDown}
+          onChange={handleOnPromptChange}
+          onKeyDown={handleOnKeyDown}
           disabled={isProcessing}
-          placeholder="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
+          helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
         />
         <Button
           fullWidth={false}
           type="button"
-          onClick={handleSubmit}
+          onClick={handleOnSubmit}
           disabled={!promptValue.trim() || isProcessing}
         >
           {isProcessing === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
