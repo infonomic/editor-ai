@@ -1,0 +1,7 @@
+body {
+  background-color: var(--canvas-900);
+}
+
+section {
+  padding: 2rem 0;
+}

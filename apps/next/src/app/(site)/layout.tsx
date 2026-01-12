@@ -1,13 +1,15 @@
 import type React from 'react'
 
-import 'src/ui/styles/globals.css'
+import '@/ui/styles/global.css'
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+type RootLayoutProps = Readonly<{
+  children: React.ReactNode
+}>
+
+export default function RootLayout({ children }: RootLayoutProps): React.JSX.Element {
   return (
     <html className="dark scroll-smooth" lang="en" data-theme="dark">
       <body>{children}</body>
     </html>
   )
 }
-
-export default Layout
