@@ -1,4 +1,5 @@
 import { defaultEditorConfig, EditorField } from '@infonomic/editor'
+import type { SerializedEditorState } from 'lexical'
 
 interface Props {
   field: {
@@ -9,10 +10,10 @@ interface Props {
   }
   readonly?: boolean
   instanceKey?: string
-  value?: any
-  defaultValue?: any
+  value?: SerializedEditorState
+  defaultValue?: SerializedEditorState
   editorConfig?: any
-  onChange?: (value: any) => void
+  onChange?: (value: SerializedEditorState) => void
   path?: string
 }
 

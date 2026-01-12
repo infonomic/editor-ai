@@ -1,6 +1,6 @@
-body {
-  background-color: var(--canvas-900);
-}
+@import "./base/base.css";
+@import "./layouts/layouts.css";
+
 
 section {
   padding: 2rem 0;

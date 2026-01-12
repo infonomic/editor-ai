@@ -1,0 +1,213 @@
+.accent-h1 {
+  position: relative;
+  padding-left: 12px;
+}
+
+.accent-h1::before {
+  position: absolute;
+  content: "";
+  display: block;
+  background-color: var(--theme-300);
+  width: 3px;
+  height: calc(100% - 15px);
+  left: 0;
+  top: 8px;
+}
+
+.accent-h2 {
+  position: relative;
+  padding-left: 12px;
+}
+
+.accent-h2::before {
+  position: absolute;
+  content: "";
+  display: block;
+  background-color: var(--theme-300);
+  width: 3px;
+  height: 100%;
+  left: 0;
+  top: 0;
+}
+
+.accent-sub {
+  position: relative;
+  padding-left: 12px;
+}
+
+.accent-sub::before {
+  position: absolute;
+  content: "";
+  display: block;
+  background-color: var(--theme-300);
+  width: 5px;
+  height: calc(100% - 10px);
+  left: 0;
+  top: 5px;
+}
+
+.dark .accent-sub::before {
+  background-color: var(--theme-300);
+}
+
+.editor-text {
+  a:not(h1 > a):not(h2 > a):not(h3 > a):not(h4 > a):not(h5 > a):not(h6 > a) {
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--link-color-hover);
+      background: var(--secondary-50);
+    }
+
+    &::selection {
+      color: var(--gray--25);
+      background: var(--theme-600);
+      text-shadow: none;
+    }
+  }
+
+  blockquote {
+    color: #555555;
+    font-style: normal;
+    font-size: 1.3rem;
+    font-weight: 400;
+    border-left: 8px solid var(--secondary-800);
+    margin: 1.2rem 1rem 1.2rem 0.5rem;
+    padding: 0 0 0 18px;
+
+    p {
+      margin-bottom: 0;
+    }
+
+    @media screen and (min-width: 640px) {
+      margin: 2rem 1rem 2rem 1rem;
+    }
+  }
+
+  ul {
+    position: relative;
+    list-style-type: none;
+    list-style-position: inside;
+    margin: 1em 0 1.25em 0;
+    padding: 0;
+
+    @media screen and (min-width: 640px) {
+      margin: 1em 1em 1.75em 2em;
+    }
+
+    li {
+      position: relative;
+      padding: 0 5px 5px 0;
+      margin-bottom: 0.3em;
+      margin-left: 2em;
+      margin-right: 1em;
+      vertical-align: text-top;
+
+      @media screen and (min-width: 640px) {
+        margin-bottom: 0.5em;
+      }
+    }
+
+    li:before {
+      content: "";
+      display: inline-block;
+      position: absolute;
+      font-size: 0.7em;
+      line-height: 0.7em;
+      color: white;
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      bottom: 0;
+      top: 8px;
+      background-color: var(--secondary-800);
+      margin-left: -25px;
+      margin-right: 0;
+    }
+  }
+
+  ol {
+    display: table;
+    counter-reset: default-counter;
+    list-style-type: none;
+    list-style-position: inside;
+    margin: 1em 0 1em 0.5em;
+    padding: 0;
+
+    @media screen and (min-width: 640px) {
+      margin: 1em 1em 1em 1.75em;
+    }
+
+    li {
+      position: relative;
+      padding: 2px 5px 5px 0;
+      margin-bottom: 0.25em;
+      margin-left: 2em;
+      margin-right: 1em;
+      vertical-align: text-top;
+
+      @media screen and (min-width: 640px) {
+        margin-bottom: 0.5em;
+      }
+    }
+
+    li:before {
+      display: inline-block;
+      position: absolute;
+      font-size: 0.7em;
+      line-height: 0.7em;
+      color: white;
+      width: 22px;
+      height: 22px;
+      bottom: 0;
+      top: 6px;
+      background-color: var(--secondary-800);
+      text-align: right;
+      padding: 7px 8px 0 2px;
+      margin-left: -40px;
+      margin-right: 0;
+      content: counters(default-counter, " ") " ";
+      counter-increment: default-counter;
+    }
+  }
+}
+
+.dark .editor-text {
+  a:not(h1 > a):not(h2 > a):not(h3 > a):not(h4 > a):not(h5 > a):not(h6 > a):hover {
+    background-color: var(--secondary-700);
+  }
+
+  blockquote {
+    color: #dddddd;
+    border-left: 8px solid var(--secondary-600);
+  }
+
+  ol {
+    li:before {
+      background-color: var(--secondary-600);
+    }
+  }
+
+  ul {
+    li:before {
+      background-color: var(--secondary-600);
+    }
+  }
+}
+
+.typography--external-link {
+  text-decoration: underline;
+}
+
+.typography--external-link .link-text {
+  text-decoration: underline;
+}
+
+.typography--external-link .link-icon {
+  display: inline;
+  white-space: nowrap;
+}
+
+.typography--external-link .link-icon svg {
+  display: inline;
+}

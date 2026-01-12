@@ -1,8 +1,6 @@
-import Link from 'next/link'
+import { Container, Section, TextArea } from '@infonomic/uikit/react'
 
-import { Container, Section } from '@infonomic/uikit/react'
-
-import { RichTextField } from '@/ui/fields/richtext-field'
+import { EditorChat } from '@/ui/components/editor-chat'
 
 const Page = () => {
   return (
@@ -12,7 +10,7 @@ const Page = () => {
           <div className="prose">
             <h1>Welcome to Infonomic's Editor</h1>
           </div>
-          <RichTextField field={{ name: 'editor1', label: 'Example Editor' }} />
+          <EditorChat />
         </Container>
       </Section>
     </main>

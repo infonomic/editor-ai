@@ -20,6 +20,6 @@
 /**
  * Tailwind - should come after the above.
  */
-/* @import "./tailwind.css"; */
+@import "./tailwind.css";
 
 @import "./app.css";

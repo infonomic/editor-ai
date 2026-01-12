@@ -84,6 +84,7 @@
 		"chokidar-cli": "^3.0.0",
 		"dotenv": "^17.2.3",
 		"jsdom": "^27.4.0",
+		"npm-run-all": "^4.1.5",
 		"react": "19.2.3",
 		"react-dom": "19.2.3",
 		"tsc-alias": "^1.8.16",
