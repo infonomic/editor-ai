@@ -6,9 +6,9 @@ const Page = () => {
   return (
     <main>
       <Section>
-        <Container>
+        <Container className="max-w-[960px] mx-auto">
           <div className="prose">
-            <h1>Welcome to Infonomic's Editor</h1>
+            <h1>Make Shit Happen</h1>
           </div>
           <EditorChat />
         </Container>
