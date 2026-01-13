@@ -1,10 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic'
-
-import { defaultSystemPrompt } from '../../prompts.js'
-import type { GenerationConfig } from '../../types.js'
-
-const MODEL_KEY = 'ANTH-C'
-const MODELS = [
+const _MODEL_KEY = 'ANTH-C'
+const _MODELS = [
   'claude-opus-4-1',
   'claude-opus-4-0',
   'claude-sonnet-4-0',

@@ -430,11 +430,11 @@ export const lexicalJsonSchema = (customNodes: JSONSchema[] | undefined) => {
   if (Array.isArray(customNodes) && customNodes.length > 0) {
     customNodes.forEach((nodeObj) => {
       for (const [nodeName, nodeDefinition] of Object.entries(nodeObj)) {
-        // @ts-ignore
+        // @ts-expect-error
         schema.definitions[nodeName] = nodeDefinition
 
-        // @ts-ignore
-        const rootNode = schema.definitions['RootNode']
+        // @ts-expect-error
+        const rootNode = schema.definitions.RootNode
         if (isObjectSchema(rootNode)) {
           const children = rootNode.properties?.children
           const items = children?.items

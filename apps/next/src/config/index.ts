@@ -1,4 +1,3 @@
-import { booleanSchema, requireIfEnabled, urlSchema } from '@infonomic/schemas'
 import { z } from 'zod'
 
 /**
@@ -14,12 +13,15 @@ const serverSchema = z.object({
     defaultProvider: z.enum(['openai', 'google', 'anthropic']),
     openai: z.object({
       apiKey: z.string(),
+      baseUrl: z.string().optional(),
     }),
     google: z.object({
       apiKey: z.string(),
+      baseUrl: z.string().optional(),
     }),
     anthropic: z.object({
       apiKey: z.string(),
+      baseUrl: z.string().optional(),
     }),
   }),
 })
@@ -32,12 +34,15 @@ const initServerConfig = (): ServerConfig =>
       defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'openai',
       openai: {
         apiKey: process.env.OPENAI_API_KEY || '',
+        baseUrl: process.env.OPENAI_BASE_URL || undefined,
       },
       google: {
         apiKey: process.env.GOOGLE_API_KEY || '',
+        baseUrl: process.env.GOOGLE_BASE_URL || undefined,
       },
       anthropic: {
         apiKey: process.env.ANTHROPIC_API_KEY || '',
+        baseUrl: process.env.ANTHROPIC_BASE_URL || undefined,
       },
     },
     log: {

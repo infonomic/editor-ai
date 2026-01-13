@@ -1,6 +1,5 @@
 import type { CSSProperties, MouseEventHandler } from 'react'
 
-import type { JSONSchema } from 'openai/lib/jsonschema'
 import type { ImageGenerateParams } from 'openai/resources/images'
 
 export interface GenerationModel {

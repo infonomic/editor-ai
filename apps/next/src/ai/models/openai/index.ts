@@ -1,15 +1,5 @@
-import type { SpeechCreateParams } from 'openai/resources/audio/speech'
-
-import { defaultSystemPrompt } from '../../prompts.js'
-import { generateFileNameByPrompt } from '../../utils/generateFileNameByPrompt.js'
-// import { generateObject } from '../generateObject.js'
-import { generateImage } from './generateImage.js'
-import { generateVoice } from './generateVoice.js'
-import { openai } from './openai.js'
-import type { GenerationConfig } from '../../types.js'
-
-const MODEL_KEY = 'Oai'
-const MODELS = [
+const _MODEL_KEY = 'Oai'
+const _MODELS = [
   'gpt-5',
   'gpt-5-mini',
   'gpt-5-nano',

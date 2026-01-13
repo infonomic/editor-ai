@@ -27,7 +27,7 @@ export const RichTextField = ({
   onChange,
   path,
 }: Props) => {
-  const fieldPath = path ?? field.name
+  const _fieldPath = path ?? field.name
   // const fieldError = useFieldError(fieldPath)
   // const isDirty = useIsDirty(fieldPath)
   // const fieldValue = useFieldValue<any>(fieldPath)

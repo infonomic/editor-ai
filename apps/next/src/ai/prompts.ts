@@ -21,8 +21,8 @@ export const defaultPrompts: ActionPrompt[] = [
       - Retain the original meaning, tone, and emotional content.
       - Use different vocabulary and sentence structures where appropriate.
       - Ensure the rephrased text conveys the same message and feeling as the original.
-      ${prompt ? '\n\nPrevious prompt:\n' + prompt : ''}
-      ${systemPrompt ? '\n\nORIGINAL SYSTEM PROMPT:\n' + systemPrompt : ''}
+      ${prompt ? `\n\nPrevious prompt:\n${prompt}` : ''}
+      ${systemPrompt ? `\n\nORIGINAL SYSTEM PROMPT:\n${systemPrompt}` : ''}
       -------------`,
   },
   {
@@ -65,7 +65,7 @@ export const defaultPrompts: ActionPrompt[] = [
       - Maintain the original meaning and key points.
       - Aim for clarity and readability for a general audience.
       - The simplified text should be more concise than the original.
-      ${prompt ? '\n\nPREVIOUS PROMPT:\n' + prompt : ''}
+      ${prompt ? `\n\nPREVIOUS PROMPT:\n${prompt}` : ''}
       -------------`,
   },
   {
@@ -108,8 +108,8 @@ INSTRUCTIONS:
     - Accurately translate the text into ${locale}.
     - Preserve the original meaning, tone, and context.
     - Ensure the translation is culturally appropriate and natural in the target language.
-    ${prompt ? '\n\nPREVIOUS PROMPT:\n' + prompt : ''}
-    ${systemPrompt ? '\n\nORIGINAL SYSTEM PROMPT:\n' + systemPrompt : ''}
+    ${prompt ? `\n\nPREVIOUS PROMPT:\n${prompt}` : ''}
+    ${systemPrompt ? `\n\nORIGINAL SYSTEM PROMPT:\n${systemPrompt}` : ''}
     -------------`,
   },
 ]

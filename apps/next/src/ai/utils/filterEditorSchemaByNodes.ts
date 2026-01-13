@@ -10,7 +10,7 @@ export function filterEditorSchemaByNodes(schema: LexicalNodeSchema, allowedNode
   for (const [key, def] of Object.entries(schema.definitions ?? {})) {
     if (isObjectSchema(def)) {
       const typeEnum = def.properties?.type?.enum
-      if (typeEnum && typeEnum.some((t) => allowedTypes.has(t))) {
+      if (typeEnum?.some((t) => allowedTypes.has(t))) {
         filteredDefinitions[key] = JSON.parse(JSON.stringify(def)) // Deep copy to safely mutate
       }
     }

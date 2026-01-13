@@ -17,8 +17,8 @@ export const generateImage = async (
 
   const options: Record<string, any> = {}
   if (version?.startsWith('dall')) {
-    options['response_format'] = 'b64_json'
-    options['style'] = style
+    options.response_format = 'b64_json'
+    options.style = style
   }
 
   let response: ImagesResponse

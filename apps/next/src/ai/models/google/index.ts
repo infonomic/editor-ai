@@ -1,12 +1,5 @@
-import { google } from '@ai-sdk/google'
-
-import { defaultSystemPrompt } from '../../prompts.js'
-import { generateFileNameByPrompt } from '../../utils/generateFileNameByPrompt.js'
-import { generateImage } from './generateImage.js'
-import type { GenerationConfig } from '../../types.js'
-
-const MODEL_KEY = 'GEMINI'
-const MODELS = [
+const _MODEL_KEY = 'GEMINI'
+const _MODELS = [
   'gemini-3-pro-preview',
   'gemini-2.5-pro',
   'gemini-2.5-flash',
@@ -16,7 +9,7 @@ const MODELS = [
   'gemini-flash-latest',
 ]
 
-const IMAGEN_MODELS = [
+const _IMAGEN_MODELS = [
   'imagen-4.0-fast-generate-001',
   'imagen-4.0-generate-001',
   'imagen-4.0-ultra-generate-001',

@@ -1,16 +1,51 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Button, LoaderEllipsis, TextArea } from '@infonomic/uikit/react'
-import type { EditorState, LexicalEditor, SerializedEditorState } from 'lexical'
+import {
+  Alert,
+  Button,
+  getErrorText,
+  hasErrors,
+  LoaderEllipsis,
+  TextArea,
+} from '@infonomic/uikit/react'
+import type { SerializedEditorState } from 'lexical'
 
 import { RichTextField } from '@/ui/fields/richtext-field'
+import { executeInstruction } from '../action'
+import type { InstructionState } from '../@types'
 
 export const EditorChat = () => {
+  const initialState: InstructionState = { prompt: '', editor: null, errors: {}, status: 'idle' }
   const [editorValue, setEditorValue] = useState<SerializedEditorState | undefined>(undefined)
   const [promptValue, setPromptValue] = useState<string>('')
-  const [isProcessing, setIsProcessing] = useState<boolean>(false)
+  const [formState, formAction, isPending] = useActionState(executeInstruction, initialState)
+  const formRef = useRef<HTMLFormElement | null>(null)
+
+  const emptyEditorState: SerializedEditorState = useMemo(
+    () => ({
+      root: {
+        children: [],
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        type: 'root',
+        version: 1,
+      },
+    }),
+    []
+  )
+
+  const editorJson = useMemo(() => {
+    return JSON.stringify(editorValue ?? emptyEditorState)
+  }, [editorValue, emptyEditorState])
+
+  useEffect(() => {
+    if (formState?.status === 'success' && formState.editor) {
+      setEditorValue(formState.editor as SerializedEditorState)
+    }
+  }, [formState])
 
   const handleOnEditorChange = (value: SerializedEditorState) => {
     setEditorValue(value)
@@ -20,58 +55,57 @@ export const EditorChat = () => {
     setPromptValue(event.target.value)
   }
 
-  const handleOnSubmit = async () => {
-    if (!promptValue.trim()) return
-
-    setIsProcessing(true)
-    try {
-      // TODO: Call AI API with editorValue and promptValue
-      // const response = await callAIAPI(editorValue, promptValue)
-      // setEditorValue(response)
-      console.log('Editor content:', editorValue)
-      console.log('Prompt:', promptValue)
-    } catch (error) {
-      console.error('AI processing failed:', error)
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
-      handleOnSubmit()
+      formRef.current?.requestSubmit()
     }
   }
 
   return (
-    <div className="flex flex-col gap-2 mt-8 max-w-[960px] mx-auto">
-      <RichTextField
-        onChange={handleOnEditorChange}
-        value={editorValue}
-        field={{ name: 'editor', label: 'Editor' }}
-      />
-      <div className="flex flex-col gap-2">
-        <TextArea
-          label="Prompt"
-          id="input"
-          name="input"
-          rows={5}
-          value={promptValue}
-          onChange={handleOnPromptChange}
-          onKeyDown={handleOnKeyDown}
-          disabled={isProcessing}
-          helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
+    <div className="max-w-240 mx-auto">
+      {formState?.status === 'success' && (
+        <Alert intent="success">
+          <span>{formState.message}</span>
+        </Alert>
+      )}
+
+      {formState?.status === 'failed' && (
+        <Alert intent="danger">
+          <span>'There was a problem submitting your instructions.</span>
+        </Alert>
+      )}
+      <form ref={formRef} className="flex flex-col gap-2 mt-8" action={formAction} noValidate>
+        <input type="hidden" name="editor" value={editorJson} />
+        <RichTextField
+          onChange={handleOnEditorChange}
+          value={editorValue}
+          readonly={isPending === true}
+          field={{ name: 'editor', label: 'Editor' }}
         />
-        <Button
-          fullWidth={false}
-          type="button"
-          onClick={handleOnSubmit}
-          disabled={!promptValue.trim() || isProcessing}
-        >
-          {isProcessing === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
-        </Button>
-      </div>
+        <div className="flex flex-col gap-2">
+          <TextArea
+            label="Prompt"
+            id="prompt"
+            name="prompt"
+            rows={5}
+            value={promptValue}
+            onChange={handleOnPromptChange}
+            onKeyDown={handleOnKeyDown}
+            disabled={isPending === true}
+            error={hasErrors('prompt', null, formState?.errors)}
+            errorText={getErrorText('prompt', null, formState?.errors)}
+            helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
+          />
+          <Button
+            fullWidth={false}
+            type="submit"
+            disabled={!promptValue.trim() || isPending === true}
+          >
+            {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
