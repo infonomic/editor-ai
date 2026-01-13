@@ -53,13 +53,23 @@ const ensureNonEmptyLexicalDocument = (state: any) => {
 
 const buildSystemPrompt = () => {
   return [
-    'You are editing a Lexical rich text document by updating ONLY text-node strings.',
+    'You are editing a Lexical rich text document by updating text-node strings.',
     'You will receive an array of text nodes with numeric IDs and their current text.',
-    'Your task:',
+    '',
+    'RULES:',
     '- Return EXACTLY one edit per input node ID (same count, same order).',
     '- Do not add, remove, or reorder IDs.',
     '- Update the text field for each node according to the user instruction.',
-    '- Preserve formatting intent: if a text node is empty, keep it empty unless instructed otherwise.',
+    '',
+    'HANDLING EMPTY CONTENT:',
+    '- If the input nodes contain only empty text, treat the instruction as a content generation request.',
+    '- Generate appropriate content and place it in the available text node(s).',
+    '- For multi-paragraph content, use the first available node and place all content there (newlines will be handled separately).',
+    '',
+    'HANDLING EXISTING CONTENT:',
+    '- Preserve the structure: do not merge or split text across nodes.',
+    '- Apply the instruction (translate, rephrase, etc.) to each node independently.',
+    '- If a node is empty in the input, keep it empty unless the instruction explicitly requires filling it.',
   ].join('\n')
 }
 
