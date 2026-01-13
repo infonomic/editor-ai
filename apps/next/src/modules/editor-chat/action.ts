@@ -88,6 +88,8 @@ export async function executeInstruction(
       }
     }
 
+    console.log('Editor State:', editorState)
+
     // Use hasText to determine if we have existing content to edit (PATCH mode)
     // or if we need to generate a new document (GENERATE mode)
     const documentHasContent = hasText(editorState)

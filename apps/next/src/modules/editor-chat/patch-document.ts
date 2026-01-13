@@ -5,7 +5,7 @@ import {
   extractTextNodesFromLexicalState,
   lexicalTextEditsResponseSchema,
   setAtPath,
-} from './lexicalTextEdits'
+} from './lexical-text-edits'
 
 /**
  * System prompt for PATCH mode: editing existing text nodes while preserving structure.
