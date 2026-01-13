@@ -1,16 +1,16 @@
 'use server'
 
-import OpenAI from 'openai'
+import { generateText, Output } from 'ai'
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
+import { openai } from '@/ai/models/openai/openai'
 import { getServerConfig } from '@/config'
 import { getLogger } from '@/lib/logger'
 import { type InstructionState, instructionSchema } from './@types'
 import {
   extractTextNodesFromLexicalState,
   lexicalTextEditsResponseSchema,
-  safeParseJsonObject,
   setAtPath,
 } from './lexicalTextEdits'
 
@@ -54,13 +54,12 @@ const ensureNonEmptyLexicalDocument = (state: any) => {
 const buildSystemPrompt = () => {
   return [
     'You are editing a Lexical rich text document by updating ONLY text-node strings.',
-    'Return ONLY valid JSON (no markdown, no code fences, no prose).',
-    'JSON shape must be: {"edits":[{"id":0,"text":"..."}]}',
-    'Rules:',
-    '- You will be given an array of input text nodes with numeric ids and their current text.',
-    '- Return EXACTLY one edit per input node id (same count).',
-    '- Do not add or remove ids.',
-    '- Keep whitespace reasonable; do not include surrounding quotes.',
+    'You will receive an array of text nodes with numeric IDs and their current text.',
+    'Your task:',
+    '- Return EXACTLY one edit per input node ID (same count, same order).',
+    '- Do not add, remove, or reorder IDs.',
+    '- Update the text field for each node according to the user instruction.',
+    '- Preserve formatting intent: if a text node is empty, keep it empty unless instructed otherwise.',
   ].join('\n')
 }
 
@@ -140,51 +139,17 @@ export async function executeInstruction(
       }
     }
 
-    const openai = new OpenAI({
-      apiKey,
-      baseURL: config.ai.openai.baseUrl,
+    const model = 'gpt-5'
+    const result = await generateText({
+      model: openai(model),
+      system: buildSystemPrompt(),
+      prompt: buildUserPrompt(prompt, inputTextNodes),
+      output: Output.object({
+        schema: lexicalTextEditsResponseSchema,
+      }),
     })
 
-    const model = 'gpt-4o-mini'
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature: 0.2,
-      messages: [
-        { role: 'system', content: buildSystemPrompt() },
-        { role: 'user', content: buildUserPrompt(prompt, inputTextNodes) },
-      ],
-    })
-
-    const content = completion.choices?.[0]?.message?.content
-    if (!content) {
-      return {
-        errors: {},
-        message: 'AI returned an empty response.',
-        status: 'failed',
-      }
-    }
-
-    let parsed: unknown
-    try {
-      parsed = safeParseJsonObject(content)
-    } catch {
-      return {
-        errors: {},
-        message: 'AI response was not valid JSON.',
-        status: 'failed',
-      }
-    }
-
-    const validated = lexicalTextEditsResponseSchema.safeParse(parsed)
-    if (validated.success === false) {
-      return {
-        errors: { prompt: [], editor: [] },
-        message: 'AI returned an invalid JSON payload.',
-        status: 'failed',
-      }
-    }
-
-    const edits = validated.data.edits
+    const edits = result.output.edits
     if (edits.length !== extracted.length) {
       return {
         errors: {},

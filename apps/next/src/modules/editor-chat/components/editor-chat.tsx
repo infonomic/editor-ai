@@ -2,14 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  Alert,
-  Button,
-  getErrorText,
-  hasErrors,
-  LoaderEllipsis,
-  TextArea,
-} from '@infonomic/uikit/react'
+import { Alert, Button, LoaderEllipsis, TextArea } from '@infonomic/uikit/react'
 import type { SerializedEditorState } from 'lexical'
 
 import { RichTextField } from '@/ui/fields/richtext-field'
@@ -93,8 +86,8 @@ export const EditorChat = () => {
             onChange={handleOnPromptChange}
             onKeyDown={handleOnKeyDown}
             disabled={isPending === true}
-            error={hasErrors('prompt', null, formState?.errors)}
-            errorText={getErrorText('prompt', null, formState?.errors)}
+            // error={hasErrors('prompt', null, formState?.errors)}
+            // errorText={getErrorText('prompt', null, formState?.errors)}
             helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
           />
           <Button

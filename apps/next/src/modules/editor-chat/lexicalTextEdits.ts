@@ -70,20 +70,3 @@ export function setAtPath(root: unknown, path: (string | number)[], value: unkno
   }
   cursor[last as any] = value
 }
-
-export function safeParseJsonObject(input: string): unknown {
-  const trimmed = input.trim()
-
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    // Common model failure mode: wraps JSON in prose or code fences.
-    const firstBrace = trimmed.indexOf('{')
-    const lastBrace = trimmed.lastIndexOf('}')
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      const candidate = trimmed.slice(firstBrace, lastBrace + 1)
-      return JSON.parse(candidate)
-    }
-    throw new Error('Invalid JSON returned by model')
-  }
-}

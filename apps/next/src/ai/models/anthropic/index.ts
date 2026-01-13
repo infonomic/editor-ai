@@ -1,3 +1,5 @@
+export {}
+
 const _MODEL_KEY = 'ANTH-C'
 const _MODELS = [
   'claude-opus-4-1',
