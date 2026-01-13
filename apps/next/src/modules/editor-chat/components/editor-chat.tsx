@@ -76,13 +76,13 @@ export const EditorChat = () => {
 
   return (
     <div className="max-w-240 mx-auto">
-      {formState?.status === 'success' && (
+      {formState?.status === 'success' && isPending === false && (
         <Alert intent="success">
           <span>{formState.message}</span>
         </Alert>
       )}
 
-      {formState?.status === 'failed' && (
+      {formState?.status === 'failed' && isPending === false && (
         <Alert intent="danger">
           <span>'There was a problem submitting your instructions.</span>
         </Alert>

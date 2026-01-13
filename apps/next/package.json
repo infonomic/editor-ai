@@ -19,18 +19,18 @@
     "node": "^18.20.2 || >=20.6.0"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.11",
-    "@ai-sdk/google": "^3.0.6",
-    "@ai-sdk/openai": "^3.0.8",
-    "@ai-sdk/provider-utils": "^4.0.4",
-    "@ai-sdk/react": "^3.0.31",
+    "@ai-sdk/anthropic": "^3.0.12",
+    "@ai-sdk/google": "^3.0.7",
+    "@ai-sdk/openai": "^3.0.9",
+    "@ai-sdk/provider-utils": "^4.0.5",
+    "@ai-sdk/react": "^3.0.35",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@anthropic-ai/sdk": "^0.71.2",
     "@google/genai": "^1.35.0",
     "@infonomic/editor": "workspace:*",
     "@infonomic/schemas": "^2.4.0",
-    "@infonomic/uikit": "^5.19.0",
-    "ai": "^6.0.29",
+    "@infonomic/uikit": "^5.20.0",
+    "ai": "^6.0.33",
     "ajv": "^8.17.1",
     "classnames": "^2.5.1",
     "cross-env": "^10.1.0",
@@ -50,7 +50,7 @@
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.8",
     "@types/react": "19.2.8",
     "@types/react-dom": "19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
@@ -58,6 +58,6 @@
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.17"
   }
 }
