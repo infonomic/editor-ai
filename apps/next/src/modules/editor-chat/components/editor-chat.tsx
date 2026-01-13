@@ -2,16 +2,35 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Alert, Button, LoaderEllipsis, TextArea } from '@infonomic/uikit/react'
+import { Alert, Button, LoaderEllipsis, Select, SelectItem, TextArea } from '@infonomic/uikit/react'
 import type { SerializedEditorState } from 'lexical'
 
+import { MODELS as ANTHROPIC_MODELS } from '@/ai/models/anthropic'
+import { MODELS as GOOGLE_MODELS } from '@/ai/models/google'
+import { MODELS as OPENAI_MODELS } from '@/ai/models/openai'
 import { RichTextField } from '@/ui/fields/richtext-field'
 import { executeInstruction } from '../action'
 import type { InstructionState } from '../@types'
 
+type Provider = 'openai' | 'google' | 'anthropic'
+
+const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
+  openai: OPENAI_MODELS,
+  google: GOOGLE_MODELS,
+  anthropic: ANTHROPIC_MODELS,
+}
+
+const DEFAULT_MODELS: Record<Provider, string> = {
+  openai: 'gpt-5.2',
+  google: 'gemini-3-pro',
+  anthropic: 'claude-sonnet-4-5-20250514',
+}
+
 export const EditorChat = () => {
   const initialState: InstructionState = { prompt: '', editor: null, errors: {}, status: 'idle' }
   const [editorValue, setEditorValue] = useState<SerializedEditorState | undefined>(undefined)
+  const [provider, setProvider] = useState<Provider>('openai')
+  const [model, setModel] = useState<string>(DEFAULT_MODELS.openai)
   const [promptValue, setPromptValue] = useState<string>('')
   const [formState, formAction, isPending] = useActionState(executeInstruction, initialState)
   const formRef = useRef<HTMLFormElement | null>(null)
@@ -70,6 +89,8 @@ export const EditorChat = () => {
       )}
       <form ref={formRef} className="flex flex-col gap-2 mt-8" action={formAction} noValidate>
         <input type="hidden" name="editor" value={editorJson} />
+        <input type="hidden" name="provider" value={provider} />
+        <input type="hidden" name="model" value={model} />
         <RichTextField
           onChange={handleOnEditorChange}
           value={editorValue}
@@ -90,13 +111,41 @@ export const EditorChat = () => {
             // errorText={getErrorText('prompt', null, formState?.errors)}
             helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
           />
-          <Button
-            fullWidth={false}
-            type="submit"
-            disabled={!promptValue.trim() || isPending === true}
-          >
-            {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
-          </Button>
+          <div className="flex options gap-2 items-center">
+            <Select
+              name="provider"
+              value={provider}
+              onValueChange={(value) => {
+                const newProvider = value as Provider
+                setProvider(newProvider)
+                setModel(DEFAULT_MODELS[newProvider])
+              }}
+              variant="outlined"
+            >
+              <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="google">Google</SelectItem>
+              <SelectItem value="anthropic">Anthropic</SelectItem>
+            </Select>
+            <Select
+              name="model"
+              value={model}
+              onValueChange={(value) => setModel(value)}
+              variant="outlined"
+            >
+              {PROVIDER_MODELS[provider].map((modelOption) => (
+                <SelectItem key={modelOption} value={modelOption}>
+                  {modelOption}
+                </SelectItem>
+              ))}
+            </Select>
+            <Button
+              fullWidth={false}
+              type="submit"
+              disabled={!promptValue.trim() || isPending === true}
+            >
+              {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
+            </Button>
+          </div>
         </div>
       </form>
     </div>

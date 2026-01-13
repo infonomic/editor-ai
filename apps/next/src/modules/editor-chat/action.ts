@@ -1,10 +1,13 @@
 'use server'
 
+import { anthropic } from '@ai-sdk/anthropic'
+import { google } from '@ai-sdk/google'
+import { openai } from '@ai-sdk/openai'
+import { hasText } from '@infonomic/editor'
 import { generateText, Output } from 'ai'
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
-import { openai } from '@/ai/models/openai/openai'
 import { getServerConfig } from '@/config'
 import { getLogger } from '@/lib/logger'
 import { type InstructionState, instructionSchema } from './@types'
@@ -92,6 +95,8 @@ export async function executeInstruction(
   const validatedFields = instructionSchema.safeParse({
     prompt: formData.get('prompt'),
     editor: formData.get('editor'),
+    provider: formData.get('provider'),
+    model: formData.get('model'),
   })
 
   // If form validation fails, return errors early. Otherwise, continue...
@@ -104,14 +109,27 @@ export async function executeInstruction(
   }
 
   // Prepare data for next step, insertion into the database or other...
-  const { prompt, editor } = validatedFields.data
+  const { prompt, editor, provider, model } = validatedFields.data
 
   try {
-    const apiKey = config.ai.openai.apiKey
+    // Validate that the appropriate API key exists for the selected provider
+    let apiKey: string | undefined
+    switch (provider) {
+      case 'openai':
+        apiKey = config.ai.openai.apiKey
+        break
+      case 'google':
+        apiKey = config.ai.google.apiKey
+        break
+      case 'anthropic':
+        apiKey = config.ai.anthropic.apiKey
+        break
+    }
+
     if (apiKey == null || apiKey.length === 0) {
       return {
         errors: { prompt: [], editor: [] },
-        message: 'OpenAI API key is missing on the server.',
+        message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} API key is missing on the server.`,
         status: 'failed',
       }
     }
@@ -149,9 +167,21 @@ export async function executeInstruction(
       }
     }
 
-    const model = 'gpt-5'
+    // Get the appropriate model instance based on provider
+    const getModelInstance = (providerName: string, modelName: string) => {
+      switch (providerName) {
+        case 'google':
+          return google(modelName)
+        case 'anthropic':
+          return anthropic(modelName)
+        case 'openai':
+        default:
+          return openai(modelName)
+      }
+    }
+
     const result = await generateText({
-      model: openai(model),
+      model: getModelInstance(provider, model),
       system: buildSystemPrompt(),
       prompt: buildUserPrompt(prompt, inputTextNodes),
       output: Output.object({

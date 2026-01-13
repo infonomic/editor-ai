@@ -1,15 +1,16 @@
-export {}
-
-const _MODEL_KEY = 'ANTH-C'
-const _MODELS = [
-  'claude-opus-4-1',
-  'claude-opus-4-0',
-  'claude-sonnet-4-0',
-  'claude-3-opus-latest',
-  'claude-3-5-haiku-latest',
-  'claude-3-5-sonnet-latest',
+export const MODEL_KEY = 'ANTH-C'
+export const MODELS = [
+  'claude-opus-4-5-20250710',
+  'claude-sonnet-4-5-20250514',
+  'claude-haiku-4-5-20250710',
+  'claude-opus-4-20250414',
+  'claude-sonnet-4-20250514',
   'claude-3-7-sonnet-latest',
-]
+  'claude-3-5-sonnet-latest',
+  'claude-3-5-haiku-latest',
+] as const
+
+export type AnthropicModel = (typeof MODELS)[number]
 
 // export const AnthropicConfig: GenerationConfig = {
 //   models: [

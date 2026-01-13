@@ -1,16 +1,19 @@
-export {}
-
-const _MODEL_KEY = 'Oai'
-const _MODELS = [
+export const MODEL_KEY = 'Oai'
+export const MODELS = [
+  'gpt-5.2',
+  'gpt-5.2-pro',
   'gpt-5',
+  'gpt-5-pro',
   'gpt-5-mini',
   'gpt-5-nano',
   'gpt-4.1',
+  'gpt-4.1-mini',
+  'gpt-4.1-nano',
   'gpt-4o',
-  'gpt-4-turbo',
   'gpt-4o-mini',
-  'gpt-3.5-turbo',
-]
+] as const
+
+export type OpenAIModel = (typeof MODELS)[number]
 
 //TODO: Simplify this file by moving the handlers to separate files and remove duplicate code
 // export const OpenAIConfig: GenerationConfig = {
