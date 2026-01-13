@@ -4,85 +4,28 @@ import { anthropic } from '@ai-sdk/anthropic'
 import { google } from '@ai-sdk/google'
 import { openai } from '@ai-sdk/openai'
 import { hasText } from '@infonomic/editor'
-import { generateText, Output } from 'ai'
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
 import { getServerConfig } from '@/config'
 import { getLogger } from '@/lib/logger'
 import { type InstructionState, instructionSchema } from './@types'
-import {
-  extractTextNodesFromLexicalState,
-  lexicalTextEditsResponseSchema,
-  setAtPath,
-} from './lexicalTextEdits'
+import { generateDocument } from './generate-document'
+import { patchDocument } from './patch-document'
 
-const ensureNonEmptyLexicalDocument = (state: any) => {
-  if (state == null || typeof state !== 'object') return
-  if (state.root == null || typeof state.root !== 'object') {
-    state.root = {
-      children: [],
-      direction: 'ltr',
-      format: '',
-      indent: 0,
-      type: 'root',
-      version: 1,
-    }
+/**
+ * Get the appropriate model instance based on provider name.
+ */
+const getModelInstance = (providerName: string, modelName: string) => {
+  switch (providerName) {
+    case 'google':
+      return google(modelName)
+    case 'anthropic':
+      return anthropic(modelName)
+    case 'openai':
+    default:
+      return openai(modelName)
   }
-
-  if (Array.isArray(state.root.children) && state.root.children.length === 0) {
-    state.root.children = [
-      {
-        children: [
-          {
-            detail: 0,
-            format: 0,
-            mode: 'normal',
-            style: '',
-            text: '',
-            type: 'text',
-            version: 1,
-          },
-        ],
-        direction: 'ltr',
-        format: '',
-        indent: 0,
-        type: 'paragraph',
-        version: 1,
-      },
-    ]
-  }
-}
-
-const buildSystemPrompt = () => {
-  return [
-    'You are editing a Lexical rich text document by updating text-node strings.',
-    'You will receive an array of text nodes with numeric IDs and their current text.',
-    '',
-    'RULES:',
-    '- Return EXACTLY one edit per input node ID (same count, same order).',
-    '- Do not add, remove, or reorder IDs.',
-    '- Update the text field for each node according to the user instruction.',
-    '',
-    'HANDLING EMPTY CONTENT:',
-    '- If the input nodes contain only empty text, treat the instruction as a content generation request.',
-    '- Generate appropriate content and place it in the available text node(s).',
-    '- For multi-paragraph content, use the first available node and place all content there (newlines will be handled separately).',
-    '',
-    'HANDLING EXISTING CONTENT:',
-    '- Preserve the structure: do not merge or split text across nodes.',
-    '- Apply the instruction (translate, rephrase, etc.) to each node independently.',
-    '- If a node is empty in the input, keep it empty unless the instruction explicitly requires filling it.',
-  ].join('\n')
-}
-
-const buildUserPrompt = (instruction: string, textNodes: Array<{ id: number; text: string }>) => {
-  return [
-    `INSTRUCTION: ${instruction}`,
-    '',
-    'INPUT_TEXT_NODES_JSON:',
-    JSON.stringify(textNodes),
-  ].join('\n')
 }
 
 export async function executeInstruction(
@@ -109,7 +52,7 @@ export async function executeInstruction(
   }
 
   // Prepare data for next step, insertion into the database or other...
-  const { prompt, editor, provider, model } = validatedFields.data
+  const { prompt, editor, provider, model: modelName } = validatedFields.data
 
   try {
     // Validate that the appropriate API key exists for the selected provider
@@ -145,85 +88,54 @@ export async function executeInstruction(
       }
     }
 
-    ensureNonEmptyLexicalDocument(editorState)
+    // Use hasText to determine if we have existing content to edit (PATCH mode)
+    // or if we need to generate a new document (GENERATE mode)
+    const documentHasContent = hasText(editorState)
+    const model = getModelInstance(provider, modelName)
 
-    const extracted = extractTextNodesFromLexicalState(editorState)
-    const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
+    if (documentHasContent) {
+      // PATCH MODE: Edit existing text nodes while preserving document structure
+      const result = await patchDocument({
+        model,
+        prompt,
+        editorState,
+      })
 
-    if (inputTextNodes.length === 0) {
-      return {
-        errors: { editor: ['No text nodes found to edit.'] },
-        message: 'No text nodes found to edit.',
-        status: 'failed',
-      }
-    }
-
-    // Simple guardrail for prototype: avoid accidental huge prompts.
-    if (inputTextNodes.length > 400) {
-      return {
-        errors: { editor: ['Document too large for the current prototype.'] },
-        message: 'Document too large for the current prototype (too many text nodes).',
-        status: 'failed',
-      }
-    }
-
-    // Get the appropriate model instance based on provider
-    const getModelInstance = (providerName: string, modelName: string) => {
-      switch (providerName) {
-        case 'google':
-          return google(modelName)
-        case 'anthropic':
-          return anthropic(modelName)
-        case 'openai':
-        default:
-          return openai(modelName)
-      }
-    }
-
-    const result = await generateText({
-      model: getModelInstance(provider, model),
-      system: buildSystemPrompt(),
-      prompt: buildUserPrompt(prompt, inputTextNodes),
-      output: Output.object({
-        schema: lexicalTextEditsResponseSchema,
-      }),
-    })
-
-    const edits = result.output.edits
-    if (edits.length !== extracted.length) {
-      return {
-        errors: {},
-        message: 'AI returned an unexpected number of edits.',
-        status: 'failed',
-      }
-    }
-
-    const expectedIds = new Set(extracted.map((n) => n.id))
-    for (const edit of edits) {
-      if (!expectedIds.has(edit.id)) {
+      if (result.success) {
         return {
           errors: {},
-          message: 'AI returned edits with unexpected ids.',
+          message: result.message,
+          editor: result.editor,
+          status: 'success',
+        }
+      } else {
+        return {
+          errors: result.errors,
+          message: result.message,
           status: 'failed',
         }
       }
-    }
+    } else {
+      // GENERATE MODE: Create a new Lexical document from scratch
+      const result = await generateDocument({
+        model,
+        prompt,
+      })
 
-    for (const edit of edits) {
-      const node = extracted[edit.id]
-      if (!node) continue
-      try {
-        setAtPath(editorState, node.path, edit.text)
-      } catch {
-        // Ignore invalid paths; schema validation can be added later.
+      if (result.success) {
+        return {
+          errors: {},
+          message: result.message,
+          editor: result.editor,
+          status: 'success',
+        }
+      } else {
+        return {
+          errors: result.errors,
+          message: result.message,
+          status: 'failed',
+        }
       }
-    }
-
-    return {
-      errors: {},
-      message: 'Task completed successfully via AI instruction.',
-      editor: editorState,
-      status: 'success',
     }
   } catch (error) {
     logger.error({

@@ -1,8 +1,43 @@
-import type { JSONSchema } from 'openai/lib/jsonschema'
+/**
+ * JSON Schema type definition (JSON Schema Draft 7 compatible)
+ * This avoids a direct dependency on the OpenAI SDK for type definitions.
+ */
+export type JSONSchema7 = {
+  $schema?: string
+  $ref?: string
+  type?: string | string[]
+  enum?: unknown[]
+  const?: unknown
+  properties?: Record<string, JSONSchema7>
+  additionalProperties?: boolean | JSONSchema7
+  required?: string[]
+  items?: JSONSchema7 | JSONSchema7[]
+  anyOf?: JSONSchema7[]
+  oneOf?: JSONSchema7[]
+  allOf?: JSONSchema7[]
+  not?: JSONSchema7
+  definitions?: Record<string, JSONSchema7>
+  description?: string
+  examples?: unknown[]
+  default?: unknown
+  format?: string
+  minimum?: number
+  maximum?: number
+  minLength?: number
+  maxLength?: number
+  pattern?: string
+  [key: string]: unknown
+}
 
-import { isObjectSchema } from '../utils/isObjectSchema.js'
+/**
+ * Type guard to check if a value is an object schema.
+ * Inlined here to avoid circular dependency with utils.
+ */
+function isObjectSchema(schema: unknown): schema is LexicalNodeSchema {
+  return typeof schema === 'object' && schema !== null && !Array.isArray(schema)
+}
 
-export interface LexicalNodeSchema extends JSONSchema {
+export interface LexicalNodeSchema extends JSONSchema7 {
   $schema?: string
   additionalProperties?: boolean
   definitions?: Record<string, any>
@@ -424,7 +459,7 @@ export const documentSchema: LexicalNodeSchema = {
   required: ['root'],
 }
 
-export const lexicalJsonSchema = (customNodes: JSONSchema[] | undefined) => {
+export const lexicalJsonSchema = (customNodes: JSONSchema7[] | undefined) => {
   const schema = structuredClone(documentSchema)
 
   if (Array.isArray(customNodes) && customNodes.length > 0) {

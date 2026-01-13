@@ -1,5 +1,7 @@
-import type { LexicalNodeSchema } from '../schemas/lexicalJsonSchema.js'
-
-export function isObjectSchema(schema: unknown): schema is LexicalNodeSchema {
+/**
+ * Type guard to check if a value is an object (likely a JSON schema object).
+ * This is a simple structural check - it doesn't validate the full schema.
+ */
+export function isObjectSchema(schema: unknown): schema is Record<string, unknown> {
   return typeof schema === 'object' && schema !== null && !Array.isArray(schema)
 }
