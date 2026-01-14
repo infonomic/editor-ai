@@ -1,16 +1,9 @@
 export const MODEL_KEY = 'GEMINI'
-export const MODELS = [
-  'gemini-3-pro',
-  'gemini-3-flash',
-  'gemini-2.5-pro',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-flash-latest',
-] as const
+export const MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash'] as const
 
 export type GoogleModel = (typeof MODELS)[number]
+
+export const DEFAULT_MODEL: GoogleModel = 'gemini-2.5-flash'
 
 const _IMAGEN_MODELS = [
   'imagen-4.0-fast-generate-001',

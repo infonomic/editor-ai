@@ -57,6 +57,9 @@ importers:
       '@infonomic/uikit':
         specifier: ^5.20.0
         version: 5.20.0(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@lexical/html':
+        specifier: 0.39.0
+        version: 0.39.0
       ai:
         specifier: ^6.0.33
         version: 6.0.33(zod@4.3.5)

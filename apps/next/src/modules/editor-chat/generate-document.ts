@@ -1,7 +1,11 @@
 import type { LanguageModel } from 'ai'
 import { generateText, jsonSchema, Output } from 'ai'
+import Ajv from 'ajv'
 
 import { documentSchema } from '@/ai/schemas/lexicalJsonSchema'
+
+const ajv = new Ajv({ allErrors: true, strict: false })
+const validateLexicalDocument = ajv.compile(documentSchema as any)
 
 /**
  * System prompt for GENERATE mode: creating a new Lexical document from scratch.
@@ -31,6 +35,52 @@ const buildGenerateSystemPrompt = () => {
     '- 3 = Bold + Italic',
     '- 8 = Underline',
     '',
+    'JSON STRUCTURE EXAMPLE:',
+    '{',
+    '  "root": {',
+    '    "type": "root",',
+    '    "format": "",',
+    '    "indent": 0,',
+    '    "version": 1,',
+    '    "direction": "ltr",',
+    '    "children": [',
+    '      {',
+    '        "type": "heading",',
+    '        "tag": "h1",',
+    '        "format": "",',
+    '        "indent": 0,',
+    '        "version": 1,',
+    '        "direction": "ltr",',
+    '        "children": [',
+    '          {',
+    '            "type": "text",',
+    '            "text": "Hello World",',
+    '            "format": 0,',
+    '            "style": "",',
+    '            "mode": 0,',
+    '            "detail": 0,',
+    '            "direction": "ltr",',
+    '            "indent": 0,',
+    '            "version": 1',
+    '          }',
+    '        ]',
+    '      },',
+    '      {',
+    '        "type": "paragraph",',
+    '        "format": "",',
+    '        "indent": 0,',
+    '        "version": 1,',
+    '        "direction": "ltr",',
+    '        "children": [...]',
+    '      }',
+    '    ]',
+    '  }',
+    '}',
+    '',
+    'IMPORTANT:',
+    '- Do NOT return a list of strings (e.g. ["h1", "paragraph"]) for children.',
+    '- You MUST return the full object structure for every node.',
+    '',
     'Generate a complete, valid Lexical document that fulfills the user request.',
   ].join('\n')
 }
@@ -42,16 +92,37 @@ const buildGenerateUserPrompt = (instruction: string) => {
   return `Generate a Lexical document based on the following request:\n\n${instruction}`
 }
 
+const buildGenerateHtmlSystemPrompt = () => {
+  return [
+    'You are writing HTML for a rich text editor.',
+    'Return ONLY valid HTML (no Markdown, no code fences).',
+    'Use semantic tags: h1/h2/h3, p, ul/ol/li, blockquote, strong, em.',
+    'Do not include <html>, <head>, or <body> wrappers.',
+  ].join('\n')
+}
+
+const buildGenerateHtmlUserPrompt = (instruction: string) => {
+  return `Write HTML for the following request:\n\n${instruction}`
+}
+
 export interface GenerateDocumentOptions {
   model: LanguageModel
   prompt: string
 }
 
-export interface GenerateDocumentResult {
-  success: true
-  editor: any
-  message: string
-}
+export type GenerateDocumentResult =
+  | {
+      success: true
+      format: 'lexical'
+      editor: any
+      message: string
+    }
+  | {
+      success: true
+      format: 'html'
+      html: string
+      message: string
+    }
 
 export interface GenerateDocumentError {
   success: false
@@ -87,18 +158,44 @@ export async function generateDocument(
 
   const generatedDocument = result.output
 
-  // Validate the generated document has a root
-  if (!generatedDocument || !generatedDocument.root) {
+  const isValid = validateLexicalDocument(generatedDocument)
+  if (isValid) {
     return {
-      success: false,
-      message: 'AI failed to generate a valid Lexical document structure.',
-      errors: {},
+      success: true,
+      format: 'lexical',
+      editor: generatedDocument,
+      message: 'Task completed successfully via AI instruction (generate mode).',
     }
   }
 
+  // Fallback: generate HTML when the model cannot reliably produce valid Lexical JSON.
+  const htmlResult = await generateText({
+    model,
+    system: buildGenerateHtmlSystemPrompt(),
+    prompt: buildGenerateHtmlUserPrompt(prompt),
+  })
+
+  const html = htmlResult.text?.trim() ?? ''
+  if (html.length > 0) {
+    return {
+      success: true,
+      format: 'html',
+      html,
+      message: 'Generated HTML fallback (Lexical JSON validation failed).',
+    }
+  }
+
+  const validationErrors = (validateLexicalDocument.errors ?? []).map((e) => {
+    const instancePath = e.instancePath ? ` at ${e.instancePath}` : ''
+    const message = e.message ?? 'Schema validation error'
+    return `${message}${instancePath}`
+  })
+
   return {
-    success: true,
-    editor: generatedDocument,
-    message: 'Task completed successfully via AI instruction (generate mode).',
+    success: false,
+    message: 'AI failed to generate a valid Lexical document (and HTML fallback was empty).',
+    errors: {
+      editor: validationErrors,
+    },
   }
 }

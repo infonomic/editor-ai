@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const PROVIDERS = ['openai', 'google', 'anthropic'] as const
+
 export interface InstructionState {
   errors: {
     prompt?: string[] | undefined
@@ -7,6 +9,8 @@ export interface InstructionState {
   }
   message?: string
   editor?: any
+  html?: string
+  format?: 'lexical' | 'html'
   prompt?: string
   status: 'success' | 'failed' | 'idle'
 }
@@ -26,7 +30,7 @@ export const instructionSchema = z.object({
     error: (issue) =>
       issue.input === undefined ? 'Editor state is required.' : 'Editor state must be a string.',
   }),
-  provider: z.enum(['openai', 'google', 'anthropic'], {
+  provider: z.enum(PROVIDERS, {
     error: 'Provider must be one of openai, google, or anthropic.',
   }),
   model: z.string({
@@ -34,3 +38,5 @@ export const instructionSchema = z.object({
       issue.input === undefined ? 'Model is required.' : 'Model must be a string.',
   }),
 })
+
+export type Provider = z.infer<typeof instructionSchema>['provider']

@@ -15,6 +15,8 @@ export const MODELS = [
 
 export type OpenAIModel = (typeof MODELS)[number]
 
+export const DEFAULT_MODEL: OpenAIModel = 'gpt-5.2'
+
 //TODO: Simplify this file by moving the handlers to separate files and remove duplicate code
 // export const OpenAIConfig: GenerationConfig = {
 //   models: [

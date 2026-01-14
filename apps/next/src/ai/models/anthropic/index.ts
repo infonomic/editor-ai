@@ -12,6 +12,8 @@ export const MODELS = [
 
 export type AnthropicModel = (typeof MODELS)[number]
 
+export const DEFAULT_MODEL: AnthropicModel = 'claude-sonnet-4-5-20250514'
+
 // export const AnthropicConfig: GenerationConfig = {
 //   models: [
 //     {
