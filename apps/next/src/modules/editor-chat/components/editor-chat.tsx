@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
+import { useActionState, useEffect, useMemo, useReducer, useRef } from 'react'
 
 import { createEmptyEditorState } from '@infonomic/editor'
 import { Alert, Button, LoaderEllipsis, Select, SelectItem, TextArea } from '@infonomic/uikit/react'
@@ -13,10 +13,10 @@ import {
 import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '@/ai/models/google'
 import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/ai/models/openai'
 import { RichTextField } from '@/ui/fields/richtext-field'
+import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } from '../@types'
 import { executeInstruction } from '../action'
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
-import type { InstructionState, Provider } from '../@types'
 
 const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
@@ -39,72 +39,153 @@ const isProvider = (value: string): value is Provider => {
   return value === 'openai' || value === 'google' || value === 'anthropic'
 }
 
+type EditorChatState = {
+  editorValue: SerializedEditorState | undefined
+  api: ChatApi
+  provider: Provider
+  model: string
+  promptValue: string
+}
+
+type EditorChatAction =
+  | { type: 'hydrate'; value: { api: ChatApi; provider: Provider; model: string } }
+  | { type: 'setEditorValue'; value: SerializedEditorState | undefined }
+  | { type: 'resetEditor'; emptyEditorState: SerializedEditorState }
+  | { type: 'setPromptValue'; value: string }
+  | { type: 'setApi'; value: ChatApi }
+  | { type: 'setProvider'; value: Provider }
+  | { type: 'setModel'; value: string }
+
+const editorChatReducer = (state: EditorChatState, action: EditorChatAction): EditorChatState => {
+  switch (action.type) {
+    case 'hydrate': {
+      const modelsForProvider = PROVIDER_MODELS[action.value.provider] ?? []
+      const model = modelsForProvider.includes(action.value.model)
+        ? action.value.model
+        : getDefaultModel(action.value.provider)
+      return {
+        ...state,
+        api: action.value.api,
+        provider: action.value.provider,
+        model,
+      }
+    }
+    case 'setEditorValue':
+      return { ...state, editorValue: action.value }
+    case 'resetEditor':
+      return { ...state, editorValue: action.emptyEditorState }
+    case 'setPromptValue':
+      return { ...state, promptValue: action.value }
+    case 'setApi':
+      return { ...state, api: action.value }
+    case 'setProvider':
+      return {
+        ...state,
+        provider: action.value,
+        model: getDefaultModel(action.value),
+      }
+    case 'setModel':
+      return { ...state, model: action.value }
+  }
+}
+
+const initialInstructionState: InstructionState = {
+  prompt: '',
+  editor: null,
+  errors: {},
+  status: 'idle',
+}
+
+const initialEditorChatState: EditorChatState = {
+  editorValue: undefined,
+  api: 'native',
+  provider: 'openai',
+  model: getDefaultModel('openai'),
+  promptValue: '',
+}
+
 export const EditorChat = () => {
-  const initialState: InstructionState = { prompt: '', editor: null, errors: {}, status: 'idle' }
-  const [editorValue, setEditorValue] = useState<SerializedEditorState | undefined>(undefined)
-  const [provider, setProvider] = useState<Provider>('openai')
-  const [model, setModel] = useState<string>(getDefaultModel('openai'))
-  const [promptValue, setPromptValue] = useState<string>('')
-  const [formState, formAction, isPending] = useActionState(executeInstruction, initialState)
+  const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
+  const [formState, formAction, isPending] = useActionState(
+    executeInstruction,
+    initialInstructionState
+  )
   const formRef = useRef<HTMLFormElement | null>(null)
+  const hydratedRef = useRef(false)
+  const skipPersistOnceRef = useRef(false)
+  const emptyEditorState: SerializedEditorState = useMemo(() => createEmptyEditorState(), [])
 
   useEffect(() => {
     const config = loadChatConfiguration()
     if (config && PROVIDER_MODELS[config.provider]) {
-      setProvider(config.provider)
-      const modelsForProvider = PROVIDER_MODELS[config.provider] ?? []
-      setModel(
-        modelsForProvider.includes(config.model) ? config.model : getDefaultModel(config.provider)
-      )
+      dispatch({
+        type: 'hydrate',
+        value: {
+          api: normalizeChatApi(config.api),
+          provider: config.provider,
+          model: config.model,
+        },
+      })
+      skipPersistOnceRef.current = true
     }
+    hydratedRef.current = true
   }, [])
 
-  const emptyEditorState: SerializedEditorState = useMemo(() => createEmptyEditorState(), [])
+  useEffect(() => {
+    if (!hydratedRef.current) return
+    if (skipPersistOnceRef.current) {
+      skipPersistOnceRef.current = false
+      return
+    }
+    saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
+  }, [state.provider, state.model, state.api])
 
   const editorJson = useMemo(() => {
-    return JSON.stringify(editorValue ?? emptyEditorState)
-  }, [editorValue, emptyEditorState])
+    return JSON.stringify(state.editorValue ?? emptyEditorState)
+  }, [state.editorValue, emptyEditorState])
 
   useEffect(() => {
     if (formState?.status === 'success') {
       if (formState.format === 'html' && formState.html) {
         try {
-          setEditorValue(importHtmlToSerializedEditorState(formState.html))
+          dispatch({
+            type: 'setEditorValue',
+            value: importHtmlToSerializedEditorState(formState.html),
+          })
         } catch {
-          setEditorValue(emptyEditorState)
+          dispatch({ type: 'setEditorValue', value: emptyEditorState })
         }
         return
       }
 
       if (formState.editor) {
-        setEditorValue(formState.editor as SerializedEditorState)
+        dispatch({ type: 'setEditorValue', value: formState.editor as SerializedEditorState })
       }
     }
   }, [formState, emptyEditorState])
 
   const handleOnEditorChange = (value: SerializedEditorState) => {
-    setEditorValue(value)
+    dispatch({ type: 'setEditorValue', value })
   }
 
   const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPromptValue(event.target.value)
+    dispatch({ type: 'setPromptValue', value: event.target.value })
   }
 
   const handleOnProviderChange = (value: string) => {
     if (!isProvider(value)) return
-    const newProvider = value
-    const newModel = getDefaultModel(newProvider)
-    setProvider(newProvider)
-    setModel(newModel)
-    saveChatConfiguration({ provider: newProvider, model: newModel })
+    dispatch({ type: 'setProvider', value })
+  }
+
+  const handleOnApiChange = (value: string) => {
+    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
   }
 
   const handleOnModelChange = (value: string) => {
     if (!value) return
-    const modelsForProvider = PROVIDER_MODELS[provider] ?? []
+    const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
     if (!modelsForProvider.includes(value)) return
-    setModel(value)
-    saveChatConfiguration({ provider, model: value })
+    dispatch({ type: 'setModel', value })
   }
 
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -115,7 +196,7 @@ export const EditorChat = () => {
   }
 
   const handleOnResetEditor = () => {
-    setEditorValue(emptyEditorState)
+    dispatch({ type: 'resetEditor', emptyEditorState })
   }
 
   return (
@@ -133,11 +214,12 @@ export const EditorChat = () => {
       )}
       <form ref={formRef} className="flex flex-col gap-2 mt-8" action={formAction} noValidate>
         <input type="hidden" name="editor" value={editorJson} />
-        <input type="hidden" name="provider" value={provider} />
-        <input type="hidden" name="model" value={model} />
+        <input type="hidden" name="api" value={state.api} />
+        <input type="hidden" name="provider" value={state.provider} />
+        <input type="hidden" name="model" value={state.model} />
         <RichTextField
           onChange={handleOnEditorChange}
-          value={editorValue}
+          value={state.editorValue}
           readonly={isPending === true}
           field={{ name: 'editor', label: 'Editor' }}
         />
@@ -147,7 +229,7 @@ export const EditorChat = () => {
             id="prompt"
             name="prompt"
             rows={5}
-            value={promptValue}
+            value={state.promptValue}
             onChange={handleOnPromptChange}
             onKeyDown={handleOnKeyDown}
             disabled={isPending === true}
@@ -158,7 +240,7 @@ export const EditorChat = () => {
           <div className="flex options gap-2 items-center">
             <Select
               name="provider"
-              value={provider}
+              value={state.provider}
               onValueChange={handleOnProviderChange}
               variant="outlined"
             >
@@ -168,20 +250,30 @@ export const EditorChat = () => {
             </Select>
             <Select
               name="model"
-              value={model}
+              value={state.model}
               onValueChange={handleOnModelChange}
               variant="outlined"
             >
-              {(PROVIDER_MODELS[provider] ?? []).map((modelOption) => (
+              {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
                 <SelectItem key={modelOption} value={modelOption}>
                   {modelOption}
                 </SelectItem>
               ))}
             </Select>
+            <Select
+              key={state.api}
+              name="api"
+              value={state.api}
+              onValueChange={handleOnApiChange}
+              variant="outlined"
+            >
+              <SelectItem value="native">Native</SelectItem>
+              <SelectItem value="vercel">Vercel</SelectItem>
+            </Select>
             <Button
               fullWidth={false}
               type="submit"
-              disabled={!promptValue.trim() || isPending === true}
+              disabled={!state.promptValue.trim() || isPending === true}
             >
               {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
             </Button>

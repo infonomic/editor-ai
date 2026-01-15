@@ -1,10 +1,11 @@
-import { PROVIDERS, type Provider } from './@types'
+import { CHAT_APIS, type ChatApi, PROVIDERS, type Provider } from './@types'
 
 const STORAGE_KEY = 'editor-chat-configuration'
 
 export interface ChatConfiguration {
   provider: Provider
   model: string
+  api: ChatApi
 }
 
 const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
@@ -13,7 +14,9 @@ const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
   return (
     typeof v.provider === 'string' &&
     PROVIDERS.includes(v.provider as Provider) &&
-    typeof v.model === 'string'
+    typeof v.model === 'string' &&
+    typeof v.api === 'string' &&
+    CHAT_APIS.includes(v.api as ChatApi)
   )
 }
 

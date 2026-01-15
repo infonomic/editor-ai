@@ -20,6 +20,7 @@ export async function executeInstruction(
   const validatedFields = instructionSchema.safeParse({
     prompt: formData.get('prompt'),
     editor: formData.get('editor'),
+    api: formData.get('api'),
     provider: formData.get('provider'),
     model: formData.get('model'),
   })
@@ -34,7 +35,7 @@ export async function executeInstruction(
   }
 
   // Prepare data for next step, insertion into the database or other...
-  const { prompt, editor, provider, model: modelName } = validatedFields.data
+  const { prompt, editor, provider, model: modelName, api } = validatedFields.data
 
   try {
     // Validate that the appropriate API key exists for the selected provider
@@ -106,6 +107,7 @@ export async function executeInstruction(
         apiKey,
         modelName,
         prompt,
+        api,
       })
 
       console.log('generateDocument result:', JSON.stringify(result))

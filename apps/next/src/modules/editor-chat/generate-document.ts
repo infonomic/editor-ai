@@ -4,12 +4,12 @@ import { generateText } from 'ai'
 import Ajv from 'ajv'
 
 import { anthropic as anthropicProvider } from '@/ai/models/anthropic/anthropic'
-import { generateDoc as generateAnthropicDoc } from '@/ai/models/anthropic/generate'
-import { generateDoc as generateGeminiDoc } from '@/ai/models/google/generate'
-import { generateDoc as generateOpenAIDoc } from '@/ai/models/openai/generate'
+import { getGenerateDoc as getGenerateAnthropicDoc } from '@/ai/models/anthropic/generate'
+import { getGenerateDoc as getGenerateGeminiDoc } from '@/ai/models/google/generate'
+import { getGenerateDoc as getGenerateOpenAIDoc } from '@/ai/models/openai/generate'
 import { documentSchema } from '@/ai/schemas/lexicalJsonSchema'
 import { convertToLexical, type GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
-import type { Provider } from './@types'
+import type { ChatApi, Provider } from './@types'
 
 const ajv = new Ajv({ allErrors: true, strict: false })
 const validateLexicalDocument = ajv.compile(documentSchema as any)
@@ -35,6 +35,7 @@ export interface GenerateDocumentOptions {
   apiKey: string
   modelName: string
   prompt: string
+  api: ChatApi
 }
 
 export type GenerateDocumentResult =
@@ -65,15 +66,18 @@ export interface GenerateDocumentError {
 export async function generateDocument(
   options: GenerateDocumentOptions
 ): Promise<GenerateDocumentResult | GenerateDocumentError> {
-  const { provider, apiKey, modelName, prompt } = options
+  const { provider, apiKey, modelName, prompt, api } = options
 
   let generated: GeneratedDoc
   if (provider === 'openai') {
-    generated = await generateOpenAIDoc({ apiKey, model: modelName, prompt })
+    const generate = getGenerateOpenAIDoc(api)
+    generated = await generate({ apiKey, model: modelName, prompt })
   } else if (provider === 'google') {
-    generated = await generateGeminiDoc({ apiKey, model: modelName, prompt })
+    const generate = getGenerateGeminiDoc(api)
+    generated = await generate({ apiKey, model: modelName, prompt })
   } else {
-    generated = await generateAnthropicDoc({ apiKey, model: modelName, prompt })
+    const generate = getGenerateAnthropicDoc(api)
+    generated = await generate({ apiKey, model: modelName, prompt })
   }
 
   const generatedDocument = convertToLexical(generated)

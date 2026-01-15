@@ -2,6 +2,15 @@ import { z } from 'zod'
 
 export const PROVIDERS = ['openai', 'google', 'anthropic'] as const
 
+export const CHAT_APIS = ['native', 'vercel'] as const
+export type ChatApi = (typeof CHAT_APIS)[number]
+
+export const normalizeChatApi = (value: unknown): ChatApi => {
+  if (typeof value !== 'string') return 'native'
+  const normalized = value.trim().toLowerCase()
+  return normalized === 'vercel' ? 'vercel' : 'native'
+}
+
 export interface InstructionState {
   errors: {
     prompt?: string[] | undefined
@@ -37,6 +46,10 @@ export const instructionSchema = z.object({
     error: (issue) =>
       issue.input === undefined ? 'Model is required.' : 'Model must be a string.',
   }),
+  api: z.enum(CHAT_APIS, {
+    error: 'API must be one of native or vercel.',
+  }),
 })
 
 export type Provider = z.infer<typeof instructionSchema>['provider']
+export type InstructionApi = z.infer<typeof instructionSchema>['api']
