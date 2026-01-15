@@ -94,6 +94,7 @@ const initialInstructionState: InstructionState = {
   editor: null,
   errors: {},
   status: 'idle',
+  lastRun: null,
 }
 
 const initialEditorChatState: EditorChatState = {
@@ -102,6 +103,15 @@ const initialEditorChatState: EditorChatState = {
   provider: 'openai',
   model: getDefaultModel('openai'),
   promptValue: '',
+}
+
+const formatLastRun = (ms: number): string => {
+  const safe = Number.isFinite(ms) ? Math.max(0, Math.floor(ms)) : 0
+  const minutes = Math.floor(safe / 60_000)
+  const seconds = Math.floor((safe % 60_000) / 1_000)
+  const milliseconds = safe % 1_000
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`
 }
 
 export const EditorChat = () => {
@@ -223,7 +233,7 @@ export const EditorChat = () => {
           readonly={isPending === true}
           field={{ name: 'editor', label: 'Editor' }}
         />
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <TextArea
             label="Prompt"
             id="prompt"
@@ -235,7 +245,9 @@ export const EditorChat = () => {
             disabled={isPending === true}
             // error={hasErrors('prompt', null, formState?.errors)}
             // errorText={getErrorText('prompt', null, formState?.errors)}
-            helpText="Enter your prompt (Cmd/Ctrl + Enter to submit)..."
+            helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
+              formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
+            }`}
           />
           <div className="flex options gap-2 items-center">
             <Select

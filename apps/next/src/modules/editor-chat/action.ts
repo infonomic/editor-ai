@@ -14,6 +14,11 @@ export async function executeInstruction(
   _prevState: InstructionState,
   formData: FormData
 ): Promise<InstructionState> {
+  const startedAt = Date.now()
+  const withLastRun = (state: InstructionState): InstructionState => {
+    return { ...state, lastRun: Date.now() - startedAt }
+  }
+
   const config = getServerConfig()
   const logger = getLogger()
 
@@ -27,11 +32,11 @@ export async function executeInstruction(
 
   // If form validation fails, return errors early. Otherwise, continue...
   if (validatedFields.success === false) {
-    return {
+    return withLastRun({
       errors: z.flattenError(validatedFields.error).fieldErrors,
       message: 'Missing fields in instruction form.',
       status: 'failed',
-    }
+    })
   }
 
   // Prepare data for next step, insertion into the database or other...
@@ -53,22 +58,22 @@ export async function executeInstruction(
     }
 
     if (apiKey == null || apiKey.length === 0) {
-      return {
+      return withLastRun({
         errors: { prompt: [], editor: [] },
         message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} API key is missing on the server.`,
         status: 'failed',
-      }
+      })
     }
 
     let editorState: any
     try {
       editorState = JSON.parse(editor)
     } catch {
-      return {
+      return withLastRun({
         errors: { editor: ['Editor state must be valid JSON.'] },
         message: 'Editor state is invalid JSON.',
         status: 'failed',
-      }
+      })
     }
 
     // Use hasText to determine if we have existing content to edit (PATCH mode)
@@ -87,19 +92,19 @@ export async function executeInstruction(
       })
 
       if (result.success) {
-        return {
+        return withLastRun({
           errors: {},
           message: result.message,
           editor: result.editor,
           format: 'lexical',
           status: 'success',
-        }
+        })
       } else {
-        return {
+        return withLastRun({
           errors: result.errors,
           message: result.message,
           status: 'failed',
-        }
+        })
       }
     } else {
       // GENERATE MODE: Create a new Lexical document from scratch
@@ -115,29 +120,29 @@ export async function executeInstruction(
 
       if (result.success) {
         if (result.format === 'html') {
-          return {
+          return withLastRun({
             errors: {},
             message: result.message,
             format: 'html',
             html: result.html,
             status: 'success',
-          }
+          })
         }
 
-        return {
+        return withLastRun({
           errors: {},
           message: result.message,
           format: 'lexical',
           editor: result.editor,
           status: 'success',
-        }
+        })
       }
 
-      return {
+      return withLastRun({
         errors: result.errors,
         message: result.message,
         status: 'failed',
-      }
+      })
     }
   } catch (error) {
     logger.error({
@@ -149,10 +154,10 @@ export async function executeInstruction(
       },
     })
 
-    return {
+    return withLastRun({
       errors: {},
       message: 'Failed to complete AI instruction.',
       status: 'failed',
-    }
+    })
   }
 }

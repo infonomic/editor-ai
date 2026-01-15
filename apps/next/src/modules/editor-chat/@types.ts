@@ -21,6 +21,7 @@ export interface InstructionState {
   html?: string
   format?: 'lexical' | 'html'
   prompt?: string
+  lastRun?: number | null
   status: 'success' | 'failed' | 'idle'
 }
 
