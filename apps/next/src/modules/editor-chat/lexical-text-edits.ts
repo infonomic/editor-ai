@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const lexicalTextEditsResponseSchema = z.object({
   edits: z.array(
     z.object({
-      id: z.number().int().nonnegative(),
+      id: z.number(),
       text: z.string(),
     })
   ),

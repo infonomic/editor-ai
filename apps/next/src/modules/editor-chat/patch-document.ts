@@ -1,14 +1,15 @@
-import { patchDoc as patchAnthropicDoc } from '@/ai/models/anthropic/patch'
-import { patchDoc as patchGeminiDoc } from '@/ai/models/google/patch'
-import { patchDoc as patchOpenAIDoc } from '@/ai/models/openai/patch'
+import { getPatchDoc as getPatchAnthropicDoc } from '@/ai/models/anthropic/patch'
+import { getPatchDoc as getPatchGeminiDoc } from '@/ai/models/google/patch'
+import { getPatchDoc as getPatchOpenAIDoc } from '@/ai/models/openai/patch'
 import { extractTextNodesFromLexicalState, setAtPath } from './lexical-text-edits'
-import type { Provider } from './@types'
+import type { ChatApi, Provider } from './@types'
 
 export interface PatchDocumentOptions {
   provider: Provider
   apiKey: string
   modelName: string
   prompt: string
+  api: ChatApi
   editorState: any
 }
 
@@ -35,7 +36,7 @@ export interface PatchDocumentError {
 export async function patchDocument(
   options: PatchDocumentOptions
 ): Promise<PatchDocumentResult | PatchDocumentError> {
-  const { provider, apiKey, modelName, prompt, editorState } = options
+  const { provider, apiKey, modelName, prompt, api, editorState } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
@@ -59,10 +60,25 @@ export async function patchDocument(
 
   const result =
     provider === 'openai'
-      ? await patchOpenAIDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
+      ? await getPatchOpenAIDoc(api)({
+          apiKey,
+          model: modelName,
+          prompt,
+          textNodes: inputTextNodes,
+        })
       : provider === 'google'
-        ? await patchGeminiDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
-        : await patchAnthropicDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
+        ? await getPatchGeminiDoc(api)({
+            apiKey,
+            model: modelName,
+            prompt,
+            textNodes: inputTextNodes,
+          })
+        : await getPatchAnthropicDoc(api)({
+            apiKey,
+            model: modelName,
+            prompt,
+            textNodes: inputTextNodes,
+          })
 
   const edits = result.edits
 

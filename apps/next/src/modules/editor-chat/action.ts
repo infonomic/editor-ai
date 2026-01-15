@@ -82,6 +82,7 @@ export async function executeInstruction(
         apiKey,
         modelName,
         prompt,
+        api,
         editorState,
       })
 
