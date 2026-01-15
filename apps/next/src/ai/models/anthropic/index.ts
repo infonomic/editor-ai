@@ -1,18 +1,13 @@
 export const MODEL_KEY = 'ANTH-C'
 export const MODELS = [
-  'claude-opus-4-5-20250710',
-  'claude-sonnet-4-5-20250514',
-  'claude-haiku-4-5-20250710',
-  'claude-opus-4-20250414',
-  'claude-sonnet-4-20250514',
-  'claude-3-7-sonnet-latest',
-  'claude-3-5-sonnet-latest',
-  'claude-3-5-haiku-latest',
+  'claude-opus-4-5-20251101',
+  'claude-haiku-4-5-20251001',
+  'claude-sonnet-4-5-20250929',
 ] as const
 
 export type AnthropicModel = (typeof MODELS)[number]
 
-export const DEFAULT_MODEL: AnthropicModel = 'claude-sonnet-4-5-20250514'
+export const DEFAULT_MODEL: AnthropicModel = 'claude-haiku-4-5-20251001'
 
 // export const AnthropicConfig: GenerationConfig = {
 //   models: [
