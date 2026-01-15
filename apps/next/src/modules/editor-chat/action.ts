@@ -1,8 +1,5 @@
 'use server'
 
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
-import { createOpenAI } from '@ai-sdk/openai'
 import { hasText } from '@infonomic/editor'
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
@@ -12,26 +9,6 @@ import { getLogger } from '@/lib/logger'
 import { type InstructionState, instructionSchema } from './@types'
 import { generateDocument } from './generate-document'
 import { patchDocument } from './patch-document'
-
-/**
- * Get the appropriate model instance based on provider name.
- */
-const getModelInstance = (providerName: string, modelName: string, apiKey: string) => {
-  switch (providerName) {
-    case 'google': {
-      const google = createGoogleGenerativeAI({ apiKey })
-      return google(modelName)
-    }
-    case 'anthropic': {
-      const anthropic = createAnthropic({ apiKey })
-      return anthropic(modelName)
-    }
-    default: {
-      const openai = createOpenAI({ apiKey })
-      return openai(modelName)
-    }
-  }
-}
 
 export async function executeInstruction(
   _prevState: InstructionState,
@@ -96,12 +73,13 @@ export async function executeInstruction(
     // Use hasText to determine if we have existing content to edit (PATCH mode)
     // or if we need to generate a new document (GENERATE mode)
     const documentHasContent = hasText(editorState)
-    const model = getModelInstance(provider, modelName, apiKey)
 
     if (documentHasContent) {
       // PATCH MODE: Edit existing text nodes while preserving document structure
       const result = await patchDocument({
-        model,
+        provider,
+        apiKey,
+        modelName,
         prompt,
         editorState,
       })
@@ -124,7 +102,9 @@ export async function executeInstruction(
     } else {
       // GENERATE MODE: Create a new Lexical document from scratch
       const result = await generateDocument({
-        model,
+        provider,
+        apiKey,
+        modelName,
         prompt,
       })
 

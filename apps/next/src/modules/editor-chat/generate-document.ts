@@ -1,8 +1,15 @@
-import type { LanguageModel } from 'ai'
-import { generateText, jsonSchema, Output } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
+import { generateText } from 'ai'
 import Ajv from 'ajv'
 
+import { anthropic as anthropicProvider } from '@/ai/models/anthropic/anthropic'
+import { generateDoc as generateAnthropicDoc } from '@/ai/models/anthropic/generate'
+import { generateDoc as generateGeminiDoc } from '@/ai/models/google/generate'
+import { generateDoc as generateOpenAIDoc } from '@/ai/models/openai/generate'
 import { documentSchema } from '@/ai/schemas/lexicalJsonSchema'
+import { convertToLexical, type GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
+import type { Provider } from './@types'
 
 const ajv = new Ajv({ allErrors: true, strict: false })
 const validateLexicalDocument = ajv.compile(documentSchema as any)
@@ -10,88 +17,6 @@ const validateLexicalDocument = ajv.compile(documentSchema as any)
 /**
  * System prompt for GENERATE mode: creating a new Lexical document from scratch.
  */
-const buildGenerateSystemPrompt = () => {
-  return [
-    'You are generating a Lexical rich text document based on a user prompt.',
-    'Generate a complete, well-structured document with appropriate formatting.',
-    '',
-    'CONTENT GUIDELINES:',
-    '- Use headings (h1, h2, h3) to structure the content appropriately.',
-    '- Use paragraphs for body text.',
-    '- Use lists (bullet or numbered) when presenting multiple items.',
-    '- Use quotes for citations or emphasized text blocks.',
-    '- Use bold/italic formatting (via text node format property) for emphasis.',
-    '',
-    'STRUCTURE RULES:',
-    '- The root node must contain an array of block-level children.',
-    '- Each block (paragraph, heading, list, quote) must contain text nodes or other inline elements.',
-    '- Text nodes must include all required properties: type, text, format, style, mode, detail, direction, indent, version.',
-    '- Default values: format=0, style="", mode=0, detail=0, direction="ltr", indent=0, version=1.',
-    '',
-    'FORMAT FLAGS (for text nodes):',
-    '- 0 = No format',
-    '- 1 = Bold',
-    '- 2 = Italic',
-    '- 3 = Bold + Italic',
-    '- 8 = Underline',
-    '',
-    'JSON STRUCTURE EXAMPLE:',
-    '{',
-    '  "root": {',
-    '    "type": "root",',
-    '    "format": "",',
-    '    "indent": 0,',
-    '    "version": 1,',
-    '    "direction": "ltr",',
-    '    "children": [',
-    '      {',
-    '        "type": "heading",',
-    '        "tag": "h1",',
-    '        "format": "",',
-    '        "indent": 0,',
-    '        "version": 1,',
-    '        "direction": "ltr",',
-    '        "children": [',
-    '          {',
-    '            "type": "text",',
-    '            "text": "Hello World",',
-    '            "format": 0,',
-    '            "style": "",',
-    '            "mode": 0,',
-    '            "detail": 0,',
-    '            "direction": "ltr",',
-    '            "indent": 0,',
-    '            "version": 1',
-    '          }',
-    '        ]',
-    '      },',
-    '      {',
-    '        "type": "paragraph",',
-    '        "format": "",',
-    '        "indent": 0,',
-    '        "version": 1,',
-    '        "direction": "ltr",',
-    '        "children": [...]',
-    '      }',
-    '    ]',
-    '  }',
-    '}',
-    '',
-    'IMPORTANT:',
-    '- Do NOT return a list of strings (e.g. ["h1", "paragraph"]) for children.',
-    '- You MUST return the full object structure for every node.',
-    '',
-    'Generate a complete, valid Lexical document that fulfills the user request.',
-  ].join('\n')
-}
-
-/**
- * User prompt for GENERATE mode.
- */
-const buildGenerateUserPrompt = (instruction: string) => {
-  return `Generate a Lexical document based on the following request:\n\n${instruction}`
-}
-
 const buildGenerateHtmlSystemPrompt = () => {
   return [
     'You are writing HTML for a rich text editor.',
@@ -106,7 +31,9 @@ const buildGenerateHtmlUserPrompt = (instruction: string) => {
 }
 
 export interface GenerateDocumentOptions {
-  model: LanguageModel
+  provider: Provider
+  apiKey: string
+  modelName: string
   prompt: string
 }
 
@@ -138,25 +65,18 @@ export interface GenerateDocumentError {
 export async function generateDocument(
   options: GenerateDocumentOptions
 ): Promise<GenerateDocumentResult | GenerateDocumentError> {
-  const { model, prompt } = options
+  const { provider, apiKey, modelName, prompt } = options
 
-  // Use the documentSchema with jsonSchema() for structured output
-  const lexicalSchema = jsonSchema<{ root: any }>({
-    ...documentSchema,
-    // Remove $schema property as it's not needed for AI SDK
-    $schema: undefined,
-  } as any)
+  let generated: GeneratedDoc
+  if (provider === 'openai') {
+    generated = await generateOpenAIDoc({ apiKey, model: modelName, prompt })
+  } else if (provider === 'google') {
+    generated = await generateGeminiDoc({ apiKey, model: modelName, prompt })
+  } else {
+    generated = await generateAnthropicDoc({ apiKey, model: modelName, prompt })
+  }
 
-  const result = await generateText({
-    model,
-    system: buildGenerateSystemPrompt(),
-    prompt: buildGenerateUserPrompt(prompt),
-    output: Output.object({
-      schema: lexicalSchema,
-    }),
-  })
-
-  const generatedDocument = result.output
+  const generatedDocument = convertToLexical(generated)
 
   const isValid = validateLexicalDocument(generatedDocument)
   if (isValid) {
@@ -169,8 +89,15 @@ export async function generateDocument(
   }
 
   // Fallback: generate HTML when the model cannot reliably produce valid Lexical JSON.
+  const htmlModel =
+    provider === 'openai'
+      ? createOpenAI({ apiKey })(modelName)
+      : provider === 'google'
+        ? createGoogleGenerativeAI({ apiKey })(modelName)
+        : anthropicProvider(apiKey)(modelName)
+
   const htmlResult = await generateText({
-    model,
+    model: htmlModel,
     system: buildGenerateHtmlSystemPrompt(),
     prompt: buildGenerateHtmlUserPrompt(prompt),
   })

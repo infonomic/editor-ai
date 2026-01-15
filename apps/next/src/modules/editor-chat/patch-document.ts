@@ -1,49 +1,13 @@
-import type { LanguageModel } from 'ai'
-import { generateText, Output } from 'ai'
-
-import {
-  extractTextNodesFromLexicalState,
-  lexicalTextEditsResponseSchema,
-  setAtPath,
-} from './lexical-text-edits'
-
-/**
- * System prompt for PATCH mode: editing existing text nodes while preserving structure.
- */
-const buildPatchSystemPrompt = () => {
-  return [
-    'You are editing a Lexical rich text document by updating text-node strings.',
-    'You will receive an array of text nodes with numeric IDs and their current text.',
-    '',
-    'RULES:',
-    '- Return EXACTLY one edit per input node ID (same count, same order).',
-    '- Do not add, remove, or reorder IDs.',
-    '- Update the text field for each node according to the user instruction.',
-    '',
-    'HANDLING EXISTING CONTENT:',
-    '- Preserve the structure: do not merge or split text across nodes.',
-    '- Apply the instruction (translate, rephrase, etc.) to each node independently.',
-    '- If a node is empty in the input, keep it empty unless the instruction explicitly requires filling it.',
-  ].join('\n')
-}
-
-/**
- * User prompt for PATCH mode.
- */
-const buildPatchUserPrompt = (
-  instruction: string,
-  textNodes: Array<{ id: number; text: string }>
-) => {
-  return [
-    `INSTRUCTION: ${instruction}`,
-    '',
-    'INPUT_TEXT_NODES_JSON:',
-    JSON.stringify(textNodes),
-  ].join('\n')
-}
+import { patchDoc as patchAnthropicDoc } from '@/ai/models/anthropic/patch'
+import { patchDoc as patchGeminiDoc } from '@/ai/models/google/patch'
+import { patchDoc as patchOpenAIDoc } from '@/ai/models/openai/patch'
+import { extractTextNodesFromLexicalState, setAtPath } from './lexical-text-edits'
+import type { Provider } from './@types'
 
 export interface PatchDocumentOptions {
-  model: LanguageModel
+  provider: Provider
+  apiKey: string
+  modelName: string
   prompt: string
   editorState: any
 }
@@ -71,7 +35,7 @@ export interface PatchDocumentError {
 export async function patchDocument(
   options: PatchDocumentOptions
 ): Promise<PatchDocumentResult | PatchDocumentError> {
-  const { model, prompt, editorState } = options
+  const { provider, apiKey, modelName, prompt, editorState } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
@@ -93,16 +57,14 @@ export async function patchDocument(
     }
   }
 
-  const result = await generateText({
-    model,
-    system: buildPatchSystemPrompt(),
-    prompt: buildPatchUserPrompt(prompt, inputTextNodes),
-    output: Output.object({
-      schema: lexicalTextEditsResponseSchema,
-    }),
-  })
+  const result =
+    provider === 'openai'
+      ? await patchOpenAIDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
+      : provider === 'google'
+        ? await patchGeminiDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
+        : await patchAnthropicDoc({ apiKey, model: modelName, prompt, textNodes: inputTextNodes })
 
-  const edits = result.output.edits
+  const edits = result.edits
 
   if (edits.length !== extracted.length) {
     return {
