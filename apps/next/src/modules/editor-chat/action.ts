@@ -26,7 +26,6 @@ const getModelInstance = (providerName: string, modelName: string, apiKey: strin
       const anthropic = createAnthropic({ apiKey })
       return anthropic(modelName)
     }
-    case 'openai':
     default: {
       const openai = createOpenAI({ apiKey })
       return openai(modelName)
