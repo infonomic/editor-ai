@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
 import { createEmptyEditorState } from '@infonomic/editor'
 import {
@@ -22,7 +22,6 @@ import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '
 import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/ai/models/openai'
 import { RichTextField } from '@/ui/fields/richtext-field'
 import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } from '../@types'
-import { executeInstruction } from '../action'
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
 
@@ -124,11 +123,10 @@ const formatLastRun = (ms: number): string => {
 
 export const EditorChat = () => {
   const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
-  const [formState, formAction, isPending] = useActionState(
-    executeInstruction,
-    initialInstructionState
-  )
+  const [formState, setFormState] = useState<InstructionState>(initialInstructionState)
+  const [isPending, setIsPending] = useState(false)
   const formRef = useRef<HTMLFormElement | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
   const emptyEditorState: SerializedEditorState = useMemo(() => createEmptyEditorState(), [])
@@ -218,7 +216,59 @@ export const EditorChat = () => {
   }
 
   const handleOnCancel = () => {
-    console.log('Cancel requested')
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setIsPending(false)
+    setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+  }
+
+  const handleOnSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!state.promptValue.trim()) return
+    if (isPending) return
+
+    // Cancel any previous in-flight request before starting a new one.
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    setIsPending(true)
+    setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    try {
+      const response = await fetch('/routes/ai', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          prompt: state.promptValue,
+          editor: editorJson,
+          provider: state.provider,
+          model: state.model,
+          api: state.api,
+        }),
+      })
+
+      const data = (await response.json()) as InstructionState
+      setFormState(data)
+    } catch (error) {
+      const err = error as any
+      if (err?.name === 'AbortError') {
+        setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+      } else {
+        setFormState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } finally {
+      setIsPending(false)
+      abortControllerRef.current = null
+    }
   }
 
   return (
@@ -234,7 +284,7 @@ export const EditorChat = () => {
           <span>'There was a problem submitting your instructions.</span>
         </Alert>
       )}
-      <form ref={formRef} className="flex flex-col gap-2 mt-8" action={formAction} noValidate>
+      <form ref={formRef} className="flex flex-col gap-2 mt-8" onSubmit={handleOnSubmit} noValidate>
         <input type="hidden" name="editor" value={editorJson} />
         <input type="hidden" name="api" value={state.api} />
         <input type="hidden" name="provider" value={state.provider} />
