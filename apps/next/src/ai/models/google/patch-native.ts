@@ -123,6 +123,7 @@ export async function patchDoc(options: {
   model: string
   prompt: string
   textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
 }): Promise<LexicalTextEditsResponse> {
   const ai = new GoogleGenAI({ apiKey: options.apiKey })
 
@@ -135,6 +136,7 @@ export async function patchDoc(options: {
       systemInstruction: buildPatchSystemPrompt(),
       responseMimeType: 'application/json',
       responseJsonSchema: normalizedResponseJsonSchema,
+      abortSignal: options.signal,
     },
   })
 

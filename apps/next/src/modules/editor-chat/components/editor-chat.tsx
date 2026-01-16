@@ -353,6 +353,8 @@ export const EditorChat = () => {
             </Button>
             <Button
               className="py-0 px-4"
+              title="Stop"
+              aria-label="Stop"
               onClick={handleOnCancel}
               disabled={isPending === false}
               type="button"

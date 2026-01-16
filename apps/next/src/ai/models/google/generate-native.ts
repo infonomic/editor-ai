@@ -108,6 +108,7 @@ export async function generateDoc(options: {
   apiKey: string
   model: string
   prompt: string
+  signal?: AbortSignal
 }): Promise<GeneratedDoc> {
   const ai = new GoogleGenAI({ apiKey: options.apiKey })
 
@@ -127,6 +128,7 @@ export async function generateDoc(options: {
       systemInstruction: buildSystem(),
       responseMimeType: 'application/json',
       responseJsonSchema: normalizedResponseJsonSchema,
+      abortSignal: options.signal,
     },
   })
 

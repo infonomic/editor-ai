@@ -48,6 +48,7 @@ export async function generateDoc(options: {
   apiKey: string
   model: string
   prompt: string
+  signal?: AbortSignal
 }): Promise<GeneratedDoc> {
   const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
     ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
@@ -64,25 +65,28 @@ export async function generateDoc(options: {
     $schema: undefined,
   }
 
-  const result = await client.messages.create({
-    model: options.model,
-    max_tokens: 4000,
-    system: buildSystem(),
-    messages: [
-      {
-        role: 'user',
-        content: options.prompt,
-      },
-    ],
-    tools: [
-      {
-        name: toolName,
-        description: 'Generate a document in the GeneratedDoc (blocks) JSON format.',
-        input_schema,
-      },
-    ],
-    tool_choice: { type: 'tool', name: toolName },
-  })
+  const result = await client.messages.create(
+    {
+      model: options.model,
+      max_tokens: 4000,
+      system: buildSystem(),
+      messages: [
+        {
+          role: 'user',
+          content: options.prompt,
+        },
+      ],
+      tools: [
+        {
+          name: toolName,
+          description: 'Generate a document in the GeneratedDoc (blocks) JSON format.',
+          input_schema,
+        },
+      ],
+      tool_choice: { type: 'tool', name: toolName },
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
 
   // Find the tool call content and return its JSON input.
   const toolUse = (result.content ?? []).find(

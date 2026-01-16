@@ -10,6 +10,26 @@ import { type InstructionState, instructionSchema } from './@types'
 import { generateDocument } from './generate-document'
 import { patchDocument } from './patch-document'
 
+const isAbortLikeError = (error: unknown): boolean => {
+  if (error == null) return false
+
+  // Many libraries throw DOM-style AbortError
+  const anyErr = error as any
+  if (anyErr?.name === 'AbortError') return true
+
+  // OpenAI Node SDK (responses/streaming + undici) can throw these.
+  if (anyErr?.type === 'APIUserAbortError') return true
+
+  // Undici abort error (often surfaces as name ResponseAborted)
+  if (anyErr?.name === 'ResponseAborted') return true
+
+  // Some libs only set message text.
+  const message = typeof anyErr?.message === 'string' ? anyErr.message : ''
+  if (message.toLowerCase().includes('aborted')) return true
+
+  return false
+}
+
 export type ExecuteInstructionFields = {
   prompt: unknown
   editor: unknown
@@ -22,7 +42,6 @@ export async function executeInstructionInternal(
   fields: ExecuteInstructionFields,
   options?: { signal?: AbortSignal }
 ): Promise<InstructionState> {
-  void options?.signal
   const startedAt = Date.now()
   const withLastRun = (state: InstructionState): InstructionState => {
     return { ...state, lastRun: Date.now() - startedAt }
@@ -87,7 +106,7 @@ export async function executeInstructionInternal(
         prompt,
         api,
         editorState,
-        // Prepared for future: pass options.signal through when provider adapters accept it.
+        signal: options?.signal,
       })
 
       if (result.success) {
@@ -113,7 +132,7 @@ export async function executeInstructionInternal(
       modelName,
       prompt,
       api,
-      // Prepared for future: pass options.signal through when provider adapters accept it.
+      signal: options?.signal,
     })
 
     if (result.success) {
@@ -142,10 +161,8 @@ export async function executeInstructionInternal(
       status: 'failed',
     })
   } catch (error) {
-    // If the underlying request is aborted, many SDKs throw an AbortError.
-    // We'll treat that as an idle/cancelled state at the transport layer.
-    const err = error as any
-    if (err?.name === 'AbortError') {
+    // Cancellation is expected behavior; do not log at error level.
+    if (isAbortLikeError(error)) {
       return withLastRun({
         errors: {},
         message: 'Cancelled.',

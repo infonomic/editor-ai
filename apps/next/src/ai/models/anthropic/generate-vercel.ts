@@ -29,6 +29,7 @@ export async function generateDoc(options: {
   apiKey: string
   model: string
   prompt: string
+  signal?: AbortSignal
 }): Promise<GeneratedDoc> {
   const schema = jsonSchema<GeneratedDoc>({
     ...(anthropicGenerationSchema as any),
@@ -39,6 +40,7 @@ export async function generateDoc(options: {
     model: anthropic(options.apiKey)(options.model),
     system: buildSystem(),
     prompt: options.prompt,
+    abortSignal: options.signal,
     output: Output.object({
       schema,
     }),

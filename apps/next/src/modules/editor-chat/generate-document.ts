@@ -36,6 +36,7 @@ export interface GenerateDocumentOptions {
   modelName: string
   prompt: string
   api: ChatApi
+  signal?: AbortSignal
 }
 
 export type GenerateDocumentResult =
@@ -66,18 +67,18 @@ export interface GenerateDocumentError {
 export async function generateDocument(
   options: GenerateDocumentOptions
 ): Promise<GenerateDocumentResult | GenerateDocumentError> {
-  const { provider, apiKey, modelName, prompt, api } = options
+  const { provider, apiKey, modelName, prompt, api, signal } = options
 
   let generated: GeneratedDoc
   if (provider === 'openai') {
     const generate = getGenerateOpenAIDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt })
+    generated = await generate({ apiKey, model: modelName, prompt, signal })
   } else if (provider === 'google') {
     const generate = getGenerateGeminiDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt })
+    generated = await generate({ apiKey, model: modelName, prompt, signal })
   } else {
     const generate = getGenerateAnthropicDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt })
+    generated = await generate({ apiKey, model: modelName, prompt, signal })
   }
 
   const generatedDocument = convertToLexical(generated)
@@ -104,6 +105,7 @@ export async function generateDocument(
     model: htmlModel,
     system: buildGenerateHtmlSystemPrompt(),
     prompt: buildGenerateHtmlUserPrompt(prompt),
+    abortSignal: signal,
   })
 
   const html = htmlResult.text?.trim() ?? ''

@@ -40,6 +40,7 @@ export async function patchDoc(options: {
   model: string
   prompt: string
   textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
 }): Promise<LexicalTextEditsResponse> {
   const openai = createOpenAI({ apiKey: options.apiKey })
 
@@ -47,6 +48,7 @@ export async function patchDoc(options: {
     model: openai(options.model),
     system: buildPatchSystemPrompt(),
     prompt: buildPatchUserPrompt(options.prompt, options.textNodes),
+    abortSignal: options.signal,
     output: Output.object({
       schema: lexicalTextEditsResponseSchema,
     }),

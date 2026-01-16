@@ -40,11 +40,13 @@ export async function patchDoc(options: {
   model: string
   prompt: string
   textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
 }): Promise<LexicalTextEditsResponse> {
   const result = await generateText({
     model: anthropic(options.apiKey)(options.model),
     system: buildPatchSystemPrompt(),
     prompt: buildPatchUserPrompt(options.prompt, options.textNodes),
+    abortSignal: options.signal,
     output: Output.object({
       schema: lexicalTextEditsResponseSchema,
     }),

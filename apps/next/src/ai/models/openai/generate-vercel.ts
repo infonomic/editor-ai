@@ -32,6 +32,7 @@ export async function generateDoc(options: {
   apiKey: string
   model: string
   prompt: string
+  signal?: AbortSignal
 }): Promise<GeneratedDoc> {
   const openai = createOpenAI({ apiKey: options.apiKey })
 
@@ -44,6 +45,7 @@ export async function generateDoc(options: {
     model: openai(options.model),
     system: buildSystem(),
     prompt: options.prompt,
+    abortSignal: options.signal,
     output: Output.object({
       schema,
     }),

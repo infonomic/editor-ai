@@ -31,6 +31,7 @@ export async function generateDoc(options: {
   apiKey: string
   model: string
   prompt: string
+  signal?: AbortSignal
 }): Promise<GeneratedDoc> {
   const client = new OpenAI({ apiKey: options.apiKey })
 
@@ -42,22 +43,25 @@ export async function generateDoc(options: {
     ...openaiGenerationSchema,
   } as any
 
-  const result = await client.responses.parse({
-    model: options.model,
-    input: [
-      {
-        role: 'system',
-        content: buildSystem(),
+  const result = await client.responses.parse(
+    {
+      model: options.model,
+      input: [
+        {
+          role: 'system',
+          content: buildSystem(),
+        },
+        {
+          role: 'user',
+          content: options.prompt,
+        },
+      ],
+      text: {
+        format,
       },
-      {
-        role: 'user',
-        content: options.prompt,
-      },
-    ],
-    text: {
-      format,
     },
-  })
+    options.signal ? { signal: options.signal } : undefined
+  )
 
   console.log(result.usage)
 

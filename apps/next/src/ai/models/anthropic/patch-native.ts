@@ -74,6 +74,7 @@ export async function patchDoc(options: {
   model: string
   prompt: string
   textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
 }): Promise<LexicalTextEditsResponse> {
   const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
     ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
@@ -83,25 +84,28 @@ export async function patchDoc(options: {
 
   const toolName = 'patch_lexical_text_nodes_v1'
 
-  const result = await client.messages.create({
-    model: options.model,
-    max_tokens: 4000,
-    system: buildPatchSystemPrompt(),
-    messages: [
-      {
-        role: 'user',
-        content: buildPatchUserPrompt(options.prompt, options.textNodes),
-      },
-    ],
-    tools: [
-      {
-        name: toolName,
-        description: 'Patch Lexical text nodes by returning edits as JSON.',
-        input_schema: anthropicPatchSchema as any,
-      },
-    ],
-    tool_choice: { type: 'tool', name: toolName },
-  })
+  const result = await client.messages.create(
+    {
+      model: options.model,
+      max_tokens: 4000,
+      system: buildPatchSystemPrompt(),
+      messages: [
+        {
+          role: 'user',
+          content: buildPatchUserPrompt(options.prompt, options.textNodes),
+        },
+      ],
+      tools: [
+        {
+          name: toolName,
+          description: 'Patch Lexical text nodes by returning edits as JSON.',
+          input_schema: anthropicPatchSchema as any,
+        },
+      ],
+      tool_choice: { type: 'tool', name: toolName },
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
 
   const toolUse = (result.content ?? []).find(
     (c: any) => c?.type === 'tool_use' && c?.name === toolName

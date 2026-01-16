@@ -11,6 +11,7 @@ export interface PatchDocumentOptions {
   prompt: string
   api: ChatApi
   editorState: any
+  signal?: AbortSignal
 }
 
 export interface PatchDocumentResult {
@@ -36,7 +37,7 @@ export interface PatchDocumentError {
 export async function patchDocument(
   options: PatchDocumentOptions
 ): Promise<PatchDocumentResult | PatchDocumentError> {
-  const { provider, apiKey, modelName, prompt, api, editorState } = options
+  const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
@@ -65,6 +66,7 @@ export async function patchDocument(
           model: modelName,
           prompt,
           textNodes: inputTextNodes,
+          signal,
         })
       : provider === 'google'
         ? await getPatchGeminiDoc(api)({
@@ -72,12 +74,14 @@ export async function patchDocument(
             model: modelName,
             prompt,
             textNodes: inputTextNodes,
+            signal,
           })
         : await getPatchAnthropicDoc(api)({
             apiKey,
             model: modelName,
             prompt,
             textNodes: inputTextNodes,
+            signal,
           })
 
   const edits = result.edits

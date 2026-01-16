@@ -60,6 +60,7 @@ export async function patchDoc(options: {
   model: string
   prompt: string
   textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
 }): Promise<LexicalTextEditsResponse> {
   const client = new OpenAI({ apiKey: options.apiKey })
 
@@ -68,22 +69,25 @@ export async function patchDoc(options: {
     ...openaiPatchSchema,
   } as any
 
-  const result = await client.responses.parse({
-    model: options.model,
-    input: [
-      {
-        role: 'system',
-        content: buildPatchSystemPrompt(),
+  const result = await client.responses.parse(
+    {
+      model: options.model,
+      input: [
+        {
+          role: 'system',
+          content: buildPatchSystemPrompt(),
+        },
+        {
+          role: 'user',
+          content: buildPatchUserPrompt(options.prompt, options.textNodes),
+        },
+      ],
+      text: {
+        format,
       },
-      {
-        role: 'user',
-        content: buildPatchUserPrompt(options.prompt, options.textNodes),
-      },
-    ],
-    text: {
-      format,
     },
-  })
+    options.signal ? { signal: options.signal } : undefined
+  )
 
   console.log(result.usage)
 
