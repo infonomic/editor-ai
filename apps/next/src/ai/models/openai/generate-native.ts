@@ -32,6 +32,55 @@ export type GenerateDocStreamingResult = {
   final: Promise<GeneratedDoc>
 }
 
+const getOutputText = (result: any) => {
+  if (typeof result?.output_text === 'string') {
+    return result.output_text
+  }
+
+  if (Array.isArray(result?.output)) {
+    const texts: string[] = []
+    for (const output of result.output) {
+      if (output?.type !== 'message' || !Array.isArray(output?.content)) {
+        continue
+      }
+      for (const content of output.content) {
+        if (content?.type === 'output_text' && typeof content?.text === 'string') {
+          texts.push(content.text)
+        }
+      }
+    }
+    if (texts.length > 0) {
+      return texts.join('')
+    }
+  }
+
+  return undefined
+}
+
+const parseGeneratedDoc = (result: any) => {
+  const parsed = (result as any).output_parsed as GeneratedDoc | undefined
+  if (parsed && typeof parsed === 'object') {
+    return parsed
+  }
+
+  const outputText = getOutputText(result)
+  if (typeof outputText === 'string' && outputText.trim().length > 0) {
+    try {
+      const json = JSON.parse(outputText)
+      if (json && typeof json === 'object') {
+        return json as GeneratedDoc
+      }
+    } catch {
+      // fall through to error below
+    }
+  }
+
+  throw new Error('OpenAI structured output did not return a parsed object.')
+}
+
+/***
+ * Generates a document from OpenAI using structured outputs.
+ */
 export async function generateDoc(options: {
   apiKey: string
   model: string
@@ -68,7 +117,7 @@ export async function generateDoc(options: {
     options.signal ? { signal: options.signal } : undefined
   )
 
-  console.log(result.usage)
+  // console.log(result.usage)
 
   // If the model refused, the parsed output will be missing.
   const refusal = (result as any)?.output?.[0]?.content?.find(
@@ -78,14 +127,12 @@ export async function generateDoc(options: {
     throw new Error(refusal)
   }
 
-  const parsed = (result as any).output_parsed as GeneratedDoc | undefined
-  if (parsed && typeof parsed === 'object') {
-    return parsed
-  }
-
-  throw new Error('OpenAI structured output did not return a parsed object.')
+  return parseGeneratedDoc(result)
 }
 
+/***
+ * Streams a document generation from OpenAI using structured outputs.
+ */
 export function generateDocStreaming(options: {
   apiKey: string
   model: string
@@ -138,12 +185,7 @@ export function generateDocStreaming(options: {
       throw new Error(refusal)
     }
 
-    const parsed = (result as any).output_parsed as GeneratedDoc | undefined
-    if (parsed && typeof parsed === 'object') {
-      return parsed
-    }
-
-    throw new Error('OpenAI structured output did not return a parsed object.')
+    return parseGeneratedDoc(result)
   })()
 
   return { text, final }

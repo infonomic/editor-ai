@@ -60,6 +60,52 @@ export type PatchDocStreamingResult = {
   final: Promise<LexicalTextEditsResponse>
 }
 
+const getOutputText = (result: any) => {
+  if (typeof result?.output_text === 'string') {
+    return result.output_text
+  }
+
+  if (Array.isArray(result?.output)) {
+    const texts: string[] = []
+    for (const output of result.output) {
+      if (output?.type !== 'message' || !Array.isArray(output?.content)) {
+        continue
+      }
+      for (const content of output.content) {
+        if (content?.type === 'output_text' && typeof content?.text === 'string') {
+          texts.push(content.text)
+        }
+      }
+    }
+    if (texts.length > 0) {
+      return texts.join('')
+    }
+  }
+
+  return undefined
+}
+
+const parsePatchResponse = (result: any) => {
+  const parsed = (result as any).output_parsed as LexicalTextEditsResponse | undefined
+  if (parsed && typeof parsed === 'object') {
+    return parsed
+  }
+
+  const outputText = getOutputText(result)
+  if (typeof outputText === 'string' && outputText.trim().length > 0) {
+    try {
+      const json = JSON.parse(outputText)
+      if (json && typeof json === 'object') {
+        return json as LexicalTextEditsResponse
+      }
+    } catch {
+      // fall through to error below
+    }
+  }
+
+  throw new Error('OpenAI structured output did not return a parsed object.')
+}
+
 export async function patchDoc(options: {
   apiKey: string
   model: string
@@ -94,7 +140,7 @@ export async function patchDoc(options: {
     options.signal ? { signal: options.signal } : undefined
   )
 
-  console.log(result.usage)
+  // console.log(result.usage)
 
   const refusal = (result as any)?.output?.[0]?.content?.find(
     (c: any) => c?.type === 'refusal'
@@ -103,12 +149,7 @@ export async function patchDoc(options: {
     throw new Error(refusal)
   }
 
-  const parsed = (result as any).output_parsed as LexicalTextEditsResponse | undefined
-  if (parsed && typeof parsed === 'object') {
-    return parsed
-  }
-
-  throw new Error('OpenAI structured output did not return a parsed object.')
+  return parsePatchResponse(result)
 }
 
 export function patchDocStreaming(options: {
@@ -164,12 +205,7 @@ export function patchDocStreaming(options: {
       throw new Error(refusal)
     }
 
-    const parsed = (result as any).output_parsed as LexicalTextEditsResponse | undefined
-    if (parsed && typeof parsed === 'object') {
-      return parsed
-    }
-
-    throw new Error('OpenAI structured output did not return a parsed object.')
+    return parsePatchResponse(result)
   })()
 
   return { text, final }
