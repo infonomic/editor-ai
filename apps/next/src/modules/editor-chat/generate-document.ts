@@ -6,7 +6,10 @@ import Ajv from 'ajv'
 import { anthropic as anthropicProvider } from '@/ai/models/anthropic/anthropic'
 import { getGenerateDoc as getGenerateAnthropicDoc } from '@/ai/models/anthropic/generate'
 import { getGenerateDoc as getGenerateGeminiDoc } from '@/ai/models/google/generate'
-import { getGenerateDoc as getGenerateOpenAIDoc } from '@/ai/models/openai/generate'
+import {
+  getGenerateDoc as getGenerateOpenAIDoc,
+  getGenerateDocStreaming as getGenerateOpenAIDocStreaming,
+} from '@/ai/models/openai/generate'
 import { documentSchema } from '@/ai/schemas/lexical-json-schema'
 import { convertToLexical, type GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 import type { ChatApi, Provider } from './@types'
@@ -53,11 +56,21 @@ export type GenerateDocumentResult =
       message: string
     }
 
+export type GenerateDocumentStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<GenerateDocumentResult | GenerateDocumentError>
+}
+
 export interface GenerateDocumentError {
   success: false
   message: string
   errors: Record<string, string[]>
 }
+
+const createEmptyTextStream = (): AsyncIterable<string> =>
+  (async function* () {
+    // intentionally empty
+  })()
 
 /**
  * Generates a new Lexical document from scratch based on a user prompt.
@@ -131,4 +144,84 @@ export async function generateDocument(
       editor: validationErrors,
     },
   }
+}
+
+/**
+ * Streams a Lexical document generation. Only OpenAI supports streaming for now.
+ */
+export function generateDocumentStreaming(
+  options: GenerateDocumentOptions
+): GenerateDocumentStreamingResult {
+  const { provider, apiKey, modelName, prompt, api, signal } = options
+
+  if (provider !== 'openai') {
+    return {
+      text: createEmptyTextStream(),
+      final: Promise.resolve({
+        success: false,
+        message: 'Streaming is only supported for OpenAI provider at the moment.',
+        errors: {
+          prompt: ['Streaming is only supported for OpenAI provider at the moment.'],
+        },
+      }),
+    }
+  }
+
+  const generateStreaming = getGenerateOpenAIDocStreaming(api)
+  const streamResult = generateStreaming({
+    apiKey,
+    model: modelName,
+    prompt,
+    signal,
+  })
+
+  const final = (async (): Promise<GenerateDocumentResult | GenerateDocumentError> => {
+    const generated = await streamResult.final
+    const generatedDocument = convertToLexical(generated)
+
+    const isValid = validateLexicalDocument(generatedDocument)
+    if (isValid) {
+      return {
+        success: true,
+        format: 'lexical',
+        editor: generatedDocument,
+        message: 'Task completed successfully via AI instruction (generate mode).',
+      }
+    }
+
+    const htmlModel = createOpenAI({ apiKey })(modelName)
+
+    const htmlResult = await generateText({
+      model: htmlModel,
+      system: buildGenerateHtmlSystemPrompt(),
+      prompt: buildGenerateHtmlUserPrompt(prompt),
+      abortSignal: signal,
+    })
+
+    const html = htmlResult.text?.trim() ?? ''
+    if (html.length > 0) {
+      return {
+        success: true,
+        format: 'html',
+        html,
+        message: 'Generated HTML fallback (Lexical JSON validation failed).',
+      }
+    }
+
+    const validationErrors = (validateLexicalDocument.errors ?? []).map((e) => {
+      const instancePath = e.instancePath ? ` at ${e.instancePath}` : ''
+      const message = e.message ?? 'Schema validation error'
+      return `${message}${instancePath}`
+    })
+
+    return {
+      success: false,
+      message: 'AI failed to generate a valid Lexical document (and HTML fallback was empty).',
+      errors: {
+        editor: validationErrors,
+      },
+    }
+  })()
+
+  return { text: streamResult.text, final }
 }

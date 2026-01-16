@@ -1,6 +1,9 @@
 import { getPatchDoc as getPatchAnthropicDoc } from '@/ai/models/anthropic/patch'
 import { getPatchDoc as getPatchGeminiDoc } from '@/ai/models/google/patch'
-import { getPatchDoc as getPatchOpenAIDoc } from '@/ai/models/openai/patch'
+import {
+  getPatchDoc as getPatchOpenAIDoc,
+  getPatchDocStreaming as getPatchOpenAIDocStreaming,
+} from '@/ai/models/openai/patch'
 import { extractTextNodesFromLexicalState, setAtPath } from './lexical-text-edits'
 import type { ChatApi, Provider } from './@types'
 
@@ -25,6 +28,16 @@ export interface PatchDocumentError {
   message: string
   errors: Record<string, string[]>
 }
+
+export type PatchDocumentStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<PatchDocumentResult | PatchDocumentError>
+}
+
+const createEmptyTextStream = (): AsyncIterable<string> =>
+  (async function* () {
+    // intentionally empty
+  })()
 
 /**
  * Patches an existing Lexical document by extracting text nodes,
@@ -121,4 +134,102 @@ export async function patchDocument(
     editor: editorState,
     message: 'Task completed successfully via AI instruction (patch mode).',
   }
+}
+
+/**
+ * Streams a Lexical document patch. Only OpenAI supports streaming for now.
+ */
+export function patchDocumentStreaming(
+  options: PatchDocumentOptions
+): PatchDocumentStreamingResult {
+  const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
+
+  if (provider !== 'openai') {
+    return {
+      text: createEmptyTextStream(),
+      final: Promise.resolve({
+        success: false,
+        message: 'Streaming is only supported for OpenAI provider at the moment.',
+        errors: {
+          prompt: ['Streaming is only supported for OpenAI provider at the moment.'],
+        },
+      }),
+    }
+  }
+
+  const extracted = extractTextNodesFromLexicalState(editorState)
+  const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
+
+  if (inputTextNodes.length === 0) {
+    return {
+      text: createEmptyTextStream(),
+      final: Promise.resolve({
+        success: false,
+        message: 'No text nodes found to edit.',
+        errors: { editor: ['No text nodes found to edit.'] },
+      }),
+    }
+  }
+
+  if (inputTextNodes.length > 400) {
+    return {
+      text: createEmptyTextStream(),
+      final: Promise.resolve({
+        success: false,
+        message: 'Document too large for the current prototype (too many text nodes).',
+        errors: { editor: ['Document too large for the current prototype.'] },
+      }),
+    }
+  }
+
+  const patchStreaming = getPatchOpenAIDocStreaming(api)
+  const streamResult = patchStreaming({
+    apiKey,
+    model: modelName,
+    prompt,
+    textNodes: inputTextNodes,
+    signal,
+  })
+
+  const final = (async (): Promise<PatchDocumentResult | PatchDocumentError> => {
+    const result = await streamResult.final
+    const edits = result.edits
+
+    if (edits.length !== extracted.length) {
+      return {
+        success: false,
+        message: 'AI returned an unexpected number of edits.',
+        errors: {},
+      }
+    }
+
+    const expectedIds = new Set(extracted.map((n) => n.id))
+    for (const edit of edits) {
+      if (!expectedIds.has(edit.id)) {
+        return {
+          success: false,
+          message: 'AI returned edits with unexpected ids.',
+          errors: {},
+        }
+      }
+    }
+
+    for (const edit of edits) {
+      const node = extracted[edit.id]
+      if (!node) continue
+      try {
+        setAtPath(editorState, node.path, edit.text)
+      } catch {
+        // Ignore invalid paths; schema validation can be added later.
+      }
+    }
+
+    return {
+      success: true,
+      editor: editorState,
+      message: 'Task completed successfully via AI instruction (patch mode).',
+    }
+  })()
+
+  return { text: streamResult.text, final }
 }
