@@ -55,6 +55,11 @@ const openaiPatchSchema = {
   },
 } as const
 
+export type PatchDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<LexicalTextEditsResponse>
+}
+
 export async function patchDoc(options: {
   apiKey: string
   model: string
@@ -104,4 +109,68 @@ export async function patchDoc(options: {
   }
 
   throw new Error('OpenAI structured output did not return a parsed object.')
+}
+
+export function patchDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
+}): PatchDocStreamingResult {
+  const client = new OpenAI({ apiKey: options.apiKey })
+
+  const format = {
+    type: 'json_schema',
+    ...openaiPatchSchema,
+  } as any
+
+  const stream = client.responses.stream(
+    {
+      model: options.model,
+      input: [
+        {
+          role: 'system',
+          content: buildPatchSystemPrompt(),
+        },
+        {
+          role: 'user',
+          content: buildPatchUserPrompt(options.prompt, options.textNodes),
+        },
+      ],
+      text: {
+        format,
+      },
+      stream: true,
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    for await (const event of stream) {
+      if (event.type === 'response.output_text.delta') {
+        yield event.delta
+      }
+    }
+  })()
+
+  const final = (async () => {
+    const result = await stream.finalResponse()
+
+    const refusal = (result as any)?.output?.[0]?.content?.find(
+      (c: any) => c?.type === 'refusal'
+    )?.refusal
+    if (typeof refusal === 'string' && refusal.length > 0) {
+      throw new Error(refusal)
+    }
+
+    const parsed = (result as any).output_parsed as LexicalTextEditsResponse | undefined
+    if (parsed && typeof parsed === 'object') {
+      return parsed
+    }
+
+    throw new Error('OpenAI structured output did not return a parsed object.')
+  })()
+
+  return { text, final }
 }

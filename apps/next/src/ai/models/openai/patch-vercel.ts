@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
-import { generateText, Output } from 'ai'
+import { generateText, Output, streamText } from 'ai'
 
 import {
   type LexicalTextEditsResponse,
@@ -35,6 +35,11 @@ const buildPatchUserPrompt = (
   ].join('\n')
 }
 
+export type PatchDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<LexicalTextEditsResponse>
+}
+
 export async function patchDoc(options: {
   apiKey: string
   model: string
@@ -55,4 +60,29 @@ export async function patchDoc(options: {
   })
 
   return result.output as LexicalTextEditsResponse
+}
+
+export function patchDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
+}): PatchDocStreamingResult {
+  const openai = createOpenAI({ apiKey: options.apiKey })
+
+  const result = streamText({
+    model: openai(options.model),
+    system: buildPatchSystemPrompt(),
+    prompt: buildPatchUserPrompt(options.prompt, options.textNodes),
+    abortSignal: options.signal,
+    output: Output.object({
+      schema: lexicalTextEditsResponseSchema,
+    }),
+  })
+
+  return {
+    text: result.textStream,
+    final: result.output as Promise<LexicalTextEditsResponse>,
+  }
 }

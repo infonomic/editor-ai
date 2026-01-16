@@ -27,6 +27,11 @@ const buildSystem = () => {
   ].join('\n')
 }
 
+export type GenerateDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<GeneratedDoc>
+}
+
 export async function generateDoc(options: {
   apiKey: string
   model: string
@@ -79,4 +84,67 @@ export async function generateDoc(options: {
   }
 
   throw new Error('OpenAI structured output did not return a parsed object.')
+}
+
+export function generateDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateDocStreamingResult {
+  const client = new OpenAI({ apiKey: options.apiKey })
+
+  const format = {
+    type: 'json_schema',
+    ...openaiGenerationSchema,
+  } as any
+
+  const stream = client.responses.stream(
+    {
+      model: options.model,
+      input: [
+        {
+          role: 'system',
+          content: buildSystem(),
+        },
+        {
+          role: 'user',
+          content: options.prompt,
+        },
+      ],
+      text: {
+        format,
+      },
+      stream: true,
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    for await (const event of stream) {
+      if (event.type === 'response.output_text.delta') {
+        yield event.delta
+      }
+    }
+  })()
+
+  const final = (async () => {
+    const result = await stream.finalResponse()
+
+    const refusal = (result as any)?.output?.[0]?.content?.find(
+      (c: any) => c?.type === 'refusal'
+    )?.refusal
+    if (typeof refusal === 'string' && refusal.length > 0) {
+      throw new Error(refusal)
+    }
+
+    const parsed = (result as any).output_parsed as GeneratedDoc | undefined
+    if (parsed && typeof parsed === 'object') {
+      return parsed
+    }
+
+    throw new Error('OpenAI structured output did not return a parsed object.')
+  })()
+
+  return { text, final }
 }
