@@ -3,7 +3,16 @@
 import { useActionState, useEffect, useMemo, useReducer, useRef } from 'react'
 
 import { createEmptyEditorState } from '@infonomic/editor'
-import { Alert, Button, LoaderEllipsis, Select, SelectItem, TextArea } from '@infonomic/uikit/react'
+import {
+  Alert,
+  Button,
+  IconButton,
+  LoaderEllipsis,
+  Select,
+  SelectItem,
+  StopIcon,
+  TextArea,
+} from '@infonomic/uikit/react'
 import type { SerializedEditorState } from 'lexical'
 
 import {
@@ -288,6 +297,9 @@ export const EditorChat = () => {
               disabled={!state.promptValue.trim() || isPending === true}
             >
               {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
+            </Button>
+            <Button className="py-0 px-4" disabled={isPending === false} type="button">
+              <StopIcon width="22px" height="22px" />
             </Button>
             <Button
               fullWidth={false}
