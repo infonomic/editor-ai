@@ -1,4 +1,10 @@
 /**
+ * Credit: Adapted from https://github.com/ashbuilds/payload-ai
+ * types to avoid direct dependency and circular dependencies.
+ * Portions copyright Ash Builds, licensed under MIT.
+ */
+
+/**
  * JSON Schema type definition (JSON Schema Draft 7 compatible)
  * This avoids a direct dependency on the OpenAI SDK for type definitions.
  */

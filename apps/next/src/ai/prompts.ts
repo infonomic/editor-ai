@@ -1,3 +1,8 @@
+/**
+ * Credit: Adapted from https://github.com/ashbuilds/payload-ai
+ * Portions copyright Ash Builds, licensed under MIT.
+ */
+
 import type { ActionPrompt } from './types.js'
 
 //TODO: This is a temporary solution make use of structured output

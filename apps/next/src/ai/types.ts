@@ -1,3 +1,8 @@
+/**
+ * Credit: Adapted from https://github.com/ashbuilds/payload-ai
+ * Portions copyright Ash Builds, licensed under MIT.
+ */
+
 import type { CSSProperties, MouseEventHandler } from 'react'
 
 import type { ImageGenerateParams } from 'openai/resources/images'

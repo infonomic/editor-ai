@@ -7,7 +7,7 @@ import { anthropic as anthropicProvider } from '@/ai/models/anthropic/anthropic'
 import { getGenerateDoc as getGenerateAnthropicDoc } from '@/ai/models/anthropic/generate'
 import { getGenerateDoc as getGenerateGeminiDoc } from '@/ai/models/google/generate'
 import { getGenerateDoc as getGenerateOpenAIDoc } from '@/ai/models/openai/generate'
-import { documentSchema } from '@/ai/schemas/lexicalJsonSchema'
+import { documentSchema } from '@/ai/schemas/lexical-json-schema'
 import { convertToLexical, type GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 import type { ChatApi, Provider } from './@types'
 
