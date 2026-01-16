@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     test: {
+      setupFiles: './vitest.setup.node.ts',
       environment: mode === 'node' ? 'node' : 'jsdom',
       include: testFiles,
       reporter: 'verbose',

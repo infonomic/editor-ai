@@ -13,7 +13,9 @@
     "lint": "biome check --write --unsafe --diagnostic-level=error",
     "test:e2e": "playwright test",
     "test:e2e:prod": "cross-env E2E_MODE=prod playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:vitest": "vitest run",
+    "test:vitest:node": "vitest run --mode node"
   },
   "engines": {
     "node": "^18.20.2 || >=20.6.0"
