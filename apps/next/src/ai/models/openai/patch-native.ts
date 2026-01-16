@@ -85,6 +85,8 @@ export async function patchDoc(options: {
     },
   })
 
+  console.log(result.usage)
+
   const refusal = (result as any)?.output?.[0]?.content?.find(
     (c: any) => c?.type === 'refusal'
   )?.refusal

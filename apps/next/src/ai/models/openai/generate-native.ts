@@ -59,6 +59,8 @@ export async function generateDoc(options: {
     },
   })
 
+  console.log(result.usage)
+
   // If the model refused, the parsed output will be missing.
   const refusal = (result as any)?.output?.[0]?.content?.find(
     (c: any) => c?.type === 'refusal'
