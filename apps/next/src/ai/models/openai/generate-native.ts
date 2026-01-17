@@ -1,6 +1,10 @@
 import OpenAI from 'openai'
 
-import { buildGenerateSystemPrompt } from '@/ai/prompts'
+import {
+  buildGenerateHtmlSystemPrompt,
+  buildGenerateHtmlUserPrompt,
+  buildGenerateSystemPrompt,
+} from '@/ai/prompts'
 import { openaiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
@@ -15,7 +19,21 @@ export async function generateHtml(options: {
   prompt: string
   signal?: AbortSignal
 }): Promise<string> {
-  throw new Error('Native HTML generation not implemented for OpenAI')
+  const openai = new OpenAI({ apiKey: options.apiKey })
+
+  const completion = await openai.chat.completions.create(
+    {
+      model: options.model,
+      messages: [
+        { role: 'system', content: buildGenerateHtmlSystemPrompt() },
+        { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
+      ],
+      stream: false,
+    },
+    { signal: options.signal }
+  )
+
+  return completion.choices[0]?.message?.content ?? ''
 }
 
 const getOutputText = (result: any) => {

@@ -1,6 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-import { buildGenerateSystemPrompt } from '@/ai/prompts'
+import {
+  buildGenerateHtmlSystemPrompt,
+  buildGenerateHtmlUserPrompt,
+  buildGenerateSystemPrompt,
+} from '@/ai/prompts'
 import { anthropicGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
@@ -10,7 +14,24 @@ export async function generateHtml(options: {
   prompt: string
   signal?: AbortSignal
 }): Promise<string> {
-  throw new Error('Native HTML generation not implemented for Anthropic')
+  const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
+    ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
+    : 'https://api.anthropic.com'
+
+  const client = new Anthropic({ apiKey: options.apiKey, baseURL })
+
+  const message = await client.messages.create(
+    {
+      model: options.model,
+      max_tokens: 4096,
+      system: buildGenerateHtmlSystemPrompt(),
+      messages: [{ role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) }],
+    },
+    { signal: options.signal }
+  )
+
+  const textBlock = message.content.find((b) => b.type === 'text')
+  return textBlock?.text ?? ''
 }
 
 const isValidHttpUrl = (value: string | undefined): value is string => {

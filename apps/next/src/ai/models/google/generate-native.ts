@@ -1,6 +1,10 @@
 import { GoogleGenAI } from '@google/genai'
 
-import { buildGenerateSystemPrompt } from '@/ai/prompts'
+import {
+  buildGenerateHtmlSystemPrompt,
+  buildGenerateHtmlUserPrompt,
+  buildGenerateSystemPrompt,
+} from '@/ai/prompts'
 import { geminiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
@@ -10,7 +14,20 @@ export async function generateHtml(options: {
   prompt: string
   signal?: AbortSignal
 }): Promise<string> {
-  throw new Error('Native HTML generation not implemented for Google Gemini')
+  const google = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const response = await google.models.generateContent({
+    model: options.model,
+    config: { systemInstruction: buildGenerateHtmlSystemPrompt() },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: buildGenerateHtmlUserPrompt(options.prompt) }],
+      },
+    ],
+  })
+
+  return response.text?.trim() ?? ''
 }
 
 const tryParseJson = (text: string): unknown => {
