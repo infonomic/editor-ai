@@ -17,7 +17,7 @@ import {
   getGenerateDocStreaming as getGenerateOpenAIDocStreaming,
 } from '@/ai/models/openai/generate'
 import { documentSchema } from '@/ai/schemas/lexical-json-schema'
-import { convertToLexical, type GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
+import { convertToLexical } from '@/modules/editor-chat/convert-to-lexical'
 import type { ChatApi, Provider } from './@types'
 
 const ajv = new Ajv({ allErrors: true, strict: false })
@@ -73,27 +73,11 @@ export interface GenerateDocumentError {
   errors: Record<string, string[]>
 }
 
-/**
- * Generates a new Lexical document from scratch based on a user prompt.
- * Uses the documentSchema to ensure the AI generates valid Lexical JSON
- * with proper structure including headings, paragraphs, lists, etc.
- */
-export async function generateDocument(
+async function processGenerationResult(
+  generated: any,
   options: GenerateDocumentOptions
 ): Promise<GenerateDocumentResult | GenerateDocumentError> {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
-
-  let generated: GeneratedDoc
-  if (provider === 'openai') {
-    const generate = getGenerateOpenAIDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt, signal })
-  } else if (provider === 'google') {
-    const generate = getGenerateGeminiDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt, signal })
-  } else {
-    const generate = getGenerateAnthropicDoc(api)
-    generated = await generate({ apiKey, model: modelName, prompt, signal })
-  }
+  const { provider, apiKey, modelName, prompt, signal } = options
 
   const generatedDocument = convertToLexical(generated)
 
@@ -148,7 +132,29 @@ export async function generateDocument(
 }
 
 /**
- * Streams a Lexical document generation. Only OpenAI supports streaming for now.
+ * Generates a new Lexical document from scratch based on a user prompt.
+ * Uses the documentSchema to ensure the AI generates valid Lexical JSON
+ * with proper structure including headings, paragraphs, lists, etc.
+ */
+export async function generateDocument(
+  options: GenerateDocumentOptions
+): Promise<GenerateDocumentResult | GenerateDocumentError> {
+  const { provider, apiKey, modelName, prompt, api, signal } = options
+
+  const generate =
+    provider === 'openai'
+      ? getGenerateOpenAIDoc(api)
+      : provider === 'google'
+        ? getGenerateGeminiDoc(api)
+        : getGenerateAnthropicDoc(api)
+
+  const generated = await generate({ apiKey, model: modelName, prompt, signal })
+
+  return processGenerationResult(generated, options)
+}
+
+/**
+ * Streams a Lexical document generation.
  */
 export function generateDocumentStreaming(
   options: GenerateDocumentOptions
@@ -171,55 +177,7 @@ export function generateDocumentStreaming(
 
   const final = (async (): Promise<GenerateDocumentResult | GenerateDocumentError> => {
     const generated = await streamResult.final
-    const generatedDocument = convertToLexical(generated)
-
-    const isValid = validateLexicalDocument(generatedDocument)
-    if (isValid) {
-      return {
-        success: true,
-        format: 'lexical',
-        editor: generatedDocument,
-        message: 'Task completed successfully via AI instruction (generate mode).',
-      }
-    }
-
-    const htmlModel =
-      provider === 'openai'
-        ? createOpenAI({ apiKey })(modelName)
-        : provider === 'google'
-          ? createGoogleGenerativeAI({ apiKey })(modelName)
-          : anthropicProvider(apiKey)(modelName)
-
-    const htmlResult = await generateText({
-      model: htmlModel,
-      system: buildGenerateHtmlSystemPrompt(),
-      prompt: buildGenerateHtmlUserPrompt(prompt),
-      abortSignal: signal,
-    })
-
-    const html = htmlResult.text?.trim() ?? ''
-    if (html.length > 0) {
-      return {
-        success: true,
-        format: 'html',
-        html,
-        message: 'Generated HTML fallback (Lexical JSON validation failed).',
-      }
-    }
-
-    const validationErrors = (validateLexicalDocument.errors ?? []).map((e) => {
-      const instancePath = e.instancePath ? ` at ${e.instancePath}` : ''
-      const message = e.message ?? 'Schema validation error'
-      return `${message}${instancePath}`
-    })
-
-    return {
-      success: false,
-      message: 'AI failed to generate a valid Lexical document (and HTML fallback was empty).',
-      errors: {
-        editor: validationErrors,
-      },
-    }
+    return processGenerationResult(generated, options)
   })()
 
   return { text: streamResult.text, final }

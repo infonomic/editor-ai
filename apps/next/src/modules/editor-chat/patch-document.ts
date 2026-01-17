@@ -45,6 +45,50 @@ const createEmptyTextStream = (): AsyncIterable<string> =>
     // intentionally empty
   })()
 
+async function processPatchResult(
+  result: { edits: Array<{ id: number; text: string }> },
+  extracted: Array<{ id: number; text: string; path: any[] }>,
+  editorState: any
+): Promise<PatchDocumentResult | PatchDocumentError> {
+  const edits = result.edits
+
+  if (edits.length !== extracted.length) {
+    return {
+      success: false,
+      message: 'AI returned an unexpected number of edits.',
+      errors: {},
+    }
+  }
+
+  const expectedIds = new Set(extracted.map((n) => n.id))
+  for (const edit of edits) {
+    if (!expectedIds.has(edit.id)) {
+      return {
+        success: false,
+        message: 'AI returned edits with unexpected ids.',
+        errors: {},
+      }
+    }
+  }
+
+  // Apply edits to the editor state (mutates editorState)
+  for (const edit of edits) {
+    const node = extracted[edit.id]
+    if (!node) continue
+    try {
+      setAtPath(editorState, node.path, edit.text)
+    } catch {
+      // Ignore invalid paths; schema validation can be added later.
+    }
+  }
+
+  return {
+    success: true,
+    editor: editorState,
+    message: 'Task completed successfully via AI instruction (patch mode).',
+  }
+}
+
 /**
  * Patches an existing Lexical document by extracting text nodes,
  * sending them to an AI model for editing, and applying the edits
@@ -93,43 +137,7 @@ export async function patchDocument(
     signal,
   })
 
-  const edits = result.edits
-
-  if (edits.length !== extracted.length) {
-    return {
-      success: false,
-      message: 'AI returned an unexpected number of edits.',
-      errors: {},
-    }
-  }
-
-  const expectedIds = new Set(extracted.map((n) => n.id))
-  for (const edit of edits) {
-    if (!expectedIds.has(edit.id)) {
-      return {
-        success: false,
-        message: 'AI returned edits with unexpected ids.',
-        errors: {},
-      }
-    }
-  }
-
-  // Apply edits to the editor state (mutates editorState)
-  for (const edit of edits) {
-    const node = extracted[edit.id]
-    if (!node) continue
-    try {
-      setAtPath(editorState, node.path, edit.text)
-    } catch {
-      // Ignore invalid paths; schema validation can be added later.
-    }
-  }
-
-  return {
-    success: true,
-    editor: editorState,
-    message: 'Task completed successfully via AI instruction (patch mode).',
-  }
+  return processPatchResult(result, extracted, editorState)
 }
 
 /**
@@ -171,6 +179,7 @@ export function patchDocumentStreaming(
       : provider === 'google'
         ? getPatchGeminiDocStreaming(api)
         : getPatchAnthropicDocStreaming(api)
+
   const streamResult = patchStreaming({
     apiKey,
     model: modelName,
@@ -181,42 +190,7 @@ export function patchDocumentStreaming(
 
   const final = (async (): Promise<PatchDocumentResult | PatchDocumentError> => {
     const result = await streamResult.final
-    const edits = result.edits
-
-    if (edits.length !== extracted.length) {
-      return {
-        success: false,
-        message: 'AI returned an unexpected number of edits.',
-        errors: {},
-      }
-    }
-
-    const expectedIds = new Set(extracted.map((n) => n.id))
-    for (const edit of edits) {
-      if (!expectedIds.has(edit.id)) {
-        return {
-          success: false,
-          message: 'AI returned edits with unexpected ids.',
-          errors: {},
-        }
-      }
-    }
-
-    for (const edit of edits) {
-      const node = extracted[edit.id]
-      if (!node) continue
-      try {
-        setAtPath(editorState, node.path, edit.text)
-      } catch {
-        // Ignore invalid paths; schema validation can be added later.
-      }
-    }
-
-    return {
-      success: true,
-      editor: editorState,
-      message: 'Task completed successfully via AI instruction (patch mode).',
-    }
+    return processPatchResult(result, extracted, editorState)
   })()
 
   return { text: streamResult.text, final }
