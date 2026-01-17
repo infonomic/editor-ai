@@ -1,4 +1,4 @@
-import { generateText, jsonSchema, Output } from 'ai'
+import { generateText, jsonSchema, Output, streamText } from 'ai'
 
 import { anthropic } from './anthropic'
 import { anthropicGenerationSchema } from './schema'
@@ -47,4 +47,36 @@ export async function generateDoc(options: {
   })
 
   return result.output as GeneratedDoc
+}
+
+export type GenerateDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<GeneratedDoc>
+}
+
+export function generateDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateDocStreamingResult {
+  const schema = jsonSchema<GeneratedDoc>({
+    ...(anthropicGenerationSchema as any),
+    $schema: undefined,
+  })
+
+  const result = streamText({
+    model: anthropic(options.apiKey)(options.model),
+    system: buildSystem(),
+    prompt: options.prompt,
+    abortSignal: options.signal,
+    output: Output.object({
+      schema,
+    }),
+  })
+
+  return {
+    text: result.textStream,
+    final: result.output as Promise<GeneratedDoc>,
+  }
 }

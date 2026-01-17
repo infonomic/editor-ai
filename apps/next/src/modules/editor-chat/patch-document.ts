@@ -1,5 +1,11 @@
-import { getPatchDoc as getPatchAnthropicDoc } from '@/ai/models/anthropic/patch'
-import { getPatchDoc as getPatchGeminiDoc } from '@/ai/models/google/patch'
+import {
+  getPatchDoc as getPatchAnthropicDoc,
+  getPatchDocStreaming as getPatchAnthropicDocStreaming,
+} from '@/ai/models/anthropic/patch'
+import {
+  getPatchDoc as getPatchGeminiDoc,
+  getPatchDocStreaming as getPatchGeminiDocStreaming,
+} from '@/ai/models/google/patch'
 import {
   getPatchDoc as getPatchOpenAIDoc,
   getPatchDocStreaming as getPatchOpenAIDocStreaming,
@@ -144,19 +150,6 @@ export function patchDocumentStreaming(
 ): PatchDocumentStreamingResult {
   const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
 
-  if (provider !== 'openai') {
-    return {
-      text: createEmptyTextStream(),
-      final: Promise.resolve({
-        success: false,
-        message: 'Streaming is only supported for OpenAI provider at the moment.',
-        errors: {
-          prompt: ['Streaming is only supported for OpenAI provider at the moment.'],
-        },
-      }),
-    }
-  }
-
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
 
@@ -182,7 +175,12 @@ export function patchDocumentStreaming(
     }
   }
 
-  const patchStreaming = getPatchOpenAIDocStreaming(api)
+  const patchStreaming =
+    provider === 'openai'
+      ? getPatchOpenAIDocStreaming(api)
+      : provider === 'google'
+        ? getPatchGeminiDocStreaming(api)
+        : getPatchAnthropicDocStreaming(api)
   const streamResult = patchStreaming({
     apiKey,
     model: modelName,

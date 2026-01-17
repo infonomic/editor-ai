@@ -144,3 +144,75 @@ export async function generateDoc(options: {
 
   throw new Error('Google structured output did not return a JSON object.')
 }
+
+export type GenerateDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<GeneratedDoc>
+}
+
+export function generateDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateDocStreamingResult {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const responseJsonSchema = {
+    ...(geminiGenerationSchema as any),
+    $schema: undefined,
+  }
+
+  const normalizedResponseJsonSchema = normalizeJsonSchemaForGemini(responseJsonSchema)
+
+  const streamPromise = ai.models.generateContentStream({
+    model: options.model,
+    contents: options.prompt,
+    config: {
+      systemInstruction: buildSystem(),
+      responseMimeType: 'application/json',
+      responseJsonSchema: normalizedResponseJsonSchema,
+      abortSignal: options.signal,
+    },
+  })
+
+  let resolveFinal!: (value: GeneratedDoc) => void
+  let rejectFinal!: (reason?: unknown) => void
+  const final = new Promise<GeneratedDoc>((resolve, reject) => {
+    resolveFinal = resolve
+    rejectFinal = reject
+  })
+
+  const text = (async function* () {
+    let buffered = ''
+    try {
+      const stream = await streamPromise
+      for await (const chunk of stream) {
+        const chunkText =
+          typeof (chunk as any)?.text === 'function' ? (chunk as any).text() : (chunk as any)?.text
+        if (typeof chunkText === 'string' && chunkText.length > 0) {
+          buffered += chunkText
+          yield chunkText
+        }
+      }
+
+      const trimmed = buffered.trim()
+      if (trimmed.length === 0) {
+        throw new Error('Google model returned an empty response.')
+      }
+
+      const parsed = tryParseJson(trimmed)
+      if (parsed && typeof parsed === 'object') {
+        resolveFinal(normalizeGeneratedDoc(parsed))
+        return
+      }
+
+      throw new Error('Google structured output did not return a JSON object.')
+    } catch (error) {
+      rejectFinal(error)
+      throw error
+    }
+  })()
+
+  return { text, final }
+}

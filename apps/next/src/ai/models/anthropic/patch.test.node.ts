@@ -10,25 +10,25 @@ import {
   patchDoc as patchDocVercel,
 } from './patch-vercel'
 
-const MODEL = 'gpt-5.2'
+const MODEL = 'claude-sonnet-4-5-20250929'
 
-describe('openai patch', () => {
+describe('anthropic patch', () => {
   beforeEach(async () => {})
 
   const runReal = process.env.AI_RUN_REAL_TESTS === 'true'
 
   if (runReal) {
     /***
-     * Generates a document from OpenAI using structured outputs.
+     * Generates a document from Anthropic using structured outputs.
      */
-    it.skip('makes a real OpenAI request (manual run) from native provider', async () => {
+    it.skip('makes a real Anthropic request (manual run) from native provider', async () => {
       const config = getServerConfig()
-      if (!config.ai.openai.apiKey) {
-        throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
+      if (!config.ai.anthropic.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY is required for real Anthropic tests.')
       }
 
       const result = await patchDocNative({
-        apiKey: config.ai.openai.apiKey,
+        apiKey: config.ai.anthropic.apiKey,
         model: MODEL,
         prompt: 'Translate into French.',
         textNodes: [{ id: 0, text: 'The sun is shining' }],
@@ -40,16 +40,16 @@ describe('openai patch', () => {
     }, 30000)
 
     /***
-     * Generates a document from OpenAI using structured outputs via streaming.
+     * Generates a document from Anthropic using structured outputs via streaming.
      */
-    it.skip('streams a real OpenAI response (manual run) from native provider', async () => {
+    it.skip('streams a real Anthropic response (manual run) from native provider', async () => {
       const config = getServerConfig()
-      if (!config.ai.openai.apiKey) {
-        throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
+      if (!config.ai.anthropic.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY is required for real Anthropic tests.')
       }
 
       const streamResult = patchDocStreamingNative({
-        apiKey: config.ai.openai.apiKey,
+        apiKey: config.ai.anthropic.apiKey,
         model: MODEL,
         prompt: 'Translate into French.',
         textNodes: [{ id: 0, text: 'The sun is shining' }],
@@ -58,7 +58,7 @@ describe('openai patch', () => {
       let streamedText = ''
       for await (const chunk of streamResult.text) {
         streamedText += chunk
-        // console.log('STREAM CHUNK:', chunk)
+        console.log('STREAM CHUNK:', chunk)
       }
 
       const final = await streamResult.final
@@ -70,16 +70,16 @@ describe('openai patch', () => {
     }, 30000)
 
     /***
-     * Generates a document from OpenAI using structured outputs.
+     * Generates a document from Anthropic using structured outputs.
      */
-    it.skip('makes a real OpenAI request (manual run) from vercel provider', async () => {
+    it.skip('makes a real Anthropic request (manual run) from vercel provider', async () => {
       const config = getServerConfig()
-      if (!config.ai.openai.apiKey) {
-        throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
+      if (!config.ai.anthropic.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY is required for real Anthropic tests.')
       }
 
       const result = await patchDocVercel({
-        apiKey: config.ai.openai.apiKey,
+        apiKey: config.ai.anthropic.apiKey,
         model: MODEL,
         prompt: 'Translate into French.',
         textNodes: [{ id: 0, text: 'The sun is shining' }],
@@ -91,16 +91,16 @@ describe('openai patch', () => {
     }, 30000)
 
     /***
-     * Generates a document from OpenAI using structured outputs via streaming.
+     * Generates a document from Anthropic using structured outputs via streaming.
      */
-    it.skip('streams a real OpenAI response (manual run) from vercel provider', async () => {
+    it.skip('streams a real Anthropic response (manual run) from vercel provider', async () => {
       const config = getServerConfig()
-      if (!config.ai.openai.apiKey) {
-        throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
+      if (!config.ai.anthropic.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY is required for real Anthropic tests.')
       }
 
       const streamResult = patchDocStreamingVercel({
-        apiKey: config.ai.openai.apiKey,
+        apiKey: config.ai.anthropic.apiKey,
         model: MODEL,
         prompt: 'Translate into French.',
         textNodes: [{ id: 0, text: 'The sun is shining' }],
@@ -120,8 +120,8 @@ describe('openai patch', () => {
       expect(typeof final).toBe('object')
     }, 30000)
   } else {
-    it('skips real OpenAI tests', () => {
-      console.log('Set AI_RUN_REAL_TESTS=true to run real OpenAI tests.')
+    it('skips real Anthropic tests', () => {
+      console.log('Set AI_RUN_REAL_TESTS=true to run real Anthropic tests.')
     })
   }
 })

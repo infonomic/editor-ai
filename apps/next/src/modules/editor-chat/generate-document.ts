@@ -4,8 +4,14 @@ import { generateText } from 'ai'
 import Ajv from 'ajv'
 
 import { anthropic as anthropicProvider } from '@/ai/models/anthropic/anthropic'
-import { getGenerateDoc as getGenerateAnthropicDoc } from '@/ai/models/anthropic/generate'
-import { getGenerateDoc as getGenerateGeminiDoc } from '@/ai/models/google/generate'
+import {
+  getGenerateDoc as getGenerateAnthropicDoc,
+  getGenerateDocStreaming as getGenerateAnthropicDocStreaming,
+} from '@/ai/models/anthropic/generate'
+import {
+  getGenerateDoc as getGenerateGeminiDoc,
+  getGenerateDocStreaming as getGenerateGeminiDocStreaming,
+} from '@/ai/models/google/generate'
 import {
   getGenerateDoc as getGenerateOpenAIDoc,
   getGenerateDocStreaming as getGenerateOpenAIDocStreaming,
@@ -66,11 +72,6 @@ export interface GenerateDocumentError {
   message: string
   errors: Record<string, string[]>
 }
-
-const createEmptyTextStream = (): AsyncIterable<string> =>
-  (async function* () {
-    // intentionally empty
-  })()
 
 /**
  * Generates a new Lexical document from scratch based on a user prompt.
@@ -154,20 +155,12 @@ export function generateDocumentStreaming(
 ): GenerateDocumentStreamingResult {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
-  if (provider !== 'openai') {
-    return {
-      text: createEmptyTextStream(),
-      final: Promise.resolve({
-        success: false,
-        message: 'Streaming is only supported for OpenAI provider at the moment.',
-        errors: {
-          prompt: ['Streaming is only supported for OpenAI provider at the moment.'],
-        },
-      }),
-    }
-  }
-
-  const generateStreaming = getGenerateOpenAIDocStreaming(api)
+  const generateStreaming =
+    provider === 'openai'
+      ? getGenerateOpenAIDocStreaming(api)
+      : provider === 'google'
+        ? getGenerateGeminiDocStreaming(api)
+        : getGenerateAnthropicDocStreaming(api)
   const streamResult = generateStreaming({
     apiKey,
     model: modelName,
@@ -189,7 +182,12 @@ export function generateDocumentStreaming(
       }
     }
 
-    const htmlModel = createOpenAI({ apiKey })(modelName)
+    const htmlModel =
+      provider === 'openai'
+        ? createOpenAI({ apiKey })(modelName)
+        : provider === 'google'
+          ? createGoogleGenerativeAI({ apiKey })(modelName)
+          : anthropicProvider(apiKey)(modelName)
 
     const htmlResult = await generateText({
       model: htmlModel,

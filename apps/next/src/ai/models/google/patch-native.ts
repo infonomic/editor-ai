@@ -152,3 +152,71 @@ export async function patchDoc(options: {
 
   throw new Error('Google structured output did not return a JSON object.')
 }
+
+export type PatchDocStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<LexicalTextEditsResponse>
+}
+
+export function patchDocStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  textNodes: Array<{ id: number; text: string }>
+  signal?: AbortSignal
+}): PatchDocStreamingResult {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const normalizedResponseJsonSchema = normalizeJsonSchemaForGemini(googlePatchSchema)
+
+  const streamPromise = ai.models.generateContentStream({
+    model: options.model,
+    contents: buildPatchUserPrompt(options.prompt, options.textNodes),
+    config: {
+      systemInstruction: buildPatchSystemPrompt(),
+      responseMimeType: 'application/json',
+      responseJsonSchema: normalizedResponseJsonSchema,
+      abortSignal: options.signal,
+    },
+  })
+
+  let resolveFinal!: (value: LexicalTextEditsResponse) => void
+  let rejectFinal!: (reason?: unknown) => void
+  const final = new Promise<LexicalTextEditsResponse>((resolve, reject) => {
+    resolveFinal = resolve
+    rejectFinal = reject
+  })
+
+  const text = (async function* () {
+    let buffered = ''
+    try {
+      const stream = await streamPromise
+      for await (const chunk of stream) {
+        const chunkText =
+          typeof (chunk as any)?.text === 'function' ? (chunk as any).text() : (chunk as any)?.text
+        if (typeof chunkText === 'string' && chunkText.length > 0) {
+          buffered += chunkText
+          yield chunkText
+        }
+      }
+
+      const trimmed = buffered.trim()
+      if (trimmed.length === 0) {
+        throw new Error('Google model returned an empty response.')
+      }
+
+      const parsed = tryParseJson(trimmed)
+      if (parsed && typeof parsed === 'object') {
+        resolveFinal(normalizePatchResponse(parsed))
+        return
+      }
+
+      throw new Error('Google structured output did not return a JSON object.')
+    } catch (error) {
+      rejectFinal(error)
+      throw error
+    }
+  })()
+
+  return { text, final }
+}
