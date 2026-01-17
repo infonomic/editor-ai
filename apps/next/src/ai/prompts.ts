@@ -252,7 +252,7 @@ export const buildPatchSystemPrompt = () => {
     '',
     'HANDLING EXISTING CONTENT:',
     '- Preserve the structure: do not merge or split text across nodes.',
-    "- Apply the instruction to each node independently but consider the overal context of input text and the user's prompt.",
+    "- Apply the instruction to each node independently but consider the overall context of input text and the user's prompt.",
     '- If a node is empty in the input, keep it empty unless the instruction explicitly requires filling it.',
   ].join('\n')
 }
