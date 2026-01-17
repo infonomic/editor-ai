@@ -25,7 +25,7 @@ import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } 
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
 
-const STREAMING = false
+const STREAMING = true
 
 const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
@@ -302,7 +302,8 @@ export const EditorChat = () => {
         }),
       })
 
-      if (!response.body) {
+      if (response.body == null) {
+        console.log('Streaming request has no body - falling back to non-streaming handling.')
         const data = (await response.json()) as InstructionState
         setFormState(data)
         return
@@ -315,11 +316,13 @@ export const EditorChat = () => {
 
       while (true) {
         const { value, done } = await reader.read()
+        console.log('Streaming response read', { value, done })
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
         buffer = lines.pop() ?? ''
+        console.log('Streaming response decoded lines', { lines })
 
         for (const line of lines) {
           const trimmed = line.trim()
@@ -330,6 +333,8 @@ export const EditorChat = () => {
               text?: string
               state?: InstructionState
             }
+
+            console.log('Streaming response payload per line', payload)
 
             if (payload.type === 'final' && payload.state) {
               finalState = payload.state
