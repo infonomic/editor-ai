@@ -78,30 +78,20 @@ export async function patchDocument(
     }
   }
 
-  const result =
+  const patch =
     provider === 'openai'
-      ? await getPatchOpenAIDoc(api)({
-          apiKey,
-          model: modelName,
-          prompt,
-          textNodes: inputTextNodes,
-          signal,
-        })
+      ? getPatchOpenAIDoc(api)
       : provider === 'google'
-        ? await getPatchGeminiDoc(api)({
-            apiKey,
-            model: modelName,
-            prompt,
-            textNodes: inputTextNodes,
-            signal,
-          })
-        : await getPatchAnthropicDoc(api)({
-            apiKey,
-            model: modelName,
-            prompt,
-            textNodes: inputTextNodes,
-            signal,
-          })
+        ? getPatchGeminiDoc(api)
+        : getPatchAnthropicDoc(api)
+
+  const result = await patch({
+    apiKey,
+    model: modelName,
+    prompt,
+    textNodes: inputTextNodes,
+    signal,
+  })
 
   const edits = result.edits
 

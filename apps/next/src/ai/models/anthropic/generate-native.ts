@@ -1,28 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 
+import { buildGenerateSystemPrompt } from '@/ai/prompts'
 import { anthropicGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
-
-const buildSystem = () => {
-  return [
-    'You are generating a rich text document using a shallow block structure.',
-    'Return JSON only, matching the provided JSON Schema.',
-    '',
-    'RULES:',
-    '- Use title for the document title (or null if none).',
-    '- blocks is a flat array of block objects.',
-    '- Avoid recursion: do not nest blocks inside blocks except quote.blocks and list.items[].blocks.',
-    '- Keep unions shallow by using kind discriminator fields.',
-    '',
-    'INLINE RULES:',
-    '- Each inline is one of: text, link, br.',
-    '- marks must always be present, with all four boolean fields.',
-    '',
-    'LIST/QUOTE:',
-    '- Quote blocks contain paragraphs only.',
-    '- List items contain paragraphs only and indent is 0 or 1.',
-  ].join('\n')
-}
 
 const isValidHttpUrl = (value: string | undefined): value is string => {
   if (value == null || value.trim().length === 0) return false
@@ -69,7 +49,7 @@ export async function generateDoc(options: {
     {
       model: options.model,
       max_tokens: 4000,
-      system: buildSystem(),
+      system: buildGenerateSystemPrompt(),
       messages: [
         {
           role: 'user',
@@ -139,7 +119,7 @@ export function generateDocStreaming(options: {
     {
       model: options.model,
       max_tokens: 4000,
-      system: buildSystem(),
+      system: buildGenerateSystemPrompt(),
       messages: [
         {
           role: 'user',

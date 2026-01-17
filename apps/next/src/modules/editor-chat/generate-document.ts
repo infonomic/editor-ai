@@ -161,6 +161,7 @@ export function generateDocumentStreaming(
       : provider === 'google'
         ? getGenerateGeminiDocStreaming(api)
         : getGenerateAnthropicDocStreaming(api)
+
   const streamResult = generateStreaming({
     apiKey,
     model: modelName,

@@ -1,27 +1,11 @@
 import { generateText, Output, streamText } from 'ai'
 
+import { buildPatchSystemPrompt } from '@/ai/prompts'
 import {
   type LexicalTextEditsResponse,
   lexicalTextEditsResponseSchema,
 } from '@/modules/editor-chat/lexical-text-edits'
 import { anthropic } from './anthropic'
-
-const buildPatchSystemPrompt = () => {
-  return [
-    'You are editing a Lexical document by updating text-node strings.',
-    'You will receive an array of text nodes with numeric IDs and their current text.',
-    '',
-    'RULES:',
-    '- Return EXACTLY one edit per input node ID (same count, same order).',
-    '- Do not add, remove, or reorder IDs.',
-    '- Update the text field for each node according to the user instruction.',
-    '',
-    'HANDLING EXISTING CONTENT:',
-    '- Preserve the structure: do not merge or split text across nodes.',
-    '- Apply the instruction to each node independently.',
-    '- If a node is empty in the input, keep it empty unless the instruction explicitly requires filling it.',
-  ].join('\n')
-}
 
 const buildPatchUserPrompt = (
   instruction: string,
