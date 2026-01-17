@@ -56,12 +56,11 @@ describe('anthropic generate', () => {
       let streamedText = ''
       for await (const chunk of streamResult.text) {
         streamedText += chunk
-        console.log('STREAM CHUNK:', chunk)
+        console.log('STREAM CHUNK (Anthropic Native):', chunk)
       }
 
       const final = await streamResult.final
-      console.log('FINAL RESULT:', final)
-
+      console.log('FINAL RESULT (Anthropic Native):', final)
       expect(streamedText.length).toBeGreaterThanOrEqual(0)
       expect(final).toBeTruthy()
       expect(typeof final).toBe('object')
@@ -105,18 +104,17 @@ describe('anthropic generate', () => {
       let streamedText = ''
       for await (const chunk of streamResult.text) {
         streamedText += chunk
-        console.log('STREAM CHUNK:', chunk)
+        console.log('STREAM CHUNK (Anthropic Vercel):', chunk)
       }
 
       const final = await streamResult.final
-      console.log('FINAL RESULT:', final)
-
+      console.log('FINAL RESULT (Anthropic Vercel):', final)
       expect(streamedText.length).toBeGreaterThanOrEqual(0)
       expect(final).toBeTruthy()
       expect(typeof final).toBe('object')
     }, 30000)
   } else {
-    it('skips real Anthropic tests', () => {
+    it.skip('skips real Anthropic tests', () => {
       console.log('Set AI_RUN_REAL_TESTS=true to run real Anthropic tests.')
     })
   }

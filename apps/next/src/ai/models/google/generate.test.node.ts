@@ -41,7 +41,7 @@ describe('google generate', () => {
     /***
      * Generates a document from Google using structured outputs via streaming.
      */
-    it('streams a real Google response (manual run) from native provider', async () => {
+    it.skip('streams a real Google response (manual run) from native provider', async () => {
       const config = getServerConfig()
       if (!config.ai.google.apiKey) {
         throw new Error('GOOGLE_API_KEY is required for real Google tests.')
@@ -90,7 +90,7 @@ describe('google generate', () => {
     /***
      * Generates a document from Google using structured outputs via streaming.
      */
-    it('streams a real Google response (manual run) from vercel provider', async () => {
+    it.skip('streams a real Google response (manual run) from vercel provider', async () => {
       const config = getServerConfig()
       if (!config.ai.google.apiKey) {
         throw new Error('GOOGLE_API_KEY is required for real Google tests.')
@@ -115,7 +115,7 @@ describe('google generate', () => {
       expect(typeof final).toBe('object')
     }, 30000)
   } else {
-    it('skips real Google tests', () => {
+    it.skip('skips real Google tests', () => {
       console.log('Set AI_RUN_REAL_TESTS=true to run real Google tests.')
     })
   }

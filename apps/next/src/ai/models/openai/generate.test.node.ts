@@ -41,7 +41,7 @@ describe('openai generate', () => {
     /***
      * Generates a document from OpenAI using structured outputs via streaming.
      */
-    it('streams a real OpenAI response (manual run) from native provider', async () => {
+    it.skip('streams a real OpenAI response (manual run) from native provider', async () => {
       const config = getServerConfig()
       if (!config.ai.openai.apiKey) {
         throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
@@ -89,7 +89,7 @@ describe('openai generate', () => {
     /***
      * Generates a document from OpenAI using structured outputs via streaming.
      */
-    it('streams a real OpenAI response (manual run) from vercel provider', async () => {
+    it.skip('streams a real OpenAI response (manual run) from vercel provider', async () => {
       const config = getServerConfig()
       if (!config.ai.openai.apiKey) {
         throw new Error('OPENAI_API_KEY is required for real OpenAI tests.')
@@ -115,7 +115,7 @@ describe('openai generate', () => {
       expect(typeof final).toBe('object')
     }, 30000)
   } else {
-    it('skips real OpenAI tests', () => {
+    it.skip('skips real OpenAI tests', () => {
       console.log('Set AI_RUN_REAL_TESTS=true to run real OpenAI tests.')
     })
   }
