@@ -15,13 +15,13 @@ const MODEL = 'gemini-2.5-flash'
 describe('google generate', () => {
   beforeEach(async () => {})
 
-  const runReal = process.env.AI_RUN_REAL_TESTS === 'true'
+  const runReal = true // = process.env.AI_RUN_REAL_TESTS === 'true'
 
   if (runReal) {
     /***
      * Generates a document from Google using structured outputs.
      */
-    it.skip('makes a real Google request (manual run) from native provider', async () => {
+    it('makes a real Google request (manual run) from native provider', async () => {
       const config = getServerConfig()
       if (!config.ai.google.apiKey) {
         throw new Error('GOOGLE_API_KEY is required for real Google tests.')
@@ -33,7 +33,7 @@ describe('google generate', () => {
         prompt: 'Create a haiku poem about a child by the sea.',
       })
 
-      // console.log(result)
+      console.log('RESULT (Google Native):', result)
       expect(result).toBeTruthy()
       expect(typeof result).toBe('object')
     }, 30000)
@@ -70,7 +70,7 @@ describe('google generate', () => {
     /***
      * Generates a document from Google using structured outputs.
      */
-    it.skip('makes a real Google request (manual run) from vercel provider', async () => {
+    it('makes a real Google request (manual run) from vercel provider', async () => {
       const config = getServerConfig()
       if (!config.ai.google.apiKey) {
         throw new Error('GOOGLE_API_KEY is required for real Google tests.')
@@ -82,7 +82,7 @@ describe('google generate', () => {
         prompt: 'Create a haiku poem about a child by the sea.',
       })
 
-      // console.log(result)
+      console.log('RESULT (Google Vercel):', result)
       expect(result).toBeTruthy()
       expect(typeof result).toBe('object')
     }, 30000)

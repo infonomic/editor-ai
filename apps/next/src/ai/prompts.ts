@@ -283,6 +283,7 @@ export const buildGenerateSystemPrompt = () => {
     '- blocks is a flat array of block objects.',
     '- Avoid recursion: do not nest blocks inside blocks except quote.blocks and list.items[].blocks.',
     '- Keep unions shallow by using kind discriminator fields.',
+    "- Paragraph align must be one of: start, center, right (never 'left').",
     '',
     'INLINE RULES:',
     '- Each inline is one of: text, link, br.',

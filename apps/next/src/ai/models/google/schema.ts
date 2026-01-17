@@ -62,7 +62,7 @@ export const geminiGenerationSchema = {
       required: ['kind', 'align', 'inlines'],
       properties: {
         kind: { const: 'paragraph' },
-        align: { enum: ['start', 'center', 'right'] },
+        align: { enum: ['start', 'center', 'right', 'left'] },
         inlines: { type: 'array', items: { $ref: '#/$defs/Inline' } },
       },
     },

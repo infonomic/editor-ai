@@ -5,6 +5,7 @@ import {
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
 } from '@/ai/prompts'
+import { normalizeGeneratedDoc } from './normalize-generated-doc'
 import { geminiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
@@ -64,50 +65,6 @@ const normalizeJsonSchemaForGemini = (schema: unknown): unknown => {
   }
 
   return next
-}
-
-const normalizeGeneratedDoc = (doc: any): GeneratedDoc => {
-  const normalizeAlign = (value: any): 'start' | 'center' | 'right' => {
-    if (value === 'start' || value === 'center' || value === 'right') return value
-    if (value === 'left') return 'start'
-    return 'start'
-  }
-
-  const normalizeParagraph = (p: any) => {
-    if (p && p.kind === 'paragraph') {
-      p.align = normalizeAlign(p.align)
-    }
-  }
-
-  const normalizeBlocks = (blocks: any[]) => {
-    for (const block of blocks) {
-      if (!block || typeof block !== 'object') continue
-
-      if (block.kind === 'paragraph') {
-        normalizeParagraph(block)
-        continue
-      }
-
-      if (block.kind === 'quote' && Array.isArray(block.blocks)) {
-        normalizeBlocks(block.blocks)
-        continue
-      }
-
-      if (block.kind === 'list' && Array.isArray(block.items)) {
-        for (const item of block.items) {
-          if (item && Array.isArray(item.blocks)) {
-            for (const paragraph of item.blocks) normalizeParagraph(paragraph)
-          }
-        }
-      }
-    }
-  }
-
-  if (doc && typeof doc === 'object' && Array.isArray(doc.blocks)) {
-    normalizeBlocks(doc.blocks)
-  }
-
-  return doc as GeneratedDoc
 }
 
 export async function generateDoc(options: {

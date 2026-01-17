@@ -67,6 +67,12 @@ export type GeneratedDoc = {
 
 const DEFAULT_DIRECTION: 'ltr' | null = 'ltr'
 
+const normalizeAlign = (value: unknown): 'start' | 'center' | 'right' => {
+  if (value === 'start' || value === 'center' || value === 'right') return value
+  if (value === 'left') return 'start'
+  return 'start'
+}
+
 const marksToTextFormat = (marks: Marks | undefined): number => {
   if (!marks) return 0
   let format = 0
@@ -131,7 +137,7 @@ const createParagraphNode = (block: ParagraphBlock) => {
     type: 'paragraph',
     children: inlinesToLexicalNodes(block.inlines),
     direction: DEFAULT_DIRECTION,
-    format: block.align,
+    format: normalizeAlign((block as any).align),
     indent: 0,
     textFormat: 0,
     textStyle: '',

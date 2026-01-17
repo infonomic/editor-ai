@@ -6,6 +6,7 @@ import { createEmptyEditorState } from '@infonomic/editor'
 import {
   Alert,
   Button,
+  Checkbox,
   LoaderEllipsis,
   Select,
   SelectItem,
@@ -24,8 +25,6 @@ import { RichTextField } from '@/ui/fields/richtext-field'
 import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } from '../@types'
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
-
-const STREAMING = true
 
 const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
@@ -127,6 +126,7 @@ export const EditorChat = () => {
   const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
   const [formState, setFormState] = useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
+  const [useStreaming, setUseStreaming] = useState(false)
   const formRef = useRef<HTMLFormElement | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const hydratedRef = useRef(false)
@@ -386,97 +386,112 @@ export const EditorChat = () => {
           <span>'There was a problem submitting your instructions.</span>
         </Alert>
       )}
+
       <form
         ref={formRef}
         className="flex flex-col gap-2 mt-8"
-        onSubmit={STREAMING ? handleOnSubmitStreaming : handleOnSubmit}
+        onSubmit={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
         noValidate
       >
         <input type="hidden" name="editor" value={editorJson} />
         <input type="hidden" name="api" value={state.api} />
         <input type="hidden" name="provider" value={state.provider} />
         <input type="hidden" name="model" value={state.model} />
+
         <RichTextField
           onChange={handleOnEditorChange}
           value={state.editorValue}
           readonly={isPending === true}
           field={{ name: 'editor', label: 'Editor' }}
         />
-        <div className="flex flex-col gap-4">
-          <TextArea
-            label="Prompt"
-            id="prompt"
-            name="prompt"
-            rows={5}
-            value={state.promptValue}
-            onChange={handleOnPromptChange}
-            onKeyDown={handleOnKeyDown}
-            disabled={isPending === true}
-            // error={hasErrors('prompt', null, formState?.errors)}
-            // errorText={getErrorText('prompt', null, formState?.errors)}
-            helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
-              formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
-            }`}
-          />
-          <div className="flex options gap-2 items-center">
-            <Select
-              name="provider"
-              value={state.provider}
-              onValueChange={handleOnProviderChange}
-              variant="outlined"
-            >
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="google">Google</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-            </Select>
-            <Select
-              name="model"
-              value={state.model}
-              onValueChange={handleOnModelChange}
-              variant="outlined"
-            >
-              {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
-                <SelectItem key={modelOption} value={modelOption}>
-                  {modelOption}
-                </SelectItem>
-              ))}
-            </Select>
-            <Select
-              key={state.api}
-              name="api"
-              value={state.api}
-              onValueChange={handleOnApiChange}
-              variant="outlined"
-            >
-              <SelectItem value="native">Native</SelectItem>
-              <SelectItem value="vercel">Vercel</SelectItem>
-            </Select>
-            <Button
-              fullWidth={false}
-              type="submit"
-              disabled={!state.promptValue.trim() || isPending === true}
-            >
-              {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
-            </Button>
-            <Button
-              className="py-0 px-4"
-              title="Stop"
-              aria-label="Stop"
-              onClick={handleOnCancel}
-              disabled={isPending === false}
-              type="button"
-            >
-              <StopIcon width="22px" height="22px" />
-            </Button>
-            <Button
-              fullWidth={false}
-              type="button"
-              onClick={handleOnResetEditor}
-              disabled={isPending === true}
-            >
-              Reset Editor
-            </Button>
+
+        <TextArea
+          label="Prompt"
+          id="prompt"
+          name="prompt"
+          rows={5}
+          value={state.promptValue}
+          onChange={handleOnPromptChange}
+          onKeyDown={handleOnKeyDown}
+          disabled={isPending === true}
+          // error={hasErrors('prompt', null, formState?.errors)}
+          // errorText={getErrorText('prompt', null, formState?.errors)}
+          helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
+            formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
+          }`}
+        />
+
+        {/* <div className="mb-4">Foo</div> */}
+
+        <div className="flex items-center gap-3 mt-4 flex-wrap">
+          <Select
+            name="provider"
+            value={state.provider}
+            onValueChange={handleOnProviderChange}
+            variant="outlined"
+          >
+            <SelectItem value="openai">OpenAI</SelectItem>
+            <SelectItem value="google">Google</SelectItem>
+            <SelectItem value="anthropic">Anthropic</SelectItem>
+          </Select>
+          <Select
+            name="model"
+            value={state.model}
+            onValueChange={handleOnModelChange}
+            variant="outlined"
+          >
+            {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
+              <SelectItem key={modelOption} value={modelOption}>
+                {modelOption}
+              </SelectItem>
+            ))}
+          </Select>
+          <Select
+            key={state.api}
+            name="api"
+            value={state.api}
+            onValueChange={handleOnApiChange}
+            variant="outlined"
+          >
+            <SelectItem value="native">Native</SelectItem>
+            <SelectItem value="vercel">Vercel</SelectItem>
+          </Select>
+          <div className="mr-2">
+            <Checkbox
+              name="streaming"
+              id="streaming"
+              defaultChecked={useStreaming}
+              onCheckedChange={(checked) => {
+                setUseStreaming(checked === true)
+              }}
+              label="Streaming"
+            />
           </div>
+          <Button
+            fullWidth={false}
+            type="submit"
+            disabled={!state.promptValue.trim() || isPending === true}
+          >
+            {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
+          </Button>
+          <Button
+            className="py-0 px-4"
+            title="Stop"
+            aria-label="Stop"
+            onClick={handleOnCancel}
+            disabled={isPending === false}
+            type="button"
+          >
+            <StopIcon width="22px" height="22px" />
+          </Button>
+          <Button
+            fullWidth={false}
+            type="button"
+            onClick={handleOnResetEditor}
+            disabled={isPending === true}
+          >
+            Reset Editor
+          </Button>
         </div>
       </form>
     </div>

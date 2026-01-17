@@ -6,6 +6,7 @@ import {
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
 } from '@/ai/prompts'
+import { normalizeGeneratedDoc } from './normalize-generated-doc'
 import { geminiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
@@ -50,7 +51,7 @@ export async function generateDoc(options: {
     }),
   })
 
-  return result.output as GeneratedDoc
+  return normalizeGeneratedDoc(result.output)
 }
 
 export type GenerateDocStreamingResult = {
@@ -83,6 +84,6 @@ export function generateDocStreaming(options: {
 
   return {
     text: result.textStream,
-    final: result.output as Promise<GeneratedDoc>,
+    final: (result.output as Promise<unknown>).then(normalizeGeneratedDoc),
   }
 }
