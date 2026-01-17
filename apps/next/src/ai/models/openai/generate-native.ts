@@ -9,6 +9,15 @@ export type GenerateDocStreamingResult = {
   final: Promise<GeneratedDoc>
 }
 
+export async function generateHtml(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): Promise<string> {
+  throw new Error('Native HTML generation not implemented for OpenAI')
+}
+
 const getOutputText = (result: any) => {
   if (typeof result?.output_text === 'string') {
     return result.output_text

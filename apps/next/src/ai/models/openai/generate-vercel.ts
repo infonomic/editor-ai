@@ -1,13 +1,35 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText, jsonSchema, Output, streamText } from 'ai'
 
-import { buildGenerateSystemPrompt } from '@/ai/prompts'
+import {
+  buildGenerateHtmlSystemPrompt,
+  buildGenerateHtmlUserPrompt,
+  buildGenerateSystemPrompt,
+} from '@/ai/prompts'
 import { openaiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
 export type GenerateDocStreamingResult = {
   text: AsyncIterable<string>
   final: Promise<GeneratedDoc>
+}
+
+export async function generateHtml(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): Promise<string> {
+  const openai = createOpenAI({ apiKey: options.apiKey })
+
+  const result = await generateText({
+    model: openai(options.model),
+    system: buildGenerateHtmlSystemPrompt(),
+    prompt: buildGenerateHtmlUserPrompt(options.prompt),
+    abortSignal: options.signal,
+  })
+
+  return result.text
 }
 
 export async function generateDoc(options: {

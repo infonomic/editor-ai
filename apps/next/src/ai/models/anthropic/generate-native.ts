@@ -4,6 +4,15 @@ import { buildGenerateSystemPrompt } from '@/ai/prompts'
 import { anthropicGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
+export async function generateHtml(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): Promise<string> {
+  throw new Error('Native HTML generation not implemented for Anthropic')
+}
+
 const isValidHttpUrl = (value: string | undefined): value is string => {
   if (value == null || value.trim().length === 0) return false
   try {

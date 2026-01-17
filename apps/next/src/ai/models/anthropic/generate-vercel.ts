@@ -1,9 +1,29 @@
 import { generateText, jsonSchema, Output, streamText } from 'ai'
 
-import { buildGenerateSystemPrompt } from '@/ai/prompts'
+import {
+  buildGenerateHtmlSystemPrompt,
+  buildGenerateHtmlUserPrompt,
+  buildGenerateSystemPrompt,
+} from '@/ai/prompts'
 import { anthropic } from './anthropic'
 import { anthropicGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
+
+export async function generateHtml(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): Promise<string> {
+  const result = await generateText({
+    model: anthropic(options.apiKey)(options.model),
+    system: buildGenerateHtmlSystemPrompt(),
+    prompt: buildGenerateHtmlUserPrompt(options.prompt),
+    abortSignal: options.signal,
+  })
+
+  return result.text
+}
 
 export async function generateDoc(options: {
   apiKey: string

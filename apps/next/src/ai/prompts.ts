@@ -257,6 +257,22 @@ export const buildPatchSystemPrompt = () => {
   ].join('\n')
 }
 
+/**
+ * System prompt for GENERATE HTML fallback mode.
+ */
+export const buildGenerateHtmlSystemPrompt = () => {
+  return [
+    'You are writing HTML for a rich text editor.',
+    'Return ONLY valid HTML (no Markdown, no code fences).',
+    'Use semantic tags: h1/h2/h3, p, ul/ol/li, blockquote, strong, em.',
+    'Do not include <html>, <head>, or <body> wrappers.',
+  ].join('\n')
+}
+
+export const buildGenerateHtmlUserPrompt = (instruction: string) => {
+  return `Write HTML for the following request:\n\n${instruction}`
+}
+
 export const buildGenerateSystemPrompt = () => {
   return [
     'You are generating a rich text document using a shallow block structure.',

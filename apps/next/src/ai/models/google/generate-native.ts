@@ -4,6 +4,15 @@ import { buildGenerateSystemPrompt } from '@/ai/prompts'
 import { geminiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
+export async function generateHtml(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): Promise<string> {
+  throw new Error('Native HTML generation not implemented for Google Gemini')
+}
+
 const tryParseJson = (text: string): unknown => {
   const trimmed = text.trim()
   if (trimmed.length === 0) return undefined
