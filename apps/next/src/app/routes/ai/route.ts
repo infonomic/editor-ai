@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { executeInstructionInternal } from '@/modules/editor-chat/execute-instruction-internal'
+import { executeInstruction } from '@/modules/editor-chat/execute-instruction'
 import type { InstructionState } from '@/modules/editor-chat/@types'
 
 export async function POST(request: Request) {
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   // Note: request.signal exists here; we’ll thread it through provider calls next.
-  const state = await executeInstructionInternal(
+  const state = await executeInstruction(
     {
       prompt: body?.prompt,
       editor: body?.editor,

@@ -25,6 +25,8 @@ import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } 
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
 
+const STREAMING = false
+
 const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
   google: GOOGLE_MODELS,
@@ -271,6 +273,101 @@ export const EditorChat = () => {
     }
   }
 
+  const handleOnSubmitStreaming = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!state.promptValue.trim()) return
+    if (isPending) return
+
+    // Cancel any previous in-flight request before starting a new one.
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    setIsPending(true)
+    setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    try {
+      const response = await fetch('/routes/ai-streaming', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          prompt: state.promptValue,
+          editor: editorJson,
+          provider: state.provider,
+          model: state.model,
+          api: state.api,
+        }),
+      })
+
+      if (!response.body) {
+        const data = (await response.json()) as InstructionState
+        setFormState(data)
+        return
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalState: InstructionState | null = null
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          try {
+            const payload = JSON.parse(trimmed) as {
+              type?: string
+              text?: string
+              state?: InstructionState
+            }
+
+            if (payload.type === 'final' && payload.state) {
+              finalState = payload.state
+            }
+          } catch {
+            // ignore malformed chunks
+          }
+        }
+      }
+
+      if (finalState) {
+        setFormState(finalState)
+      } else {
+        setFormState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } catch (error) {
+      const err = error as any
+      if (err?.name === 'AbortError') {
+        setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+      } else {
+        setFormState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } finally {
+      setIsPending(false)
+      abortControllerRef.current = null
+    }
+  }
+
   return (
     <div className="max-w-240 mx-auto">
       {formState?.status === 'success' && isPending === false && (
@@ -284,7 +381,12 @@ export const EditorChat = () => {
           <span>'There was a problem submitting your instructions.</span>
         </Alert>
       )}
-      <form ref={formRef} className="flex flex-col gap-2 mt-8" onSubmit={handleOnSubmit} noValidate>
+      <form
+        ref={formRef}
+        className="flex flex-col gap-2 mt-8"
+        onSubmit={STREAMING ? handleOnSubmitStreaming : handleOnSubmit}
+        noValidate
+      >
         <input type="hidden" name="editor" value={editorJson} />
         <input type="hidden" name="api" value={state.api} />
         <input type="hidden" name="provider" value={state.provider} />

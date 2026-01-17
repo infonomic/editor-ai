@@ -1,5 +1,3 @@
-'use server'
-
 import { hasText } from '@infonomic/editor'
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
@@ -38,7 +36,7 @@ export type ExecuteInstructionFields = {
   model: unknown
 }
 
-export async function executeInstructionInternal(
+export async function executeInstruction(
   fields: ExecuteInstructionFields,
   options?: { signal?: AbortSignal }
 ): Promise<InstructionState> {

@@ -1,6 +1,6 @@
 'use server'
 
-import { executeInstructionInternal } from './execute-instruction-internal'
+import { executeInstruction as executeInstructionInternal } from './execute-instruction'
 import type { InstructionState } from './@types'
 
 export async function executeInstruction(
