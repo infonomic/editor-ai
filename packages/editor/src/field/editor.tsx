@@ -123,7 +123,7 @@ export const Editor = memo(function Editor({
     () => (
       <div
         className="editor-scroller"
-        style={{ minHeight: minHeight ?? '200px', maxHeight: maxHeight ?? '400px' }}
+        style={{ minHeight: minHeight ?? '150px', maxHeight: maxHeight ?? undefined }}
       >
         <div className="editor" ref={onRef}>
           <ContentEditable />
@@ -137,7 +137,7 @@ export const Editor = memo(function Editor({
     () => (
       <div
         className="editor-scroller"
-        style={{ minHeight: minHeight ?? '200px', maxHeight: maxHeight ?? '400px' }}
+        style={{ minHeight: minHeight ?? '150px', maxHeight: maxHeight ?? undefined }}
       >
         <div className="editor">
           <ContentEditable />
