@@ -401,6 +401,13 @@ export const EditorChat = () => {
         <RichTextField
           onChange={handleOnEditorChange}
           value={state.editorValue}
+          editorSettings={{
+            options: {
+              aiPlugin: true,
+            },
+            inlineImageUploadCollection: '',
+            placeholderText: 'Start writing your content here...',
+          }}
           minHeight={'350px'}
           maxHeight={'475px'}
           readonly={isPending === true}

@@ -5,7 +5,7 @@ import {
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
 } from '@/ai/prompts'
-import { openaiGenerationSchema } from './schema'
+import { openaiGenerationSchema, openaiHtmlGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
 export type GenerateDocStreamingResult = {
@@ -19,21 +19,52 @@ export async function generateHtml(options: {
   prompt: string
   signal?: AbortSignal
 }): Promise<string> {
-  const openai = new OpenAI({ apiKey: options.apiKey })
+  const client = new OpenAI({ apiKey: options.apiKey })
 
-  const completion = await openai.chat.completions.create(
+  const format = {
+    type: 'json_schema',
+    ...openaiHtmlGenerationSchema,
+  } as any
+
+  const result = await client.responses.parse(
     {
       model: options.model,
-      messages: [
+      input: [
         { role: 'system', content: buildGenerateHtmlSystemPrompt() },
         { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
       ],
-      stream: false,
+      text: {
+        format,
+      },
     },
-    { signal: options.signal }
+    options.signal ? { signal: options.signal } : undefined
   )
 
-  return completion.choices[0]?.message?.content ?? ''
+  const parsed = (result as any).output_parsed
+  if (parsed && typeof parsed === 'object' && typeof parsed.html === 'string') {
+    return parsed.html
+  }
+
+  const outputText = getOutputText(result)
+  if (typeof outputText === 'string' && outputText.trim().length > 0) {
+    try {
+      const json = JSON.parse(outputText)
+      if (json && typeof json === 'object' && typeof json.html === 'string') {
+        return json.html
+      }
+    } catch {
+      // fall through
+    }
+  }
+
+  const refusal = (result as any)?.output?.[0]?.content?.find(
+    (c: any) => c?.type === 'refusal'
+  )?.refusal
+  if (typeof refusal === 'string' && refusal.length > 0) {
+    throw new Error(refusal)
+  }
+
+  throw new Error('OpenAI structured output did not return a parsed HTML object.')
 }
 
 const getOutputText = (result: any) => {

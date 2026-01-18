@@ -17,6 +17,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
     collab: false,
     maxLength: false,
     richText: true,
+    aiPlugin: false,
     measureTypingPerf: false,
     showNestedEditorTreeView: false,
     showTableOfContents: false,

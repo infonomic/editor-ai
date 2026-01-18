@@ -1,3 +1,19 @@
+export const openaiHtmlGenerationSchema = {
+  name: 'html_generation',
+  strict: true,
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      html: {
+        type: 'string',
+        description: 'The generated HTML content.',
+      },
+    },
+    required: ['html'],
+  },
+}
+
 export const openaiGenerationSchema = {
   name: 'lexical_doc_blocks_v1',
   strict: true,

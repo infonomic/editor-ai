@@ -1,4 +1,4 @@
-import { defaultEditorConfig, EditorField } from '@infonomic/editor'
+import { defaultEditorConfig, EditorField, type EditorSettingsOverride } from '@infonomic/editor'
 import type { SerializedEditorState } from 'lexical'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   instanceKey?: string
   value?: SerializedEditorState
   defaultValue?: SerializedEditorState
-  editorConfig?: any
+  editorSettings?: EditorSettingsOverride
   minHeight?: number | string
   maxHeight?: number | string
   onChange?: (value: SerializedEditorState) => void
@@ -24,7 +24,7 @@ export const RichTextField = ({
   field,
   value,
   defaultValue,
-  editorConfig,
+  editorSettings,
   readonly = false,
   instanceKey,
   onChange,
@@ -37,13 +37,28 @@ export const RichTextField = ({
   // const fieldError = useFieldError(fieldPath)
   // const isDirty = useIsDirty(fieldPath)
   // const fieldValue = useFieldValue<any>(fieldPath)
+
+  const editorConfig = editorSettings
+    ? {
+        ...defaultEditorConfig,
+        settings: {
+          ...defaultEditorConfig.settings,
+          ...editorSettings,
+          options: {
+            ...defaultEditorConfig.settings.options,
+            ...(editorSettings.options ?? {}),
+          },
+        },
+      }
+    : defaultEditorConfig
+
   const incomingValue = value // ?? fieldValue
   const incomingDefault = defaultValue
   return (
     <div className={className}>
       <EditorField
         onChange={onChange}
-        editorConfig={editorConfig || defaultEditorConfig}
+        editorConfig={editorConfig}
         id={instanceKey ? `${field.name}-${instanceKey}` : field.name}
         name={field.name}
         description={field.helpText}

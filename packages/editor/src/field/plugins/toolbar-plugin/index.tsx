@@ -350,6 +350,7 @@ export function ToolbarPlugin(): React.JSX.Element {
         tablePlugin,
         inlineImagePlugin,
         admonitionPlugin,
+        aiPlugin,
         horizontalRulePlugin,
         layoutPlugin,
         autoEmbedPlugin,
@@ -910,17 +911,19 @@ export function ToolbarPlugin(): React.JSX.Element {
                       </DropDownItem>
                     ))}
                 </DropDown>
-                <button
-                  key="link"
-                  type="button"
-                  // disabled={!isEditable}
-                  // onClick={insertLink}
-                  className="toolbar-item spaced"
-                  aria-label="AI Assistant"
-                  title="AI Assistant"
-                >
-                  <i className="format ai" />
-                </button>
+                {aiPlugin && (
+                  <button
+                    key="link"
+                    type="button"
+                    disabled={!isEditable}
+                    // onClick={insertLink}
+                    className="toolbar-item spaced"
+                    aria-label="AI Assistant"
+                    title="AI Assistant"
+                  >
+                    <i className="format ai" />
+                  </button>
+                )}
               </>
             )}
         </>

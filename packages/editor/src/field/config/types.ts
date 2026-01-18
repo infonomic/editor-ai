@@ -8,6 +8,7 @@ export type OptionName =
   | 'collab'
   | 'maxLength'
   | 'richText'
+  | 'aiPlugin'
   | 'measureTypingPerf'
   | 'showNestedEditorTreeView'
   | 'showTableOfContents'
@@ -42,6 +43,12 @@ export interface EditorSettings {
   options: Record<OptionName, boolean>
   inlineImageUploadCollection: string
   placeholderText: string
+}
+
+export interface EditorSettingsOverride {
+  options?: Partial<Record<OptionName, boolean>>
+  inlineImageUploadCollection?: string
+  placeholderText?: string
 }
 
 export interface EditorConfig {
