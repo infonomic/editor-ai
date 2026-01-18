@@ -402,7 +402,7 @@ export const EditorChat = () => {
           onChange={handleOnEditorChange}
           value={state.editorValue}
           minHeight={'350px'}
-          maxHeight={'350px'}
+          maxHeight={'450px'}
           readonly={isPending === true}
           field={{ name: 'editor', label: 'Editor' }}
         />
