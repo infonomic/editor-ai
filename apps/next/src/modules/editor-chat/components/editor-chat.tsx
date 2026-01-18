@@ -401,6 +401,8 @@ export const EditorChat = () => {
         <RichTextField
           onChange={handleOnEditorChange}
           value={state.editorValue}
+          minHeight={'350px'}
+          maxHeight={'350px'}
           readonly={isPending === true}
           field={{ name: 'editor', label: 'Editor' }}
         />
@@ -414,6 +416,7 @@ export const EditorChat = () => {
           onChange={handleOnPromptChange}
           onKeyDown={handleOnKeyDown}
           disabled={isPending === true}
+          spellCheck={true}
           // error={hasErrors('prompt', null, formState?.errors)}
           // errorText={getErrorText('prompt', null, formState?.errors)}
           helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
