@@ -334,6 +334,10 @@ i.code {
   background-image: url(images/icons/code.svg);
 }
 
+i.ai {
+  background-image: url(images/icons/ai.svg);
+}
+
 i.underline {
   background-image: url(images/icons/type-underline.svg);
 }
