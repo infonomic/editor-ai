@@ -1,5 +1,3 @@
-// NOTE: Important! Allows process.env.SOME_ENV_VAR to accessed in tests
-// without using import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
