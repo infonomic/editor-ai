@@ -28,6 +28,8 @@ export function EditorContext(props: {
   onChange: (editorState: EditorState, editor: LexicalEditor, tags: Set<string>) => void
   readOnly: boolean
   value?: SerializedEditorState
+  minHeight?: number | string
+  maxHeight?: number | string
   children?: React.ReactNode
 }): React.JSX.Element {
   const { composerKey, editorConfig, onChange, readOnly, value, children } = props
@@ -65,7 +67,7 @@ export function EditorContext(props: {
         <SharedOnChangeContext onChange={onChange}>
           <SharedHistoryContext>
             <div className="editor-shell">
-              <Editor />
+              <Editor minHeight={props.minHeight} maxHeight={props.maxHeight} />
             </div>
             {children}
           </SharedHistoryContext>

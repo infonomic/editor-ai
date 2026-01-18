@@ -6,7 +6,7 @@ import {
   buildGenerateSystemPrompt,
 } from '@/ai/prompts'
 import { normalizeGeneratedDoc } from './normalize-generated-doc'
-import { geminiGenerationSchema } from './schema'
+import { geminiGenerationSchema, geminiGenerationSchema2 } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
 export async function generateHtml(options: {
@@ -90,7 +90,8 @@ export async function generateDoc(options: {
     config: {
       systemInstruction: buildGenerateSystemPrompt(),
       responseMimeType: 'application/json',
-      responseJsonSchema: normalizedResponseJsonSchema,
+      // responseJsonSchema: normalizedResponseJsonSchema,
+      responseJsonSchema: geminiGenerationSchema2,
       abortSignal: options.signal,
     },
   })
@@ -121,12 +122,12 @@ export function generateDocStreaming(options: {
 }): GenerateDocStreamingResult {
   const ai = new GoogleGenAI({ apiKey: options.apiKey })
 
-  const responseJsonSchema = {
-    ...(geminiGenerationSchema as any),
-    $schema: undefined,
-  }
+  // const responseJsonSchema = {
+  //   ...(geminiGenerationSchema as any),
+  //   $schema: undefined,
+  // }
 
-  const normalizedResponseJsonSchema = normalizeJsonSchemaForGemini(responseJsonSchema)
+  // const normalizedResponseJsonSchema = normalizeJsonSchemaForGemini(responseJsonSchema)
 
   const streamPromise = ai.models.generateContentStream({
     model: options.model,
@@ -134,7 +135,8 @@ export function generateDocStreaming(options: {
     config: {
       systemInstruction: buildGenerateSystemPrompt(),
       responseMimeType: 'application/json',
-      responseJsonSchema: normalizedResponseJsonSchema,
+      // responseJsonSchema: normalizedResponseJsonSchema,
+      responseJsonSchema: geminiGenerationSchema2,
       abortSignal: options.signal,
     },
   })

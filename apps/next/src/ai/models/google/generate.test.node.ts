@@ -30,7 +30,7 @@ describe('google generate', () => {
       const result = await generateDocNative({
         apiKey: config.ai.google.apiKey,
         model: MODEL,
-        prompt: 'Create a haiku poem about a child by the sea.',
+        prompt: 'Write a short description of the solar system..',
       })
 
       console.log('RESULT (Google Native):', result)
@@ -50,7 +50,7 @@ describe('google generate', () => {
       const streamResult = generateDocStreamingNative({
         apiKey: config.ai.google.apiKey,
         model: MODEL,
-        prompt: 'Create a haiku poem about a child by the sea.',
+        prompt: 'Write a short description of the solar system..',
       })
 
       let streamedText = ''
@@ -79,7 +79,7 @@ describe('google generate', () => {
       const result = await generateDocVercel({
         apiKey: config.ai.google.apiKey,
         model: MODEL,
-        prompt: 'Create a haiku poem about a child by the sea.',
+        prompt: 'Write a short description of the solar system..',
       })
 
       console.log('RESULT (Google Vercel):', result)
@@ -99,7 +99,7 @@ describe('google generate', () => {
       const streamResult = generateDocStreamingVercel({
         apiKey: config.ai.google.apiKey,
         model: MODEL,
-        prompt: 'Create a haiku poem about a child by the sea.',
+        prompt: 'Write a short description of the solar system..',
       })
 
       let streamedText = ''

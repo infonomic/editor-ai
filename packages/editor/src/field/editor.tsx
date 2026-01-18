@@ -73,7 +73,13 @@ import { APPLY_VALUE_TAG } from './constants'
 // editor instance should trigger re-renders. Our form-context and value handlers
 // are subscription-based and so in theory this shouldn't be necessary, but
 // here just in case.
-export const Editor = memo(function Editor(): React.JSX.Element {
+export const Editor = memo(function Editor({
+  minHeight,
+  maxHeight,
+}: {
+  minHeight?: number | string
+  maxHeight?: number | string
+}): React.JSX.Element {
   const [floatingAnchorElem, setFloatingAnchorElem] = useState<HTMLDivElement | null>(null)
   const [isSmallWidthViewport, setIsSmallWidthViewport] = useState<boolean>(false)
   const _debugTagLogCountRef = useState(() => ({ count: 0 }))[0]
@@ -115,24 +121,30 @@ export const Editor = memo(function Editor(): React.JSX.Element {
 
   const richTextContentEditable = useMemo(
     () => (
-      <div className="editor-scroller">
+      <div
+        className="editor-scroller"
+        style={{ minHeight: minHeight ?? '200px', maxHeight: maxHeight ?? '400px' }}
+      >
         <div className="editor" ref={onRef}>
           <ContentEditable />
         </div>
       </div>
     ),
-    [onRef]
+    [onRef, minHeight, maxHeight]
   )
 
   const plainTextContentEditable = useMemo(
     () => (
-      <div className="editor-scroller">
+      <div
+        className="editor-scroller"
+        style={{ minHeight: minHeight ?? '200px', maxHeight: maxHeight ?? '400px' }}
+      >
         <div className="editor">
           <ContentEditable />
         </div>
       </div>
     ),
-    []
+    [minHeight, maxHeight]
   )
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import {
   buildGenerateSystemPrompt,
 } from '@/ai/prompts'
 import { normalizeGeneratedDoc } from './normalize-generated-doc'
-import { geminiGenerationSchema } from './schema'
+import { geminiGenerationSchema, geminiGenerationSchema2 } from './schema'
 import type { GeneratedDoc } from '@/modules/editor-chat/convert-to-lexical'
 
 export async function generateHtml(options: {
@@ -37,7 +37,7 @@ export async function generateDoc(options: {
   const google = createGoogleGenerativeAI({ apiKey: options.apiKey })
 
   const schema = jsonSchema<GeneratedDoc>({
-    ...(geminiGenerationSchema as any),
+    ...(geminiGenerationSchema2 as any),
     $schema: undefined,
   })
 

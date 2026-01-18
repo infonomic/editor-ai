@@ -9,10 +9,13 @@ interface Props {
     required?: boolean
   }
   readonly?: boolean
+  className?: string
   instanceKey?: string
   value?: SerializedEditorState
   defaultValue?: SerializedEditorState
   editorConfig?: any
+  minHeight?: number | string
+  maxHeight?: number | string
   onChange?: (value: SerializedEditorState) => void
   path?: string
 }
@@ -26,6 +29,9 @@ export const RichTextField = ({
   instanceKey,
   onChange,
   path,
+  className,
+  minHeight,
+  maxHeight,
 }: Props) => {
   const _fieldPath = path ?? field.name
   // const fieldError = useFieldError(fieldPath)
@@ -34,7 +40,7 @@ export const RichTextField = ({
   const incomingValue = value // ?? fieldValue
   const incomingDefault = defaultValue
   return (
-    <div className="flex flex-1 h-full">
+    <div className={className}>
       <EditorField
         onChange={onChange}
         editorConfig={editorConfig || defaultEditorConfig}
@@ -46,6 +52,8 @@ export const RichTextField = ({
         required={field.required}
         value={incomingValue}
         defaultValue={incomingDefault}
+        minHeight={minHeight}
+        maxHeight={maxHeight}
         // Ensure React fully remounts when instanceKey changes
         key={instanceKey ? `${field.name}-${instanceKey}` : field.name}
       />

@@ -36,6 +36,8 @@ export const EditorComponent = memo(function EditorComponent({
   defaultValue,
   value,
   onChange,
+  minHeight,
+  maxHeight,
   validate = richTextValidate,
   onError: _onError,
   lexicalEditorProps: _lexicalEditorProps,
@@ -158,6 +160,8 @@ export const EditorComponent = memo(function EditorComponent({
             onChange={handleChange}
             readOnly={disabled}
             value={incomingValue}
+            minHeight={minHeight}
+            maxHeight={maxHeight}
           >
             <ApplyValuePlugin
               value={incomingValue}

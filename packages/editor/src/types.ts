@@ -16,6 +16,8 @@ export type EditorFieldProps = {
   readonly?: boolean
   placeholder?: string
   className?: string
+  minHeight?: number | string
+  maxHeight?: number | string
   editorConfig: EditorConfig
   defaultValue?: SerializedEditorState
   value?: SerializedEditorState

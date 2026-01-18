@@ -35,7 +35,6 @@
 }
 
 .editor-scroller {
-  min-height: 125px;
   border: 0;
   display: flex;
   position: relative;
@@ -149,7 +148,7 @@
   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-.test-recorder-button + .test-recorder-button {
+.test-recorder-button+.test-recorder-button {
   margin-left: 4px;
 }
 
@@ -672,7 +671,7 @@ i.prettier-error {
     display: none;
   }
 
-  .dialog-dropdown > .dropdown-button-text {
+  .dialog-dropdown>.dropdown-button-text {
     display: flex;
   }
 
@@ -1399,6 +1398,7 @@ button.item.dropdown-item-active i {
 }
 
 .dark {
+
   .toolbar i,
   .toolbar span {
     filter: invert(1) brightness(1.2);
