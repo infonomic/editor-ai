@@ -46,6 +46,7 @@ import { useSharedHistoryContext } from './context/shared-history-context'
 import { useSharedOnChange } from './context/shared-on-change-context'
 import { Debug } from './debug'
 import { AdmonitionPlugin } from './plugins/admonition-plugin'
+import { AiPlugin } from './plugins/ai-plugin'
 import { AutoEmbedPlugin } from './plugins/auto-embed-plugin'
 import { CodeHighlightPlugin } from './plugins/code-highlight-plugin'
 // import { DragDropPaste } from './plugins/drag-drop-paste-plugin'
@@ -89,6 +90,7 @@ export const Editor = memo(function Editor({
     config: {
       options: {
         debug,
+        aiPlugin,
         richText,
         showTreeView,
         autoFocusPlugin,
@@ -237,10 +239,11 @@ export const Editor = memo(function Editor({
             <HistoryPlugin externalHistoryState={historyState} />
           </>
         )}
+        <ClearEditorPlugin />
+        {aiPlugin && <AiPlugin />}
         {debug && (
           <>
             <Debug />
-            <ClearEditorPlugin />
             <TreeViewPlugin />
           </>
         )}

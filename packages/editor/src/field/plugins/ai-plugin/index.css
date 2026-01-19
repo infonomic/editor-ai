@@ -1,0 +1,31 @@
+.lexical-ai-plugin {
+  display: none;
+  flex-direction: column;
+  margin-top: 6px;
+  padding: 8px;
+  border: 1px solid #333333;
+  background-color: #efefef;
+}
+
+.lexical-ai-plugin--visible {
+  display: flex;
+}
+
+.lexical-ai-plugin__disclaimer {
+  font-size: 11px;
+  color: #666666;
+  margin-top: 4px;
+}
+
+.dark,
+[data-theme="dark"],
+[data-theme="dark"] ::backdrop {
+  .lexical-ai-plugin {
+    border: 1px solid #444444;
+    background-color: #121212;
+  }
+
+  .lexical-ai-plugin__disclaimer {
+    color: #666666;
+  }
+}

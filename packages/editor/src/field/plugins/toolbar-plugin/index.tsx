@@ -82,6 +82,7 @@ import DropDown, { DropDownItem } from '../../ui/dropdown'
 import { getSelectedNode } from '../../utils/getSelectedNode'
 import { sanitizeUrl } from '../../utils/url'
 import { OPEN_ADMONITION_MODAL_COMMAND } from '../admonition-plugin'
+import { TOGGLE_AI_DRAWER_COMMAND } from '../ai-plugin'
 import { EmbedConfigs } from '../auto-embed-plugin'
 // import { OPEN_INLINE_IMAGE_MODAL_COMMAND } from '../inline-image-plugin'
 import { OPEN_INSERT_LAYOUT_MODAL_COMMAND } from '../layout-plugin/layout-plugin'
@@ -913,10 +914,12 @@ export function ToolbarPlugin(): React.JSX.Element {
                 </DropDown>
                 {aiPlugin && (
                   <button
-                    key="link"
+                    key="ai"
                     type="button"
                     disabled={!isEditable}
-                    // onClick={insertLink}
+                    onClick={() => {
+                      activeEditor.dispatchCommand(TOGGLE_AI_DRAWER_COMMAND, undefined)
+                    }}
                     className="toolbar-item spaced"
                     aria-label="AI Assistant"
                     title="AI Assistant"
