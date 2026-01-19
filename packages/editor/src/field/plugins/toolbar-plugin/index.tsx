@@ -78,7 +78,7 @@ import {
 import { useEditorConfig } from '../../config/editor-config-context'
 import { $isLinkNode, type LinkAttributes, TOGGLE_LINK_COMMAND } from '../../nodes/link-nodes'
 import { IS_APPLE } from '../../shared/environment'
-import DropDown, { DropDownItem } from '../../ui/dropdown'
+import { DropDown, DropDownItem } from '../../ui/dropdown'
 import { getSelectedNode } from '../../utils/getSelectedNode'
 import { sanitizeUrl } from '../../utils/url'
 import { OPEN_ADMONITION_MODAL_COMMAND } from '../admonition-plugin'

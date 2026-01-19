@@ -1,20 +1,50 @@
 .lexical-ai-plugin {
-  display: none;
+  display: flex;
   flex-direction: column;
   margin-top: 6px;
   padding: 8px;
   border: 1px solid #333333;
   background-color: #efefef;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
 }
 
 .lexical-ai-plugin--visible {
-  display: flex;
+  max-height: fit-content;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .lexical-ai-plugin__disclaimer {
   font-size: 11px;
   color: #666666;
   margin-top: 4px;
+}
+
+.lexical-ai-plugin__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lexical-ai-plugin .ai-plugin-button {
+  cursor: pointer;
+  vertical-align: middle;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  display: flex;
+}
+
+.lexical-ai-plugin .ai-plugin-button:hover {
+  background-color: #e0e0e0;
 }
 
 .dark,
@@ -24,6 +54,15 @@
     border: 1px solid #444444;
     background-color: #121212;
   }
+
+  .lexical-ai-plugin .ai-plugin-button {
+    color: #ffffff;
+  }
+
+  .lexical-ai-plugin .ai-plugin-button:hover {
+    background-color: #222222;
+  }
+
 
   .lexical-ai-plugin__disclaimer {
     color: #666666;
