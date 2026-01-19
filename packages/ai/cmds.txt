@@ -1,0 +1,6 @@
+# Manually publish this package.
+cd packages/ai
+pnpm login
+pnpm install
+pnpm build
+pnpm publish --access public --no-git-checks

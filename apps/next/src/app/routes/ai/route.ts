@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { executeInstruction } from '@/modules/editor-chat/execute-instruction'
+import { executeInstruction } from '@infonomic/ai'
+
 import type { InstructionState } from '@/modules/editor-chat/@types'
 
 export async function POST(request: Request) {

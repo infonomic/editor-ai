@@ -1,5 +1,5 @@
-import { executeInstructionStreaming } from '@/modules/editor-chat/execute-instruction-streaming'
-import type { InstructionState } from '@/modules/editor-chat/@types'
+import type { InstructionState } from '@infonomic/ai'
+import { executeInstructionStreaming } from '@infonomic/ai'
 
 export async function POST(request: Request) {
   let body: any

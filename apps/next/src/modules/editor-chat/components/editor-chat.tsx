@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
+import {
+  type AiApi,
+  getDefaultModel,
+  type InstructionState,
+  isProvider,
+  normalizeChatApi,
+  PROVIDER_MODELS,
+  type Provider,
+} from '@infonomic/ai'
 import { createEmptyEditorState } from '@infonomic/editor'
 import {
   Alert,
@@ -15,52 +24,24 @@ import {
 } from '@infonomic/uikit/react'
 import type { SerializedEditorState } from 'lexical'
 
-import {
-  DEFAULT_MODEL as ANTHROPIC_DEFAULT_MODEL,
-  MODELS as ANTHROPIC_MODELS,
-} from '@/ai/models/anthropic'
-import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '@/ai/models/google'
-import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/ai/models/openai'
 import { RichTextField } from '@/ui/fields/richtext-field'
-import { type ChatApi, type InstructionState, normalizeChatApi, type Provider } from '../@types'
 import { importHtmlToSerializedEditorState } from '../import-html'
 import { loadChatConfiguration, saveChatConfiguration } from '../storage'
 
-const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
-  openai: OPENAI_MODELS,
-  google: GOOGLE_MODELS,
-  anthropic: ANTHROPIC_MODELS,
-}
-
-const getDefaultModel = (provider: Provider): string => {
-  switch (provider) {
-    case 'openai':
-      return OPENAI_DEFAULT_MODEL
-    case 'google':
-      return GOOGLE_DEFAULT_MODEL
-    case 'anthropic':
-      return ANTHROPIC_DEFAULT_MODEL
-  }
-}
-
-const isProvider = (value: string): value is Provider => {
-  return value === 'openai' || value === 'google' || value === 'anthropic'
-}
-
 type EditorChatState = {
   editorValue: SerializedEditorState | undefined
-  api: ChatApi
+  api: AiApi
   provider: Provider
   model: string
   promptValue: string
 }
 
 type EditorChatAction =
-  | { type: 'hydrate'; value: { api: ChatApi; provider: Provider; model: string } }
+  | { type: 'hydrate'; value: { api: AiApi; provider: Provider; model: string } }
   | { type: 'setEditorValue'; value: SerializedEditorState | undefined }
   | { type: 'resetEditor'; emptyEditorState: SerializedEditorState }
   | { type: 'setPromptValue'; value: string }
-  | { type: 'setApi'; value: ChatApi }
+  | { type: 'setApi'; value: AiApi }
   | { type: 'setProvider'; value: Provider }
   | { type: 'setModel'; value: string }
 
