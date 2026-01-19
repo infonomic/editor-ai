@@ -91,7 +91,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
         <DropDown
           disabled={!isEditable}
           buttonClassName="ai-plugin-button"
-          buttonLabel="Provider"
+          buttonLabel="Select Provider"
           buttonAriaLabel="Select AI Provider"
         >
           {AI_PROVIDERS.map(([value, name]) => {

@@ -13,7 +13,7 @@
 }
 
 .lexical-ai-plugin--visible {
-  max-height: fit-content;
+  max-height: 300px;
   opacity: 1;
   transform: translateY(0);
 }
