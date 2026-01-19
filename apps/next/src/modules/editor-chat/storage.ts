@@ -1,11 +1,11 @@
-import { CHAT_APIS, type ChatApi, PROVIDERS, type Provider } from './@types'
+import { AI_APIS, type AiApi, PROVIDERS, type Provider } from '@infonomic/ai'
 
 const STORAGE_KEY = 'editor-chat-configuration'
 
 export interface ChatConfiguration {
   provider: Provider
   model: string
-  api: ChatApi
+  api: AiApi
 }
 
 const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
@@ -16,7 +16,7 @@ const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
     PROVIDERS.includes(v.provider as Provider) &&
     typeof v.model === 'string' &&
     typeof v.api === 'string' &&
-    CHAT_APIS.includes(v.api as ChatApi)
+    AI_APIS.includes(v.api as AiApi)
   )
 }
 

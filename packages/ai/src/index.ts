@@ -2,6 +2,7 @@ export { executeInstruction } from '@/execute-instruction'
 export { executeInstructionStreaming } from '@/execute-instruction-streaming'
 export { generateDocument, generateDocumentStreaming } from '@/generate-document'
 export { patchDocument, patchDocumentStreaming } from '@/patch-document'
+export { getAiServerConfig } from './config/index'
 export type { AiApi, InstructionState, Provider } from '@/@types'
 export type {
   GenerateDocumentError,
@@ -23,6 +24,10 @@ import {
 import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '@/models/google'
 import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/models/openai'
 import type { AiApi, Provider } from '@/@types'
+
+export const PROVIDERS: Provider[] = ['openai', 'google', 'anthropic']
+
+export const AI_APIS: AiApi[] = ['native', 'vercel']
 
 export const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
