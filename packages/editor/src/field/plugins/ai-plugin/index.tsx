@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 
 import {
+  AI_APIS,
   type AiApi,
   getDefaultModel,
   type InstructionState,
@@ -14,6 +15,7 @@ import {
   type Provider,
 } from '@infonomic/ai'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { mergeRegister } from '@lexical/utils'
 import {
   CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
@@ -23,15 +25,12 @@ import {
   type SerializedEditorState,
 } from 'lexical'
 
+import { Button } from '../../ui/button'
 import { DropDown, DropDownItem } from '../../ui/dropdown'
 import { TextArea } from '../../ui/text-area'
-import { Button } from '../../ui/button'
-
+import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
-import { createEmptyEditorState } from './create-empty-editor-state'
-
-import { mergeRegister } from '@lexical/utils'
 
 import './index.css'
 
@@ -46,12 +45,11 @@ type EditorChatState = {
 type EditorChatAction =
   | { type: 'hydrate'; value: { api: AiApi; provider: Provider; model: string } }
   | { type: 'setEditorValue'; value: SerializedEditorState | undefined }
-  | { type: 'resetEditor'; emptyEditorState: SerializedEditorState }
+  | { type: 'clearCurrentEditor'; emptyEditorState: SerializedEditorState }
   | { type: 'setPromptValue'; value: string }
   | { type: 'setApi'; value: AiApi }
   | { type: 'setProvider'; value: Provider }
   | { type: 'setModel'; value: string }
-
 
 export const TOGGLE_AI_DRAWER_COMMAND = createCommand('TOGGLE_AI_DRAWER_COMMAND')
 
@@ -71,7 +69,7 @@ const editorChatReducer = (state: EditorChatState, action: EditorChatAction): Ed
     }
     case 'setEditorValue':
       return { ...state, editorValue: action.value }
-    case 'resetEditor':
+    case 'clearCurrentEditor':
       return { ...state, editorValue: action.emptyEditorState }
     case 'setPromptValue':
       return { ...state, promptValue: action.value }
@@ -113,8 +111,6 @@ const formatLastRun = (ms: number): string => {
   return `${minutes}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`
 }
 
-
-
 export function AiPlugin(): React.JSX.Element | undefined {
   const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
   const [formState, setFormState] = useState<InstructionState>(initialInstructionState)
@@ -129,14 +125,13 @@ export function AiPlugin(): React.JSX.Element | undefined {
   const [editor] = useLexicalComposerContext()
   const [isEditable, setIsEditable] = useState(() => editor.isEditable())
   const [activeEditor, setActiveEditor] = useState(editor)
-  // const emptyEditorState: SerializedEditorState = useMemo(() => createEmptyEditorState(), [])
 
   function handleOnSave(): void {
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(activeEditor.getEditorState()))
   }
 
-  function handleOnClear(): void {
+  function handleOnFullReset(): void {
     activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
     activeEditor.focus()
   }
@@ -220,14 +215,14 @@ export function AiPlugin(): React.JSX.Element | undefined {
         dispatch({ type: 'setEditorValue', value: formState.editor as SerializedEditorState })
       }
     }
-  }, [formState, emptyEditorState])
+  }, [formState, emptyEditorState, activeEditor])
 
   const handleOnEditorChange = (value: SerializedEditorState) => {
     dispatch({ type: 'setEditorValue', value })
   }
 
-  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    dispatch({ type: 'setPromptValue', value: event.target.value })
+  const handleOnPromptChange = (value: string) => {
+    dispatch({ type: 'setPromptValue', value })
   }
 
   const handleOnProviderChange = (value: string) => {
@@ -253,8 +248,8 @@ export function AiPlugin(): React.JSX.Element | undefined {
     }
   }
 
-  const handleOnResetEditor = () => {
-    dispatch({ type: 'resetEditor', emptyEditorState })
+  const handleOnClear = () => {
+    dispatch({ type: 'clearCurrentEditor', emptyEditorState })
   }
 
   const handleOnCancel = () => {
@@ -419,13 +414,15 @@ export function AiPlugin(): React.JSX.Element | undefined {
         label="AI Assistant"
         placeholder="Ask AI to help you write..."
         value={state.promptValue}
-        onChange={() => { }}
+        onChange={handleOnPromptChange}
       />
       <div className="lexical-ai-plugin__actions">
         <DropDown
           disabled={!isEditable}
           buttonClassName="ai-plugin-button"
-          buttonLabel={PROVIDERS.find(([value]) => value === state.provider)?.[1] ?? 'Select Provider'}
+          buttonLabel={
+            PROVIDERS.find(([value]) => value === state.provider)?.[1] ?? 'Select Provider'
+          }
           buttonAriaLabel="Select AI Provider"
         >
           {PROVIDERS.map(([value, name]) => {
@@ -462,12 +459,34 @@ export function AiPlugin(): React.JSX.Element | undefined {
             </DropDownItem>
           ))}
         </DropDown>
-        <button type="button" className="ai-plugin-button" onClick={handleOnSave}>
-          Save
-        </button>
-        <button type="button" className="ai-plugin-button" onClick={handleOnClear}>
+        <DropDown
+          disabled={!isEditable}
+          buttonClassName="ai-plugin-button"
+          buttonLabel={state.api === 'native' ? 'Native' : 'Vercel'}
+          buttonAriaLabel="Select AI Model"
+        >
+          {AI_APIS.map((option) => (
+            <DropDownItem
+              className="item"
+              onClick={() => {
+                console.log(`Selected AI API: ${option}`)
+                handleOnApiChange(option)
+              }}
+              key={option}
+            >
+              <span className="text">{option}</span>
+            </DropDownItem>
+          ))}
+        </DropDown>
+        <Button className="ai-plugin-button" onClick={handleOnSave}>
+          Debug
+        </Button>
+        <Button className="ai-plugin-button" onClick={handleOnClear}>
           Clear
-        </button>
+        </Button>
+        <Button className="ai-plugin-button" onClick={handleOnFullReset}>
+          Full Reset
+        </Button>
       </div>
       <p className="lexical-ai-plugin__disclaimer">
         AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and

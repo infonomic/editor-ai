@@ -1,9 +1,11 @@
-import { defaultEditorConfig, Nodes } from '@infonomic/editor'
 import { $generateNodesFromDOM } from '@lexical/html'
 import type { LexicalEditor, SerializedEditorState } from 'lexical'
-import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
+import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
 
-export const importHtmlToSerializedEditorState = (html: string, editor: LexicalEditor): SerializedEditorState => {
+export const importHtmlToSerializedEditorState = (
+  html: string,
+  editor: LexicalEditor
+): SerializedEditorState => {
   const parser = new DOMParser()
   const dom = parser.parseFromString(html, 'text/html')
 
