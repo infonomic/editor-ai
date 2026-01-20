@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "@infonomic/uikit": "^5.21.0",
+    "@infonomic/ai": "workspace:*",
     "@lexical/clipboard": "0.39.0",
     "@lexical/code": "0.39.0",
     "@lexical/hashtag": "0.39.0",

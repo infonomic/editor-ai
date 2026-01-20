@@ -275,6 +275,9 @@ importers:
 
   packages/editor:
     dependencies:
+      '@infonomic/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@infonomic/uikit':
         specifier: ^5.21.0
         version: 5.21.0(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)

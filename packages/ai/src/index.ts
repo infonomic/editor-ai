@@ -25,7 +25,11 @@ import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '
 import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/models/openai'
 import type { AiApi, Provider } from '@/@types'
 
-export const PROVIDERS: Provider[] = ['openai', 'google', 'anthropic']
+export const PROVIDERS: Array<[Provider, string]> = [
+  ['openai', 'OpenAI'],
+  ['google', 'Google'],
+  ['anthropic', 'Anthropic'],
+]
 
 export const AI_APIS: AiApi[] = ['native', 'vercel']
 
