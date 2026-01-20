@@ -235,15 +235,15 @@ export function AiPlugin(): React.JSX.Element | undefined {
     dispatch({ type: 'setProvider', value })
   }
 
-  const handleOnApiChange = (value: string) => {
-    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
-  }
-
   const handleOnModelChange = (value: string) => {
     if (!value) return
     const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
     if (!modelsForProvider.includes(value)) return
     dispatch({ type: 'setModel', value })
+  }
+
+  const handleOnApiChange = (value: string) => {
+    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
   }
 
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -425,7 +425,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
         <DropDown
           disabled={!isEditable}
           buttonClassName="ai-plugin-button"
-          buttonLabel="Select Provider"
+          buttonLabel={PROVIDERS.find(([value]) => value === state.provider)?.[1] ?? 'Select Provider'}
           buttonAriaLabel="Select AI Provider"
         >
           {PROVIDERS.map(([value, name]) => {
@@ -434,6 +434,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
                 className="item"
                 onClick={() => {
                   console.log(`Selected AI provider: ${value}`)
+                  handleOnProviderChange(value)
                 }}
                 key={value}
               >
@@ -441,6 +442,25 @@ export function AiPlugin(): React.JSX.Element | undefined {
               </DropDownItem>
             )
           })}
+        </DropDown>
+        <DropDown
+          disabled={!isEditable}
+          buttonClassName="ai-plugin-button"
+          buttonLabel={state.model}
+          buttonAriaLabel="Select AI Model"
+        >
+          {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
+            <DropDownItem
+              className="item"
+              onClick={() => {
+                console.log(`Selected AI provider: ${modelOption}`)
+                handleOnModelChange(modelOption)
+              }}
+              key={modelOption}
+            >
+              <span className="text">{modelOption}</span>
+            </DropDownItem>
+          ))}
         </DropDown>
         <button type="button" className="ai-plugin-button" onClick={handleOnSave}>
           Save
