@@ -69,7 +69,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
-  const [promptDraft, setPromptDraft] = useState('')
+  const [prompt, setPrompt] = useState('')
   const abortControllerRef = useRef<AbortController | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
   const hydratedRef = useRef(false)
@@ -79,7 +79,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
   const [activeEditor, setActiveEditor] = useState(editor)
 
   const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPromptDraft(event.target.value)
+    setPrompt(event.target.value)
   }
 
   const handleOnProviderChange = (value: string) => {
@@ -121,7 +121,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
   }
 
   const handleOnSubmit = async () => {
-    if (!promptDraft.trim()) return
+    if (!prompt.trim()) return
     if (isPending) return
 
     // Cancel any previous in-flight request before starting a new one.
@@ -144,7 +144,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         },
         signal: abortController.signal,
         body: JSON.stringify({
-          prompt: promptDraft,
+          prompt: prompt,
           editor: editorJson,
           provider: state.provider,
           model: state.model,
@@ -162,6 +162,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         })
       }
       const data = (await response.json()) as InstructionState
+      console.log('AI Plugin response data', data)
       setInstructionState(data)
     } catch (error) {
       const err = error as any
@@ -187,7 +188,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
   }
 
   const handleOnSubmitStreaming = async () => {
-    if (!promptDraft.trim()) return
+    if (!prompt.trim()) return
     if (isPending) return
 
     // Cancel any previous in-flight request before starting a new one.
@@ -210,7 +211,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         },
         signal: abortController.signal,
         body: JSON.stringify({
-          prompt: promptDraft,
+          prompt: prompt,
           editor: editorJson,
           provider: state.provider,
           model: state.model,
@@ -388,8 +389,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       const targetEditor = submitEditorRef.current ?? editor
       if (instructionState.format === 'html' && instructionState.html) {
         try {
-          const htmlState = importHtmlToSerializedEditorState(instructionState.html)
-          const nextState = targetEditor.parseEditorState(htmlState)
+          const parsedHtml = importHtmlToSerializedEditorState(instructionState.html)
+          const nextState = targetEditor.parseEditorState(parsedHtml)
           targetEditor.update(
             () => {
               targetEditor.setEditorState(nextState)
@@ -397,7 +398,12 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
             { discrete: true }
           )
         } catch {
-          targetEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+          setInstructionState({
+            ...initialInstructionState,
+            status: 'failed',
+            message: 'There was a problem parsing fallback HTML.',
+            errors: {},
+          })
         }
         return
       }
@@ -423,7 +429,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         id="prompt"
         name="prompt"
         rows={5}
-        value={promptDraft}
+        value={prompt}
         onChange={handleOnPromptChange}
         onKeyDown={handleOnKeyDown}
         disabled={isPending === true}
@@ -483,7 +489,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           fullWidth={false}
           type="button"
           onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
-          disabled={!promptDraft.trim() || isPending === true}
+          disabled={!prompt.trim() || isPending === true}
         >
           {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
         </Button>

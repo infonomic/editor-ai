@@ -33,7 +33,9 @@ export async function executeInstruction(
   options?: { signal?: AbortSignal }
 ): Promise<InstructionState> {
   const startedAt = Date.now()
+
   const withLastRun = (state: InstructionState): InstructionState => {
+    console.log('executeInstruction result', state)
     return { ...state, lastRun: Date.now() - startedAt }
   }
 

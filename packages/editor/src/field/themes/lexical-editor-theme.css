@@ -396,6 +396,7 @@ html[data-theme="dark"] .LexicalEditorTheme__code:before {
   padding: 0;
   margin: 0 0 0.5rem 0;
   list-style-position: outside;
+  list-style-type: disc;
 }
 
 .LexicalEditorTheme__listItem {
