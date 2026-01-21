@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { AiApi, InstructionState, Provider } from '@infonomic/ai'
 import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '@infonomic/ai'
@@ -36,46 +36,9 @@ type EditorChatState = {
   api: AiApi
   provider: Provider
   model: string
-  promptValue: string
 }
-
-type EditorChatAction =
-  | { type: 'hydrate'; value: { api: AiApi; provider: Provider; model: string } }
-  | { type: 'setPromptValue'; value: string }
-  | { type: 'setApi'; value: AiApi }
-  | { type: 'setProvider'; value: Provider }
-  | { type: 'setModel'; value: string }
 
 export const TOGGLE_AI_DRAWER_COMMAND = createCommand('TOGGLE_AI_DRAWER_COMMAND')
-
-const editorChatReducer = (state: EditorChatState, action: EditorChatAction): EditorChatState => {
-  switch (action.type) {
-    case 'hydrate': {
-      const modelsForProvider = PROVIDER_MODELS[action.value.provider] ?? []
-      const model = modelsForProvider.includes(action.value.model)
-        ? action.value.model
-        : getDefaultModel(action.value.provider)
-      return {
-        ...state,
-        api: action.value.api,
-        provider: action.value.provider,
-        model,
-      }
-    }
-    case 'setPromptValue':
-      return { ...state, promptValue: action.value }
-    case 'setApi':
-      return { ...state, api: action.value }
-    case 'setProvider':
-      return {
-        ...state,
-        provider: action.value,
-        model: getDefaultModel(action.value),
-      }
-    case 'setModel':
-      return { ...state, model: action.value }
-  }
-}
 
 const initialInstructionState: InstructionState = {
   prompt: '',
@@ -89,7 +52,6 @@ const initialEditorChatState: EditorChatState = {
   api: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
-  promptValue: '',
 }
 
 const formatLastRun = (ms: number): string => {
@@ -102,15 +64,14 @@ const formatLastRun = (ms: number): string => {
 }
 
 export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
-  const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
+  const [state, setState] = useState<EditorChatState>(initialEditorChatState)
   const [instructionState, setInstructionState] =
     useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
-  const [promptDraft, setPromptDraft] = useState(initialEditorChatState.promptValue)
+  const [promptDraft, setPromptDraft] = useState('')
   const abortControllerRef = useRef<AbortController | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
-  const promptDebounceRef = useRef<number | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
   const [open, setOpen] = React.useState(false)
@@ -123,18 +84,22 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
   const handleOnProviderChange = (value: string) => {
     if (!isProvider(value)) return
-    dispatch({ type: 'setProvider', value })
+    setState((prev) => ({
+      ...prev,
+      provider: value,
+      model: getDefaultModel(value),
+    }))
   }
 
   const handleOnModelChange = (value: string) => {
     if (!value) return
     const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
     if (!modelsForProvider.includes(value)) return
-    dispatch({ type: 'setModel', value })
+    setState((prev) => ({ ...prev, model: value }))
   }
 
   const handleOnApiChange = (value: string) => {
-    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
+    setState((prev) => ({ ...prev, api: normalizeChatApi(value) }))
   }
 
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -164,7 +129,6 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    dispatch({ type: 'setPromptValue', value: promptDraft })
     submitEditorRef.current = activeEditor
     setIsPending(true)
     setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
@@ -187,6 +151,15 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         }),
       })
 
+      if (response.ok === false) {
+        console.error('AI Plugin request failed with status', response.status)
+        setInstructionState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
       const data = (await response.json()) as InstructionState
       setInstructionState(data)
     } catch (error) {
@@ -221,7 +194,6 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    dispatch({ type: 'setPromptValue', value: promptDraft })
     submitEditorRef.current = activeEditor
     setIsPending(true)
     setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
@@ -243,6 +215,16 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           api: state.api,
         }),
       })
+
+      if (response.ok === false) {
+        console.error('AI Plugin streaming request failed with status', response.status)
+        setInstructionState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
 
       if (response.body == null) {
         console.log('Streaming request has no body - falling back to non-streaming handling.')
@@ -357,24 +339,33 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       editor.registerCommand<null>(
         TOGGLE_AI_DRAWER_COMMAND,
         () => {
-          setOpen(!open)
+          setOpen((prevOpen) => !prevOpen)
           return true
         },
         COMMAND_PRIORITY_NORMAL
       )
     )
-  }, [editor, open])
+  }, [editor])
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     const config = loadChatConfiguration()
     if (config && PROVIDER_MODELS[config.provider]) {
-      dispatch({
-        type: 'hydrate',
-        value: {
-          api: normalizeChatApi(config.api),
-          provider: config.provider,
-          model: config.model,
-        },
+      const modelsForProvider = PROVIDER_MODELS[config.provider] ?? []
+      const model = modelsForProvider.includes(config.model)
+        ? config.model
+        : getDefaultModel(config.provider)
+
+      setState({
+        api: normalizeChatApi(config.api),
+        provider: config.provider,
+        model,
       })
       skipPersistOnceRef.current = true
     }
@@ -423,21 +414,6 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     }
   }, [instructionState, editor])
 
-  useEffect(() => {
-    if (promptDebounceRef.current != null) {
-      window.clearTimeout(promptDebounceRef.current)
-    }
-    promptDebounceRef.current = window.setTimeout(() => {
-      dispatch({ type: 'setPromptValue', value: promptDraft })
-    }, 200)
-
-    return () => {
-      if (promptDebounceRef.current != null) {
-        window.clearTimeout(promptDebounceRef.current)
-      }
-    }
-  }, [promptDraft])
-
   return (
     <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
       <TextArea
@@ -450,8 +426,6 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         onKeyDown={handleOnKeyDown}
         disabled={isPending === true}
         spellCheck={true}
-        // error={hasErrors('prompt', null, instructionState?.errors)}
-        // errorText={getErrorText('prompt', null, instructionState?.errors)}
         helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
           }`}
       />
@@ -492,7 +466,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           <Checkbox
             name="streaming"
             id="streaming"
-            defaultChecked={useStreaming}
+            checked={useStreaming}
             onCheckedChange={(checked) => {
               setUseStreaming(checked === true)
             }}
