@@ -102,7 +102,7 @@ const formatLastRun = (ms: number): string => {
 
 export function AiPlugin(): React.JSX.Element | undefined {
   const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
-  const [formState, setFormState] = useState<InstructionState>(initialInstructionState)
+  const [instructionState, setInstructionState] = useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -173,19 +173,19 @@ export function AiPlugin(): React.JSX.Element | undefined {
   }, [state.provider, state.model, state.api])
 
   useEffect(() => {
-    if (formState?.status === 'success') {
+    if (instructionState?.status === 'success') {
       const targetEditor = submitEditorRef.current ?? editor
-      if (formState.format === 'html' && formState.html) {
+      if (instructionState.format === 'html' && instructionState.html) {
         try {
-          importHtmlToSerializedEditorState(formState.html, targetEditor)
+          importHtmlToSerializedEditorState(instructionState.html, targetEditor)
         } catch {
           targetEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
         }
         return
       }
 
-      if (formState.editor) {
-        const nextState = targetEditor.parseEditorState(formState.editor as SerializedEditorState)
+      if (instructionState.editor) {
+        const nextState = targetEditor.parseEditorState(instructionState.editor as SerializedEditorState)
         targetEditor.update(
           () => {
             targetEditor.setEditorState(nextState)
@@ -194,7 +194,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
         )
       }
     }
-  }, [formState, editor])
+  }, [instructionState, editor])
 
   const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     dispatch({ type: 'setPromptValue', value: event.target.value })
@@ -236,7 +236,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
     abortControllerRef.current?.abort()
     abortControllerRef.current = null
     setIsPending(false)
-    setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+    setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
   }
 
   const handleOnSubmit = async () => {
@@ -250,7 +250,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
     submitEditorRef.current = activeEditor
     setIsPending(true)
-    setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
     const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
 
@@ -271,13 +271,13 @@ export function AiPlugin(): React.JSX.Element | undefined {
       })
 
       const data = (await response.json()) as InstructionState
-      setFormState(data)
+      setInstructionState(data)
     } catch (error) {
       const err = error as any
       if (err?.name === 'AbortError') {
-        setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+        setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
       } else {
-        setFormState({
+        setInstructionState({
           ...initialInstructionState,
           status: 'failed',
           message: 'There was a problem submitting your instructions.',
@@ -301,7 +301,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
     submitEditorRef.current = activeEditor
     setIsPending(true)
-    setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
     const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
 
@@ -324,7 +324,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
       if (response.body == null) {
         console.log('Streaming request has no body - falling back to non-streaming handling.')
         const data = (await response.json()) as InstructionState
-        setFormState(data)
+        setInstructionState(data)
         return
       }
 
@@ -365,9 +365,9 @@ export function AiPlugin(): React.JSX.Element | undefined {
       }
 
       if (finalState) {
-        setFormState(finalState)
+        setInstructionState(finalState)
       } else {
-        setFormState({
+        setInstructionState({
           ...initialInstructionState,
           status: 'failed',
           message: 'There was a problem submitting your instructions.',
@@ -377,9 +377,9 @@ export function AiPlugin(): React.JSX.Element | undefined {
     } catch (error) {
       const err = error as any
       if (err?.name === 'AbortError') {
-        setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+        setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
       } else {
-        setFormState({
+        setInstructionState({
           ...initialInstructionState,
           status: 'failed',
           message: 'There was a problem submitting your instructions.',
@@ -404,9 +404,9 @@ export function AiPlugin(): React.JSX.Element | undefined {
         onKeyDown={handleOnKeyDown}
         disabled={isPending === true}
         spellCheck={true}
-        // error={hasErrors('prompt', null, formState?.errors)}
-        // errorText={getErrorText('prompt', null, formState?.errors)}
-        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
+        // error={hasErrors('prompt', null, instructionState?.errors)}
+        // errorText={getErrorText('prompt', null, instructionState?.errors)}
+        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
           }`}
       />
       <div className="lexical-ai-plugin__actions">
@@ -486,12 +486,12 @@ export function AiPlugin(): React.JSX.Element | undefined {
           Debug
         </Button>
       </div>
-      {formState?.status === 'success' && isPending === false && (
-        <p className="ai-plugin-success-message">{formState.message}</p>
+      {instructionState?.status === 'success' && isPending === false && (
+        <p className="ai-plugin-success-message">{instructionState.message}</p>
       )}
 
-      {formState?.status === 'failed' && isPending === false && (
-        <p className="ai-plugin-error-message">{formState.message}</p>
+      {instructionState?.status === 'failed' && isPending === false && (
+        <p className="ai-plugin-error-message">{instructionState.message}</p>
       )}
       <p className="lexical-ai-plugin__disclaimer">
         AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
