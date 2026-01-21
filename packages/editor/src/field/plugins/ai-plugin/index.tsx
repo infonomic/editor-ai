@@ -26,6 +26,7 @@ import {
   type SerializedEditorState,
 } from 'lexical'
 
+import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
 
@@ -100,18 +101,224 @@ const formatLastRun = (ms: number): string => {
   return `${minutes}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`
 }
 
-export function AiPlugin(): React.JSX.Element | undefined {
+export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
   const [state, dispatch] = useReducer(editorChatReducer, initialEditorChatState)
-  const [instructionState, setInstructionState] = useState<InstructionState>(initialInstructionState)
+  const [instructionState, setInstructionState] =
+    useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
+  const [promptDraft, setPromptDraft] = useState(initialEditorChatState.promptValue)
   const abortControllerRef = useRef<AbortController | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
+  const promptDebounceRef = useRef<number | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
   const [open, setOpen] = React.useState(false)
   const [editor] = useLexicalComposerContext()
   const [activeEditor, setActiveEditor] = useState(editor)
+
+  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPromptDraft(event.target.value)
+  }
+
+  const handleOnProviderChange = (value: string) => {
+    if (!isProvider(value)) return
+    dispatch({ type: 'setProvider', value })
+  }
+
+  const handleOnModelChange = (value: string) => {
+    if (!value) return
+    const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
+    if (!modelsForProvider.includes(value)) return
+    dispatch({ type: 'setModel', value })
+  }
+
+  const handleOnApiChange = (value: string) => {
+    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
+  }
+
+  const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault()
+      if (useStreaming) {
+        void handleOnSubmitStreaming()
+        return
+      }
+      void handleOnSubmit()
+    }
+  }
+
+  const handleOnCancel = () => {
+    abortControllerRef.current?.abort()
+    abortControllerRef.current = null
+    setIsPending(false)
+    setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
+  }
+
+  const handleOnSubmit = async () => {
+    if (!promptDraft.trim()) return
+    if (isPending) return
+
+    // Cancel any previous in-flight request before starting a new one.
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    dispatch({ type: 'setPromptValue', value: promptDraft })
+    submitEditorRef.current = activeEditor
+    setIsPending(true)
+    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+
+    try {
+      const response = await fetch('/routes/ai', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          prompt: promptDraft,
+          editor: editorJson,
+          provider: state.provider,
+          model: state.model,
+          api: state.api,
+        }),
+      })
+
+      const data = (await response.json()) as InstructionState
+      setInstructionState(data)
+    } catch (error) {
+      const err = error as any
+      if (err?.name === 'AbortError') {
+        setInstructionState((prev) => ({
+          ...prev,
+          status: 'idle',
+          message: 'Cancelled.',
+          errors: {},
+        }))
+      } else {
+        setInstructionState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } finally {
+      setIsPending(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  const handleOnSubmitStreaming = async () => {
+    if (!promptDraft.trim()) return
+    if (isPending) return
+
+    // Cancel any previous in-flight request before starting a new one.
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    dispatch({ type: 'setPromptValue', value: promptDraft })
+    submitEditorRef.current = activeEditor
+    setIsPending(true)
+    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+
+    try {
+      const response = await fetch('/routes/ai-streaming', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          prompt: promptDraft,
+          editor: editorJson,
+          provider: state.provider,
+          model: state.model,
+          api: state.api,
+        }),
+      })
+
+      if (response.body == null) {
+        console.log('Streaming request has no body - falling back to non-streaming handling.')
+        const data = (await response.json()) as InstructionState
+        setInstructionState(data)
+        return
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalState: InstructionState | null = null
+
+      while (true) {
+        const { value, done } = await reader.read()
+        console.log('Streaming response read', { value, done })
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        console.log('Streaming response decoded lines', { lines })
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          try {
+            const payload = JSON.parse(trimmed) as {
+              type?: string
+              text?: string
+              state?: InstructionState
+            }
+
+            console.log('Streaming response payload per line', payload)
+
+            if (payload.type === 'final' && payload.state) {
+              finalState = payload.state
+            }
+          } catch {
+            // ignore malformed chunks
+          }
+        }
+      }
+
+      if (finalState) {
+        setInstructionState(finalState)
+      } else {
+        setInstructionState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } catch (error) {
+      const err = error as any
+      if (err?.name === 'AbortError') {
+        setInstructionState((prev) => ({
+          ...prev,
+          status: 'idle',
+          message: 'Cancelled.',
+          errors: {},
+        }))
+      } else {
+        setInstructionState({
+          ...initialInstructionState,
+          status: 'failed',
+          message: 'There was a problem submitting your instructions.',
+          errors: {},
+        })
+      }
+    } finally {
+      setIsPending(false)
+      abortControllerRef.current = null
+    }
+  }
 
   function handleOnDebug(): void {
     // eslint-disable-next-line no-console
@@ -120,6 +327,17 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
   function handleOnFullReset(): void {
     activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+    activeEditor.focus()
+  }
+
+  const handleOnClear = () => {
+    const emptyState = activeEditor.parseEditorState(createEmptyEditorState())
+    activeEditor.update(
+      () => {
+        activeEditor.setEditorState(emptyState)
+      },
+      { discrete: true }
+    )
     activeEditor.focus()
   }
 
@@ -185,7 +403,9 @@ export function AiPlugin(): React.JSX.Element | undefined {
       }
 
       if (instructionState.editor) {
-        const nextState = targetEditor.parseEditorState(instructionState.editor as SerializedEditorState)
+        const nextState = targetEditor.parseEditorState(
+          instructionState.editor as SerializedEditorState
+        )
         targetEditor.update(
           () => {
             targetEditor.setEditorState(nextState)
@@ -196,201 +416,20 @@ export function AiPlugin(): React.JSX.Element | undefined {
     }
   }, [instructionState, editor])
 
-  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    dispatch({ type: 'setPromptValue', value: event.target.value })
-  }
-
-  const handleOnProviderChange = (value: string) => {
-    if (!isProvider(value)) return
-    dispatch({ type: 'setProvider', value })
-  }
-
-  const handleOnModelChange = (value: string) => {
-    if (!value) return
-    const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
-    if (!modelsForProvider.includes(value)) return
-    dispatch({ type: 'setModel', value })
-  }
-
-  const handleOnApiChange = (value: string) => {
-    dispatch({ type: 'setApi', value: normalizeChatApi(value) })
-  }
-
-  const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault()
-      if (useStreaming) {
-        void handleOnSubmitStreaming()
-        return
-      }
-      void handleOnSubmit()
+  useEffect(() => {
+    if (promptDebounceRef.current != null) {
+      window.clearTimeout(promptDebounceRef.current)
     }
-  }
+    promptDebounceRef.current = window.setTimeout(() => {
+      dispatch({ type: 'setPromptValue', value: promptDraft })
+    }, 200)
 
-  const handleOnClear = () => {
-    activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
-    activeEditor.focus()
-  }
-
-  const handleOnCancel = () => {
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setIsPending(false)
-    setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
-  }
-
-  const handleOnSubmit = async () => {
-    if (!state.promptValue.trim()) return
-    if (isPending) return
-
-    // Cancel any previous in-flight request before starting a new one.
-    abortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-
-    submitEditorRef.current = activeEditor
-    setIsPending(true)
-    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
-
-    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
-
-    try {
-      const response = await fetch('/routes/ai', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-          prompt: state.promptValue,
-          editor: editorJson,
-          provider: state.provider,
-          model: state.model,
-          api: state.api,
-        }),
-      })
-
-      const data = (await response.json()) as InstructionState
-      setInstructionState(data)
-    } catch (error) {
-      const err = error as any
-      if (err?.name === 'AbortError') {
-        setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
+    return () => {
+      if (promptDebounceRef.current != null) {
+        window.clearTimeout(promptDebounceRef.current)
       }
-    } finally {
-      setIsPending(false)
-      abortControllerRef.current = null
     }
-  }
-
-  const handleOnSubmitStreaming = async () => {
-    if (!state.promptValue.trim()) return
-    if (isPending) return
-
-    // Cancel any previous in-flight request before starting a new one.
-    abortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-
-    submitEditorRef.current = activeEditor
-    setIsPending(true)
-    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
-
-    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
-
-    try {
-      const response = await fetch('/routes/ai-streaming', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-          prompt: state.promptValue,
-          editor: editorJson,
-          provider: state.provider,
-          model: state.model,
-          api: state.api,
-        }),
-      })
-
-      if (response.body == null) {
-        console.log('Streaming request has no body - falling back to non-streaming handling.')
-        const data = (await response.json()) as InstructionState
-        setInstructionState(data)
-        return
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let finalState: InstructionState | null = null
-
-      while (true) {
-        const { value, done } = await reader.read()
-        console.log('Streaming response read', { value, done })
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        console.log('Streaming response decoded lines', { lines })
-
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-          try {
-            const payload = JSON.parse(trimmed) as {
-              type?: string
-              text?: string
-              state?: InstructionState
-            }
-
-            console.log('Streaming response payload per line', payload)
-
-            if (payload.type === 'final' && payload.state) {
-              finalState = payload.state
-            }
-          } catch {
-            // ignore malformed chunks
-          }
-        }
-      }
-
-      if (finalState) {
-        setInstructionState(finalState)
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
-      }
-    } catch (error) {
-      const err = error as any
-      if (err?.name === 'AbortError') {
-        setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
-      }
-    } finally {
-      setIsPending(false)
-      abortControllerRef.current = null
-    }
-  }
+  }, [promptDraft])
 
   return (
     <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
@@ -399,7 +438,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
         id="prompt"
         name="prompt"
         rows={5}
-        value={state.promptValue}
+        value={promptDraft}
         onChange={handleOnPromptChange}
         onKeyDown={handleOnKeyDown}
         disabled={isPending === true}
@@ -457,7 +496,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
           fullWidth={false}
           type="button"
           onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
-          disabled={!state.promptValue.trim() || isPending === true}
+          disabled={!promptDraft.trim() || isPending === true}
         >
           {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
         </Button>
@@ -477,12 +516,12 @@ export function AiPlugin(): React.JSX.Element | undefined {
           onClick={handleOnClear}
           disabled={isPending === true}
         >
-          Reset Editor
+          Clear Editor
         </Button>
-        <Button className="ai-plugin-button" onClick={handleOnFullReset}>
+        <Button variant="text" disabled={isPending === true} onClick={handleOnFullReset}>
           Full Reset
         </Button>
-        <Button className="ai-plugin-button" onClick={handleOnDebug}>
+        <Button variant="text" disabled={isPending === true} onClick={handleOnDebug}>
           Debug
         </Button>
       </div>
@@ -499,4 +538,4 @@ export function AiPlugin(): React.JSX.Element | undefined {
       </p>
     </div>
   )
-}
+})

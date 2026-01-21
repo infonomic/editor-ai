@@ -1,6 +1,6 @@
 import { Container, Section } from '@infonomic/uikit/react'
 
-import { EditorChat } from '@/modules/editor-chat/components/editor-chat'
+import { RichTextField } from '@/ui/fields/richtext-field'
 
 const Page = () => {
   return (
@@ -10,7 +10,22 @@ const Page = () => {
           <div className="prose">
             <h1>Make Stuff Happen</h1>
           </div>
-          <EditorChat />
+          <RichTextField
+            // onChange={handleOnEditorChange}
+            // value={state.editorValue}
+            editorSettings={{
+              options: {
+                aiPlugin: true,
+              },
+              inlineImageUploadCollection: '',
+              placeholderText: 'Start writing your content here...',
+            }}
+            minHeight={'250px'}
+            maxHeight={'475px'}
+            // readonly={isPending === true}
+            field={{ name: 'editor', label: 'Editor' }}
+          />
+          {/* <EditorChat /> */}
         </Container>
       </Section>
     </main>
