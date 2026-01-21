@@ -21,6 +21,7 @@ import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
+  type LexicalEditor,
   SELECTION_CHANGE_COMMAND,
   type SerializedEditorState,
 } from 'lexical'
@@ -105,6 +106,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const submitEditorRef = useRef<LexicalEditor | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
   const [open, setOpen] = React.useState(false)
@@ -172,28 +174,27 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
   useEffect(() => {
     if (formState?.status === 'success') {
+      const targetEditor = submitEditorRef.current ?? editor
       if (formState.format === 'html' && formState.html) {
         try {
-          importHtmlToSerializedEditorState(formState.html, activeEditor)
+          importHtmlToSerializedEditorState(formState.html, targetEditor)
         } catch {
-          activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+          targetEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
         }
         return
       }
 
       if (formState.editor) {
-        const nextState = activeEditor.parseEditorState(
-          formState.editor as SerializedEditorState
-        )
-        activeEditor.update(
+        const nextState = targetEditor.parseEditorState(formState.editor as SerializedEditorState)
+        targetEditor.update(
           () => {
-            activeEditor.setEditorState(nextState)
+            targetEditor.setEditorState(nextState)
           },
           { discrete: true }
         )
       }
     }
-  }, [formState, activeEditor])
+  }, [formState, editor])
 
   const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     dispatch({ type: 'setPromptValue', value: event.target.value })
@@ -247,6 +248,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
+    submitEditorRef.current = activeEditor
     setIsPending(true)
     setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
@@ -297,6 +299,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
+    submitEditorRef.current = activeEditor
     setIsPending(true)
     setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
@@ -484,15 +487,11 @@ export function AiPlugin(): React.JSX.Element | undefined {
         </Button>
       </div>
       {formState?.status === 'success' && isPending === false && (
-        <p className="ai-plugin-success-message">
-          {formState.message}
-        </p>
+        <p className="ai-plugin-success-message">{formState.message}</p>
       )}
 
       {formState?.status === 'failed' && isPending === false && (
-        <p className="ai-plugin-error-message">
-          {formState.message}
-        </p>
+        <p className="ai-plugin-error-message">{formState.message}</p>
       )}
       <p className="lexical-ai-plugin__disclaimer">
         AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
