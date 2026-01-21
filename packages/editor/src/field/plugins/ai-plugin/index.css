@@ -13,21 +13,35 @@
 }
 
 .lexical-ai-plugin--visible {
-  max-height: 300px;
+  max-height: 400px;
   opacity: 1;
   transform: translateY(0);
+}
+
+.lexical-ai-plugin__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lexical-ai-plugin .ai-plugin-success-message {
+  color: green;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.lexical-ai-plugin .ai-plugin-error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 4px;
 }
 
 .lexical-ai-plugin__disclaimer {
   font-size: 11px;
   color: #666666;
   margin-top: 4px;
-}
-
-.lexical-ai-plugin__actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
 }
 
 .lexical-ai-plugin .ai-plugin-button {

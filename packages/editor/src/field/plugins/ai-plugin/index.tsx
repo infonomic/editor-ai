@@ -1,19 +1,19 @@
 'use client'
 
 import * as React from 'react'
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 
+import type { AiApi, InstructionState, Provider } from '@infonomic/ai'
+import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '@infonomic/ai'
 import {
-  AI_APIS,
-  type AiApi,
-  getDefaultModel,
-  type InstructionState,
-  isProvider,
-  normalizeChatApi,
-  PROVIDER_MODELS,
-  PROVIDERS,
-  type Provider,
-} from '@infonomic/ai'
+  Button,
+  Checkbox,
+  LoaderEllipsis,
+  Select,
+  SelectItem,
+  StopIcon,
+  TextArea,
+} from '@infonomic/uikit/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
 import {
@@ -25,17 +25,12 @@ import {
   type SerializedEditorState,
 } from 'lexical'
 
-import { Button } from '../../ui/button'
-import { DropDown, DropDownItem } from '../../ui/dropdown'
-import { TextArea } from '../../ui/text-area'
-import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
 
 import './index.css'
 
 type EditorChatState = {
-  editorValue: SerializedEditorState | undefined
   api: AiApi
   provider: Provider
   model: string
@@ -44,8 +39,6 @@ type EditorChatState = {
 
 type EditorChatAction =
   | { type: 'hydrate'; value: { api: AiApi; provider: Provider; model: string } }
-  | { type: 'setEditorValue'; value: SerializedEditorState | undefined }
-  | { type: 'clearCurrentEditor'; emptyEditorState: SerializedEditorState }
   | { type: 'setPromptValue'; value: string }
   | { type: 'setApi'; value: AiApi }
   | { type: 'setProvider'; value: Provider }
@@ -67,10 +60,6 @@ const editorChatReducer = (state: EditorChatState, action: EditorChatAction): Ed
         model,
       }
     }
-    case 'setEditorValue':
-      return { ...state, editorValue: action.value }
-    case 'clearCurrentEditor':
-      return { ...state, editorValue: action.emptyEditorState }
     case 'setPromptValue':
       return { ...state, promptValue: action.value }
     case 'setApi':
@@ -95,7 +84,6 @@ const initialInstructionState: InstructionState = {
 }
 
 const initialEditorChatState: EditorChatState = {
-  editorValue: undefined,
   api: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
@@ -116,17 +104,14 @@ export function AiPlugin(): React.JSX.Element | undefined {
   const [formState, setFormState] = useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
   const [useStreaming, setUseStreaming] = useState(false)
-  const formRef = useRef<HTMLFormElement | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
-  const emptyEditorState: SerializedEditorState = useMemo(() => createEmptyEditorState(), [])
   const [open, setOpen] = React.useState(false)
   const [editor] = useLexicalComposerContext()
-  const [isEditable, setIsEditable] = useState(() => editor.isEditable())
   const [activeEditor, setActiveEditor] = useState(editor)
 
-  function handleOnSave(): void {
+  function handleOnDebug(): void {
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(activeEditor.getEditorState()))
   }
@@ -161,14 +146,6 @@ export function AiPlugin(): React.JSX.Element | undefined {
   }, [editor, open])
 
   useEffect(() => {
-    return mergeRegister(
-      editor.registerEditableListener((editable) => {
-        setIsEditable(editable)
-      })
-    )
-  }, [editor])
-
-  useEffect(() => {
     const config = loadChatConfiguration()
     if (config && PROVIDER_MODELS[config.provider]) {
       dispatch({
@@ -193,36 +170,33 @@ export function AiPlugin(): React.JSX.Element | undefined {
     saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
   }, [state.provider, state.model, state.api])
 
-  const editorJson = useMemo(() => {
-    return JSON.stringify(state.editorValue ?? emptyEditorState)
-  }, [state.editorValue, emptyEditorState])
-
   useEffect(() => {
     if (formState?.status === 'success') {
       if (formState.format === 'html' && formState.html) {
         try {
-          dispatch({
-            type: 'setEditorValue',
-            value: importHtmlToSerializedEditorState(formState.html, activeEditor),
-          })
+          importHtmlToSerializedEditorState(formState.html, activeEditor)
         } catch {
-          dispatch({ type: 'setEditorValue', value: emptyEditorState })
+          activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
         }
         return
       }
 
       if (formState.editor) {
-        dispatch({ type: 'setEditorValue', value: formState.editor as SerializedEditorState })
+        const nextState = activeEditor.parseEditorState(
+          formState.editor as SerializedEditorState
+        )
+        activeEditor.update(
+          () => {
+            activeEditor.setEditorState(nextState)
+          },
+          { discrete: true }
+        )
       }
     }
-  }, [formState, emptyEditorState, activeEditor])
+  }, [formState, activeEditor])
 
-  const handleOnEditorChange = (value: SerializedEditorState) => {
-    dispatch({ type: 'setEditorValue', value })
-  }
-
-  const handleOnPromptChange = (value: string) => {
-    dispatch({ type: 'setPromptValue', value })
+  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    dispatch({ type: 'setPromptValue', value: event.target.value })
   }
 
   const handleOnProviderChange = (value: string) => {
@@ -244,12 +218,17 @@ export function AiPlugin(): React.JSX.Element | undefined {
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
-      formRef.current?.requestSubmit()
+      if (useStreaming) {
+        void handleOnSubmitStreaming()
+        return
+      }
+      void handleOnSubmit()
     }
   }
 
   const handleOnClear = () => {
-    dispatch({ type: 'clearCurrentEditor', emptyEditorState })
+    activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+    activeEditor.focus()
   }
 
   const handleOnCancel = () => {
@@ -259,8 +238,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
     setFormState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
   }
 
-  const handleOnSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleOnSubmit = async () => {
     if (!state.promptValue.trim()) return
     if (isPending) return
 
@@ -271,6 +249,8 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
     setIsPending(true)
     setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
 
     try {
       const response = await fetch('/routes/ai', {
@@ -308,8 +288,7 @@ export function AiPlugin(): React.JSX.Element | undefined {
     }
   }
 
-  const handleOnSubmitStreaming = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleOnSubmitStreaming = async () => {
     if (!state.promptValue.trim()) return
     if (isPending) return
 
@@ -320,6 +299,8 @@ export function AiPlugin(): React.JSX.Element | undefined {
 
     setIsPending(true)
     setFormState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
 
     try {
       const response = await fetch('/routes/ai-streaming', {
@@ -411,83 +392,108 @@ export function AiPlugin(): React.JSX.Element | undefined {
   return (
     <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
       <TextArea
-        label="AI Assistant"
-        placeholder="Ask AI to help you write..."
+        label="Prompt"
+        id="prompt"
+        name="prompt"
+        rows={5}
         value={state.promptValue}
         onChange={handleOnPromptChange}
+        onKeyDown={handleOnKeyDown}
+        disabled={isPending === true}
+        spellCheck={true}
+        // error={hasErrors('prompt', null, formState?.errors)}
+        // errorText={getErrorText('prompt', null, formState?.errors)}
+        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
+          }`}
       />
       <div className="lexical-ai-plugin__actions">
-        <DropDown
-          disabled={!isEditable}
-          buttonClassName="ai-plugin-button"
-          buttonLabel={
-            PROVIDERS.find(([value]) => value === state.provider)?.[1] ?? 'Select Provider'
-          }
-          buttonAriaLabel="Select AI Provider"
+        <Select
+          name="provider"
+          value={state.provider}
+          onValueChange={handleOnProviderChange}
+          variant="outlined"
         >
-          {PROVIDERS.map(([value, name]) => {
-            return (
-              <DropDownItem
-                className="item"
-                onClick={() => {
-                  console.log(`Selected AI provider: ${value}`)
-                  handleOnProviderChange(value)
-                }}
-                key={value}
-              >
-                <span className="text">{name}</span>
-              </DropDownItem>
-            )
-          })}
-        </DropDown>
-        <DropDown
-          disabled={!isEditable}
-          buttonClassName="ai-plugin-button"
-          buttonLabel={state.model}
-          buttonAriaLabel="Select AI Model"
+          <SelectItem value="openai">OpenAI</SelectItem>
+          <SelectItem value="google">Google</SelectItem>
+          <SelectItem value="anthropic">Anthropic</SelectItem>
+        </Select>
+        <Select
+          name="model"
+          value={state.model}
+          onValueChange={handleOnModelChange}
+          variant="outlined"
         >
           {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
-            <DropDownItem
-              className="item"
-              onClick={() => {
-                console.log(`Selected AI provider: ${modelOption}`)
-                handleOnModelChange(modelOption)
-              }}
-              key={modelOption}
-            >
-              <span className="text">{modelOption}</span>
-            </DropDownItem>
+            <SelectItem key={modelOption} value={modelOption}>
+              {modelOption}
+            </SelectItem>
           ))}
-        </DropDown>
-        <DropDown
-          disabled={!isEditable}
-          buttonClassName="ai-plugin-button"
-          buttonLabel={state.api === 'native' ? 'Native' : 'Vercel'}
-          buttonAriaLabel="Select AI Model"
+        </Select>
+        <Select
+          key={state.api}
+          name="api"
+          value={state.api}
+          onValueChange={handleOnApiChange}
+          variant="outlined"
         >
-          {AI_APIS.map((option) => (
-            <DropDownItem
-              className="item"
-              onClick={() => {
-                console.log(`Selected AI API: ${option}`)
-                handleOnApiChange(option)
-              }}
-              key={option}
-            >
-              <span className="text">{option}</span>
-            </DropDownItem>
-          ))}
-        </DropDown>
-        <Button className="ai-plugin-button" onClick={handleOnSave}>
-          Debug
+          <SelectItem value="native">Native</SelectItem>
+          <SelectItem value="vercel">Vercel</SelectItem>
+        </Select>
+        <div className="mr-2">
+          <Checkbox
+            name="streaming"
+            id="streaming"
+            defaultChecked={useStreaming}
+            onCheckedChange={(checked) => {
+              setUseStreaming(checked === true)
+            }}
+            label="Streaming"
+          />
+        </div>
+        <Button
+          fullWidth={false}
+          type="button"
+          onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
+          disabled={!state.promptValue.trim() || isPending === true}
+        >
+          {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
         </Button>
-        <Button className="ai-plugin-button" onClick={handleOnClear}>
-          Clear
+        <Button
+          className="py-0 px-4"
+          title="Stop"
+          aria-label="Stop"
+          onClick={handleOnCancel}
+          disabled={isPending === false}
+          type="button"
+        >
+          <StopIcon width="22px" height="22px" />
+        </Button>
+        <Button
+          fullWidth={false}
+          type="button"
+          onClick={handleOnClear}
+          disabled={isPending === true}
+        >
+          Reset Editor
         </Button>
         <Button className="ai-plugin-button" onClick={handleOnFullReset}>
           Full Reset
         </Button>
+        <Button className="ai-plugin-button" onClick={handleOnDebug}>
+          Debug
+        </Button>
       </div>
+      {formState?.status === 'success' && isPending === false && (
+        <p className="ai-plugin-success-message">
+          {formState.message}
+        </p>
+      )}
+
+      {formState?.status === 'failed' && isPending === false && (
+        <p className="ai-plugin-error-message">
+          {formState.message}
+        </p>
+      )}
       <p className="lexical-ai-plugin__disclaimer">
         AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
         verify information from reliable sources.
