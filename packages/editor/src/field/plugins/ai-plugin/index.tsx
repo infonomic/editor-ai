@@ -129,6 +129,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
+    activeEditor.focus()
     submitEditorRef.current = activeEditor
     setIsPending(true)
     setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
@@ -194,6 +195,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
+    activeEditor.focus()
     submitEditorRef.current = activeEditor
     setIsPending(true)
     setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
@@ -432,6 +434,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       <div className="lexical-ai-plugin__actions">
         <Select
           name="provider"
+          disabled={isPending === true}
           value={state.provider}
           onValueChange={handleOnProviderChange}
           variant="outlined"
@@ -442,6 +445,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         </Select>
         <Select
           name="model"
+          disabled={isPending === true}
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
@@ -457,6 +461,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           name="api"
           value={state.api}
           onValueChange={handleOnApiChange}
+          disabled={isPending === true}
           variant="outlined"
         >
           <SelectItem value="native">Native</SelectItem>
@@ -466,6 +471,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           <Checkbox
             name="streaming"
             id="streaming"
+            disabled={isPending === true}
             checked={useStreaming}
             onCheckedChange={(checked) => {
               setUseStreaming(checked === true)
