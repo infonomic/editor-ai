@@ -1,25 +1,13 @@
 import { $generateNodesFromDOM } from '@lexical/html'
-import type { SerializedEditorState } from 'lexical'
-import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
+import type { LexicalEditor, SerializedEditorState } from 'lexical'
+import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
 
-import { defaultEditorConfig } from '../../config/default'
-import { Nodes } from '../../nodes'
-
-export const importHtmlToSerializedEditorState = (html: string): SerializedEditorState => {
+export const importHtmlToSerializedEditorState = (
+  html: string,
+  editor: LexicalEditor
+): SerializedEditorState => {
   const parser = new DOMParser()
   const dom = parser.parseFromString(html, 'text/html')
-
-  const editor = createEditor({
-    namespace: defaultEditorConfig.lexical.namespace,
-    nodes: [...Nodes],
-    theme: defaultEditorConfig.lexical.theme,
-    onError(error) {
-      throw error
-    },
-  })
-
-  // Ensure the editor is fully initialized for DOM-based transforms.
-  editor.setRootElement(document.createElement('div'))
 
   editor.update(
     () => {

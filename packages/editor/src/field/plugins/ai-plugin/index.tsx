@@ -447,14 +447,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       const targetEditor = submitEditorRef.current ?? editor
       if (instructionState.format === 'html' && instructionState.html) {
         try {
-          const parsedHtml = importHtmlToSerializedEditorState(instructionState.html)
-          const nextState = targetEditor.parseEditorState(parsedHtml)
-          targetEditor.update(
-            () => {
-              targetEditor.setEditorState(nextState)
-            },
-            { discrete: true }
-          )
+          importHtmlToSerializedEditorState(instructionState.html, targetEditor)
         } catch {
           setInstructionState({
             ...initialInstructionState,
