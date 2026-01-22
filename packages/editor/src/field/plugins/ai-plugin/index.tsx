@@ -33,6 +33,7 @@ import {
 
 import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
+import { appendRollingPreviewText } from './streaming-preview'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
 
 import './index.css'
@@ -68,14 +69,20 @@ const formatLastRun = (ms: number): string => {
   return `${minutes}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`
 }
 
+const STREAM_PREVIEW_MAX_CHARS = 200
+const STREAM_PREVIEW_UPDATE_INTERVAL_MS = 150
+
 export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
   const { onDismiss, onOpen, isOpen, setIsOpen } = useModal()
   const [state, setState] = useState<EditorChatState>(initialEditorChatState)
   const [instructionState, setInstructionState] =
     useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
-  const [useStreaming, setUseStreaming] = useState(false)
+  const [useStreaming, setUseStreaming] = useState(true)
   const [prompt, setPrompt] = useState('')
+  const [streamPreviewText, setStreamPreviewText] = useState('')
+  const streamPreviewAccumulatorRef = useRef('')
+  const streamPreviewLastFlushMsRef = useRef(0)
   const abortControllerRef = useRef<AbortController | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
   const hydratedRef = useRef(false)
@@ -83,6 +90,25 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
   const [open, setOpen] = React.useState(false)
   const [editor] = useLexicalComposerContext()
   const [activeEditor, setActiveEditor] = useState(editor)
+
+  const resetStreamPreview = () => {
+    streamPreviewAccumulatorRef.current = ''
+    streamPreviewLastFlushMsRef.current = 0
+    setStreamPreviewText('')
+  }
+
+  const appendStreamPreview = (chunk: string) => {
+    streamPreviewAccumulatorRef.current = appendRollingPreviewText(
+      streamPreviewAccumulatorRef.current,
+      chunk,
+      { maxChars: STREAM_PREVIEW_MAX_CHARS }
+    )
+
+    const now = Date.now()
+    if (now - streamPreviewLastFlushMsRef.current < STREAM_PREVIEW_UPDATE_INTERVAL_MS) return
+    streamPreviewLastFlushMsRef.current = now
+    setStreamPreviewText(streamPreviewAccumulatorRef.current)
+  }
 
   const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(event.target.value)
@@ -123,6 +149,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     abortControllerRef.current?.abort()
     abortControllerRef.current = null
     setIsPending(false)
+    resetStreamPreview()
     setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
   }
 
@@ -205,6 +232,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     activeEditor.focus()
     submitEditorRef.current = activeEditor
     setIsPending(true)
+    resetStreamPreview()
     setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
     const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
@@ -269,6 +297,10 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
             console.log('Streaming response payload per line', payload)
 
+            if (payload.type === 'delta' && typeof payload.text === 'string') {
+              appendStreamPreview(payload.text)
+            }
+
             if (payload.type === 'final' && payload.state) {
               finalState = payload.state
             }
@@ -307,6 +339,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       }
     } finally {
       setIsPending(false)
+      resetStreamPreview()
       abortControllerRef.current = null
     }
   }
@@ -430,7 +463,15 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
   return (
     <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
+      <div className={`lexical-ai-plugin__stream-preview ${isPending && useStreaming ? 'lexical-ai-plugin__stream-preview--visible' : ''}`} aria-live="polite" aria-busy="true">
+        <div className="lexical-ai-plugin__stream-preview__label">Streaming preview</div>
+        <div className="lexical-ai-plugin__stream-preview__content">
+          {streamPreviewText || 'Receiving…'}
+        </div>
+      </div>
+
       <TextArea
+        className="lexical-ai-plugin__prompt"
         label="Prompt"
         id="prompt"
         name="prompt"
@@ -468,7 +509,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
             </SelectItem>
           ))}
         </Select>
-        <Select
+        {/* <Select
           key={state.api}
           name="api"
           value={state.api}
@@ -478,8 +519,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         >
           <SelectItem value="native">Native</SelectItem>
           <SelectItem value="vercel">Vercel</SelectItem>
-        </Select>
-        <div className="mr-2">
+        </Select> */}
+        {/* <div className="mr-2">
           <Checkbox
             name="streaming"
             id="streaming"
@@ -490,7 +531,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
             }}
             label="Streaming"
           />
-        </div>
+        </div> */}
         <Button
           fullWidth={false}
           type="button"
