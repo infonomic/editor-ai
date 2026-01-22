@@ -98,11 +98,18 @@
   margin-top: 0;
 }
 
-.lexical-ai-plugin__disclaimer {
-  line-height: 1;
+.lexical-ai-plugin__disclaimer,
+.lexical-ai-plugin__disclaimer--modal {
+  line-height: 1.2;
   font-size: 11px;
   color: #666666;
   margin-top: 0;
+}
+
+.lexical-ai-plugin__disclaimer--modal {
+  margin-top: 2rem;
+  line-height: 1.2;
+  font-size: 14px;
 }
 
 .ai_help_icon {
@@ -133,8 +140,9 @@
     color: #dddddd;
   }
 
-  .lexical-ai-plugin__disclaimer {
-    color: #666666;
+  .lexical-ai-plugin__disclaimer,
+  .lexical-ai-plugin__disclaimer--modal {
+    color: #aaaaaa;
   }
 
   .ai_help_icon {

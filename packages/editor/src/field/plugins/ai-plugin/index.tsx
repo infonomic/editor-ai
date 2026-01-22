@@ -8,16 +8,16 @@ import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '
 import {
   Button,
   Checkbox,
+  CloseIcon,
+  IconButton,
+  InfoIcon,
   LoaderEllipsis,
+  Modal,
   Select,
   SelectItem,
   StopIcon,
   TextArea,
-  InfoIcon,
-  Modal,
   useModal,
-  CloseIcon,
-  IconButton,
 } from '@infonomic/uikit/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
@@ -33,8 +33,8 @@ import {
 
 import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
-import { appendRollingPreviewText } from './streaming-preview'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
+import { appendRollingPreviewText } from './streaming-preview'
 
 import './index.css'
 
@@ -463,7 +463,11 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
   return (
     <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
-      <div className={`lexical-ai-plugin__stream-preview ${isPending && useStreaming ? 'lexical-ai-plugin__stream-preview--visible' : ''}`} aria-live="polite" aria-busy="true">
+      <div
+        className={`lexical-ai-plugin__stream-preview ${isPending && useStreaming ? 'lexical-ai-plugin__stream-preview--visible' : ''}`}
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="lexical-ai-plugin__stream-preview__label">Streaming preview</div>
         <div className="lexical-ai-plugin__stream-preview__content">
           {streamPreviewText || 'Receiving…'}
@@ -578,10 +582,15 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           verify information from reliable sources.
         </p>
         <span className="lexical-ai-plugin__help">
-          <IconButton aria-label='Help' size="sm" variant="text" onClick={() => {
-            setIsOpen(true)
-          }}>
-            <InfoIcon width="22px" height="22px" className="mr-1" svgClassName='ai_help_icon' />
+          <IconButton
+            aria-label="Help"
+            size="sm"
+            variant="text"
+            onClick={() => {
+              setIsOpen(true)
+            }}
+          >
+            <InfoIcon width="22px" height="22px" className="mr-1" svgClassName="ai_help_icon" />
           </IconButton>
         </span>
       </div>
@@ -602,16 +611,26 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           <Modal.Content>
             <div className="prose">
               <p style={{ margin: '0.5rem 0' }}>
-                This is an experimental AI feature that allows you to generate and edit content using AI models.
+                This is an experimental feature that allows you to generate and edit content using
+                AI.
               </p>
-              <p style={{ margin: '0.5rem 0' }}>It can currently be used to generate new content as well as translate, summarize, rephrase, and check for spelling, grammar and clarity in existing text.</p>
+              <p style={{ margin: '0.5rem 0' }}>
+                It can currently be used to generate new content as well as translate, summarize,
+                rephrase, check spelling, grammar and clarity in existing text.
+              </p>
               <p style={{ margin: '0.5rem 0' }}>Here are a few example prompts:</p>
               <ul>
-                <li>Check for spelling, grammar and clarity</li>
-                <li>Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.)</li>
-                <li>Rephrase to make this more engaging</li>
-                <li>Write a haiku poem about the wind and trees</li>
+                <li>Check for spelling, grammar and clarity.</li>
+                <li>
+                  Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.).
+                </li>
+                <li>Rephrase to make this more engaging.</li>
+                <li>Write a haiku poem about the wind and trees.</li>
               </ul>
+              <p className="lexical-ai-plugin__disclaimer--modal">
+                Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
+                verify information from reliable sources.
+              </p>
             </div>
           </Modal.Content>
           <Modal.Actions>
