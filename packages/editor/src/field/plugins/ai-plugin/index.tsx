@@ -39,6 +39,7 @@ import { appendRollingPreviewText } from './streaming-preview'
 import './index.css'
 
 type EditorChatState = {
+  mode: 'edit' | 'generate'
   api: AiApi
   provider: Provider
   model: string
@@ -55,6 +56,7 @@ const initialInstructionState: InstructionState = {
 }
 
 const initialEditorChatState: EditorChatState = {
+  mode: 'edit',
   api: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
@@ -123,6 +125,14 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     }))
   }
 
+  const handleOnModeChange = (value: string) => {
+    if (value !== 'edit' && value !== 'generate') return
+    setState((prev) => ({
+      ...prev,
+      mode: value,
+    }))
+  }
+
   const handleOnModelChange = (value: string) => {
     if (!value) return
     const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
@@ -161,6 +171,10 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     abortControllerRef.current?.abort()
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+
+    if (state.mode === 'generate') {
+      handleOnClear()
+    }
 
     activeEditor.focus()
     submitEditorRef.current = activeEditor
@@ -228,6 +242,10 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     abortControllerRef.current?.abort()
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+
+    if (state.mode === 'generate') {
+      handleOnClear()
+    }
 
     activeEditor.focus()
     submitEditorRef.current = activeEditor
@@ -406,6 +424,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
       setState({
         api: normalizeChatApi(config.api),
+        mode: config.mode,
         provider: config.provider,
         model,
       })
@@ -420,8 +439,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       skipPersistOnceRef.current = false
       return
     }
-    saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
-  }, [state.provider, state.model, state.api])
+    saveChatConfiguration({ mode: state.mode, provider: state.provider, model: state.model, api: state.api })
+  }, [state.mode, state.provider, state.model, state.api])
 
   useEffect(() => {
     if (instructionState?.status === 'success') {
@@ -489,6 +508,16 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           }`}
       />
       <div className="lexical-ai-plugin__actions">
+        <Select
+          name="mode"
+          disabled={isPending === true}
+          value={state.mode}
+          onValueChange={handleOnModeChange}
+          variant="outlined"
+        >
+          <SelectItem value="generate">Create New</SelectItem>
+          <SelectItem value="edit">Edit Existing</SelectItem>
+        </Select>
         <Select
           name="provider"
           disabled={isPending === true}
