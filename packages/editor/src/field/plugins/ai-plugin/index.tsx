@@ -13,6 +13,11 @@ import {
   SelectItem,
   StopIcon,
   TextArea,
+  InfoIcon,
+  Modal,
+  useModal,
+  CloseIcon,
+  IconButton,
 } from '@infonomic/uikit/react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
@@ -64,6 +69,7 @@ const formatLastRun = (ms: number): string => {
 }
 
 export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
+  const { onDismiss, onOpen, isOpen, setIsOpen } = useModal()
   const [state, setState] = useState<EditorChatState>(initialEditorChatState)
   const [instructionState, setInstructionState] =
     useState<InstructionState>(initialInstructionState)
@@ -509,14 +515,14 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           onClick={handleOnClear}
           disabled={isPending === true}
         >
-          Clear Editor
+          Clear
         </Button>
-        <Button variant="text" disabled={isPending === true} onClick={handleOnFullReset}>
+        {/* <Button variant="text" disabled={isPending === true} onClick={handleOnFullReset}>
           Full Reset
         </Button>
         <Button variant="text" disabled={isPending === true} onClick={handleOnDebug}>
           Debug
-        </Button>
+        </Button> */}
       </div>
       {instructionState?.status === 'success' && isPending === false && (
         <p className="ai-plugin-success-message">{instructionState.message}</p>
@@ -525,10 +531,62 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       {instructionState?.status === 'failed' && isPending === false && (
         <p className="ai-plugin-error-message">{instructionState.message}</p>
       )}
-      <p className="lexical-ai-plugin__disclaimer">
-        AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
-        verify information from reliable sources.
-      </p>
+      <div className="lexical-ai-plugin__footer">
+        <p className="lexical-ai-plugin__disclaimer">
+          AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
+          verify information from reliable sources.
+        </p>
+        <span className="lexical-ai-plugin__help">
+          <IconButton aria-label='Help' size="sm" variant="text" onClick={() => {
+            setIsOpen(true)
+          }}>
+            <InfoIcon width="22px" height="22px" className="mr-1" svgClassName='ai_help_icon' />
+          </IconButton>
+        </span>
+      </div>
+      <Modal isOpen={isOpen} onDismiss={onDismiss} closeOnOverlayClick={true}>
+        <Modal.Container style={{ maxWidth: '600px', borderRadius: '4px' }}>
+          <Modal.Header style={{ marginBottom: '0.5rem' }}>
+            <h2 style={{ fontSize: '1.75rem' }}>AI Help</h2>
+            <IconButton
+              arial-label="Close"
+              size="sm"
+              onClick={() => {
+                setIsOpen(false)
+              }}
+            >
+              <CloseIcon width="16px" height="16px" svgClassName="white-icon" />
+            </IconButton>
+          </Modal.Header>
+          <Modal.Content>
+            <div className="prose">
+              <p style={{ margin: '0.5rem 0' }}>
+                This is an experimental AI feature that allows you to generate and edit content using AI models.
+              </p>
+              <p style={{ margin: '0.5rem 0' }}>It can currently be used to generate new content as well as translate, summarize, rephrase, and check for spelling, grammar and clarity in existing text.</p>
+              <p style={{ margin: '0.5rem 0' }}>Here are a few example prompts:</p>
+              <ul>
+                <li>Check for spelling, grammar and clarity</li>
+                <li>Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.)</li>
+                <li>Rephrase to make this more engaging</li>
+                <li>Write a haiku poem about the wind and trees</li>
+              </ul>
+            </div>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button
+              size="sm"
+              intent="noeffect"
+              onClick={() => {
+                setIsOpen(false)
+              }}
+              data-autofocus
+            >
+              Close
+            </Button>
+          </Modal.Actions>
+        </Modal.Container>
+      </Modal>
     </div>
   )
 })
