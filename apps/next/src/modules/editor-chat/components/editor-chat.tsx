@@ -407,9 +407,8 @@ export const EditorChat = () => {
           spellCheck={true}
           // error={hasErrors('prompt', null, formState?.errors)}
           // errorText={getErrorText('prompt', null, formState?.errors)}
-          helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
-            formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
-          }`}
+          helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${formState?.lastRun == null ? 'never' : formatLastRun(formState.lastRun)
+            }`}
         />
 
         {/* <div className="mb-4">Foo</div> */}
