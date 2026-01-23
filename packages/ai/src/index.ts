@@ -1,28 +1,28 @@
-export { executeInstruction } from '@/execute-instruction'
-export { executeInstructionStreaming } from '@/execute-instruction-streaming'
-export { generateDocument, generateDocumentStreaming } from '@/generate-document'
-export { patchDocument, patchDocumentStreaming } from '@/patch-document'
 export { getAiServerConfig } from './config/index'
-export type { AiApi, InstructionState, Provider } from '@/@types'
+export { executeInstruction } from './execute-instruction'
+export { executeInstructionStreaming } from './execute-instruction-streaming'
+export { generateDocument, generateDocumentStreaming } from './generate-document'
+export { patchDocument, patchDocumentStreaming } from './patch-document'
+export type { AiApi, InstructionState, Provider } from './@types'
 export type {
   GenerateDocumentError,
   GenerateDocumentOptions,
   GenerateDocumentResult,
   GenerateDocumentStreamingResult,
-} from '@/generate-document'
+} from './generate-document'
 export type {
   PatchDocumentError,
   PatchDocumentOptions,
   PatchDocumentResult,
   PatchDocumentStreamingResult,
-} from '@/patch-document'
+} from './patch-document'
 
 import {
   DEFAULT_MODEL as ANTHROPIC_DEFAULT_MODEL,
   MODELS as ANTHROPIC_MODELS,
-} from '@/models/anthropic'
-import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from '@/models/google'
-import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from '@/models/openai'
+} from './models/anthropic'
+import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from './models/google'
+import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from './models/openai'
 import type { AiApi, Provider } from '@/@types'
 
 export const PROVIDERS: Array<[Provider, string]> = [

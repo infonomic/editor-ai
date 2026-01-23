@@ -22,6 +22,7 @@
  */
 
 import type * as React from 'react'
+import { lazy, Suspense } from 'react'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { TRANSFORMERS } from '@lexical/markdown'
@@ -46,7 +47,7 @@ import { useSharedHistoryContext } from './context/shared-history-context'
 import { useSharedOnChange } from './context/shared-on-change-context'
 import { Debug } from './debug'
 import { AdmonitionPlugin } from './plugins/admonition-plugin'
-import { AiPlugin } from './plugins/ai-plugin'
+// import { AiPlugin } from './plugins/ai-plugin'
 import { AutoEmbedPlugin } from './plugins/auto-embed-plugin'
 import { CodeHighlightPlugin } from './plugins/code-highlight-plugin'
 // import { DragDropPaste } from './plugins/drag-drop-paste-plugin'
@@ -115,6 +116,10 @@ export const Editor = memo(function Editor({
     },
   } = useEditorConfig()
 
+  const AiPlugin = lazy(() =>
+    import('@infonomic/ai/plugins/lexical').then((m) => ({ default: m.AiPlugin }))
+  )
+
   const onRef = useCallback((_floatingAnchorElem: HTMLDivElement): void => {
     if (_floatingAnchorElem != null) {
       setFloatingAnchorElem(_floatingAnchorElem)
@@ -171,9 +176,8 @@ export const Editor = memo(function Editor({
       {tablePlugin && <PayloadTablePlugin />}
       {richText && <ToolbarPlugin />}
       <div
-        className={`editor-container ${showTreeView ? 'tree-view' : ''} ${
-          !richText ? 'plain-text' : ''
-        }`}
+        className={`editor-container ${showTreeView ? 'tree-view' : ''} ${!richText ? 'plain-text' : ''
+          }`}
       >
         {/* <DragDropPaste /> */}
         {autoFocusPlugin && <AutoFocusPlugin />}
@@ -240,7 +244,11 @@ export const Editor = memo(function Editor({
           </>
         )}
         <ClearEditorPlugin />
-        {aiPlugin && <AiPlugin />}
+        {aiPlugin && (
+          <Suspense fallback={null}>
+            <AiPlugin />
+          </Suspense>
+        )}
         {debug && (
           <>
             <Debug />

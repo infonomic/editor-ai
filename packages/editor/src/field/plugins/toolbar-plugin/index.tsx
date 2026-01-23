@@ -53,7 +53,7 @@ import {
   mergeRegister,
 } from '@lexical/utils'
 // import { formatDrawerSlug, useEditDepth, useModal as usePayloadModal } from '@payloadcms/ui'
-import type { LexicalEditor, NodeKey } from 'lexical'
+import type { LexicalCommand, LexicalEditor, NodeKey } from 'lexical'
 import {
   $createParagraphNode,
   $getNodeByKey,
@@ -82,7 +82,6 @@ import { DropDown, DropDownItem } from '../../ui/dropdown'
 import { getSelectedNode } from '../../utils/getSelectedNode'
 import { sanitizeUrl } from '../../utils/url'
 import { OPEN_ADMONITION_MODAL_COMMAND } from '../admonition-plugin'
-import { TOGGLE_AI_DRAWER_COMMAND } from '../ai-plugin'
 import { EmbedConfigs } from '../auto-embed-plugin'
 // import { OPEN_INLINE_IMAGE_MODAL_COMMAND } from '../inline-image-plugin'
 import { OPEN_INSERT_LAYOUT_MODAL_COMMAND } from '../layout-plugin/layout-plugin'
@@ -329,6 +328,9 @@ export function ToolbarPlugin(): React.JSX.Element {
   const [blockType, setBlockType] = useState<keyof typeof blockTypeToBlockName>('paragraph')
   const [rootType, setRootType] = useState<keyof typeof rootTypeToRootName>('root')
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(null)
+  const [toggleAiDrawerCommand, setToggleAiDrawerCommand] = useState<LexicalCommand<void> | null>(
+    null
+  )
 
   const [isLink, setIsLink] = useState(false)
   const [isBold, setIsBold] = useState(false)
@@ -365,6 +367,31 @@ export function ToolbarPlugin(): React.JSX.Element {
   // const { openModal } = usePayloadModal()
   // const editDepth = useEditDepth()
 
+  useEffect(() => {
+    if (!aiPlugin) {
+      setToggleAiDrawerCommand(null)
+      return
+    }
+
+    let isMounted = true
+
+    import('@infonomic/ai/plugins/lexical')
+      .then((module) => {
+        if (isMounted) {
+          setToggleAiDrawerCommand(() => module.TOGGLE_AI_DRAWER_COMMAND)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setToggleAiDrawerCommand(null)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [aiPlugin])
+
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection()
     if ($isRangeSelection(selection)) {
@@ -373,9 +400,9 @@ export function ToolbarPlugin(): React.JSX.Element {
         anchorNode.getKey() === 'root'
           ? anchorNode
           : $findMatchingParent(anchorNode, (e) => {
-              const parent = e.getParent()
-              return parent !== null && $isRootOrShadowRoot(parent)
-            })
+            const parent = e.getParent()
+            return parent !== null && $isRootOrShadowRoot(parent)
+          })
 
       if (element === null) {
         element = anchorNode.getTopLevelElementOrThrow()
@@ -912,13 +939,13 @@ export function ToolbarPlugin(): React.JSX.Element {
                       </DropDownItem>
                     ))}
                 </DropDown>
-                {aiPlugin && (
+                {aiPlugin && toggleAiDrawerCommand && (
                   <button
                     key="ai"
                     type="button"
                     disabled={!isEditable}
                     onClick={() => {
-                      activeEditor.dispatchCommand(TOGGLE_AI_DRAWER_COMMAND, undefined)
+                      activeEditor.dispatchCommand(toggleAiDrawerCommand, undefined)
                     }}
                     className="toolbar-item spaced"
                     aria-label="AI Assistant"

@@ -24,30 +24,6 @@ importers:
 
   apps/next:
     dependencies:
-      '@ai-sdk/anthropic':
-        specifier: ^3.0.14
-        version: 3.0.14(zod@4.3.5)
-      '@ai-sdk/google':
-        specifier: ^3.0.9
-        version: 3.0.9(zod@4.3.5)
-      '@ai-sdk/openai':
-        specifier: ^3.0.11
-        version: 3.0.11(zod@4.3.5)
-      '@ai-sdk/provider-utils':
-        specifier: ^4.0.7
-        version: 4.0.7(zod@4.3.5)
-      '@ai-sdk/react':
-        specifier: ^3.0.39
-        version: 3.0.39(react@19.2.3)(zod@4.3.5)
-      '@ai-sdk/ui-utils':
-        specifier: ^1.2.11
-        version: 1.2.11(zod@4.3.5)
-      '@anthropic-ai/sdk':
-        specifier: ^0.71.2
-        version: 0.71.2(zod@4.3.5)
-      '@google/genai':
-        specifier: ^1.37.0
-        version: 1.37.0
       '@infonomic/ai':
         specifier: workspace:*
         version: link:../../packages/ai
@@ -60,33 +36,18 @@ importers:
       '@infonomic/uikit':
         specifier: ^5.21.0
         version: 5.21.0(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@lexical/html':
-        specifier: 0.39.0
-        version: 0.39.0
-      ai:
-        specifier: ^6.0.37
-        version: 6.0.37(zod@4.3.5)
-      ajv:
-        specifier: ^8.17.1
-        version: 8.17.1
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      json-schema:
-        specifier: ^0.4.0
-        version: 0.4.0
       lexical:
         specifier: 0.39.0
         version: 0.39.0
       next:
         specifier: 16.1.2
         version: 16.1.2(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.77.4)
-      openai:
-        specifier: ^6.16.0
-        version: 6.16.0(ws@8.19.0)(zod@4.3.5)
       pino:
         specifier: ^10.2.0
         version: 10.2.0
@@ -182,7 +143,13 @@ importers:
         specifier: ^2.4.0
         version: 2.4.0
       '@lexical/html':
-        specifier: 0.39.0
+        specifier: ^0.39.0
+        version: 0.39.0
+      '@lexical/react':
+        specifier: ^0.39.0
+        version: 0.39.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(yjs@13.6.28)
+      '@lexical/utils':
+        specifier: ^0.39.0
         version: 0.39.0
       ai:
         specifier: ^6.0.37
@@ -200,7 +167,7 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0
       lexical:
-        specifier: 0.39.0
+        specifier: ^0.39.0
         version: 0.39.0
       openai:
         specifier: ^6.16.0
@@ -227,6 +194,9 @@ importers:
       '@biomejs/biome':
         specifier: 2.3.11
         version: 2.3.11
+      '@infonomic/uikit':
+        specifier: ^5.21.0
+        version: 5.21.0(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15

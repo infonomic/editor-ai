@@ -7,7 +7,7 @@ import type { AiApi, InstructionState, Provider } from '@infonomic/ai'
 import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '@infonomic/ai'
 import {
   Button,
-  Checkbox,
+  // Checkbox,
   CloseIcon,
   IconButton,
   InfoIcon,
@@ -22,7 +22,7 @@ import {
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
 import {
-  CLEAR_EDITOR_COMMAND,
+  // CLEAR_EDITOR_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   createCommand,
@@ -39,7 +39,7 @@ import { appendRollingPreviewText } from './streaming-preview'
 import './index.css'
 
 type EditorChatState = {
-  mode: 'edit' | 'generate'
+  // mode: 'edit' | 'generate'
   api: AiApi
   provider: Provider
   model: string
@@ -56,7 +56,7 @@ const initialInstructionState: InstructionState = {
 }
 
 const initialEditorChatState: EditorChatState = {
-  mode: 'edit',
+  // mode: 'edit',
   api: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
@@ -75,12 +75,12 @@ const STREAM_PREVIEW_MAX_CHARS = 200
 const STREAM_PREVIEW_UPDATE_INTERVAL_MS = 150
 
 export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
-  const { onDismiss, onOpen, isOpen, setIsOpen } = useModal()
+  const { onDismiss, isOpen, setIsOpen } = useModal()
   const [state, setState] = useState<EditorChatState>(initialEditorChatState)
   const [instructionState, setInstructionState] =
     useState<InstructionState>(initialInstructionState)
   const [isPending, setIsPending] = useState(false)
-  const [useStreaming, setUseStreaming] = useState(true)
+  const [useStreaming, _setUseStreaming] = useState(true)
   const [prompt, setPrompt] = useState('')
   const [streamPreviewText, setStreamPreviewText] = useState('')
   const streamPreviewAccumulatorRef = useRef('')
@@ -125,13 +125,13 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     }))
   }
 
-  const handleOnModeChange = (value: string) => {
-    if (value !== 'edit' && value !== 'generate') return
-    setState((prev) => ({
-      ...prev,
-      mode: value,
-    }))
-  }
+  // const handleOnModeChange = (value: string) => {
+  //   if (value !== 'edit' && value !== 'generate') return
+  //   setState((prev) => ({
+  //     ...prev,
+  //     mode: value,
+  //   }))
+  // }
 
   const handleOnModelChange = (value: string) => {
     if (!value) return
@@ -140,9 +140,9 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     setState((prev) => ({ ...prev, model: value }))
   }
 
-  const handleOnApiChange = (value: string) => {
-    setState((prev) => ({ ...prev, api: normalizeChatApi(value) }))
-  }
+  // const handleOnApiChange = (value: string) => {
+  //   setState((prev) => ({ ...prev, api: normalizeChatApi(value) }))
+  // }
 
   const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -172,9 +172,9 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    if (state.mode === 'generate') {
-      handleOnClear()
-    }
+    // if (state.mode === 'generate') {
+    //   handleOnClear()
+    // }
 
     activeEditor.focus()
     submitEditorRef.current = activeEditor
@@ -243,9 +243,9 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     const abortController = new AbortController()
     abortControllerRef.current = abortController
 
-    if (state.mode === 'generate') {
-      handleOnClear()
-    }
+    // if (state.mode === 'generate') {
+    //   handleOnClear()
+    // }
 
     activeEditor.focus()
     submitEditorRef.current = activeEditor
@@ -367,10 +367,10 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
     console.log(JSON.stringify(activeEditor.getEditorState()))
   }
 
-  function handleOnFullReset(): void {
-    activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
-    activeEditor.focus()
-  }
+  // function handleOnFullReset(): void {
+  //   activeEditor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+  //   activeEditor.focus()
+  // }
 
   const handleOnClear = () => {
     const emptyState = activeEditor.parseEditorState(createEmptyEditorState())
@@ -424,7 +424,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
       setState({
         api: normalizeChatApi(config.api),
-        mode: config.mode,
+        // mode: config.mode,
         provider: config.provider,
         model,
       })
@@ -439,8 +439,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
       skipPersistOnceRef.current = false
       return
     }
-    saveChatConfiguration({ mode: state.mode, provider: state.provider, model: state.model, api: state.api })
-  }, [state.mode, state.provider, state.model, state.api])
+    saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
+  }, [state.provider, state.model, state.api])
 
   useEffect(() => {
     if (instructionState?.status === 'success') {
@@ -501,7 +501,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           }`}
       />
       <div className="lexical-ai-plugin__actions">
-        <Select
+        {/* <Select
           name="mode"
           disabled={isPending === true}
           value={state.mode}
@@ -510,7 +510,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         >
           <SelectItem value="generate">Create New</SelectItem>
           <SelectItem value="edit">Edit Existing</SelectItem>
-        </Select>
+        </Select> */}
         <Select
           name="provider"
           disabled={isPending === true}
@@ -586,10 +586,10 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         </Button>
         {/* <Button variant="text" disabled={isPending === true} onClick={handleOnFullReset}>
           Full Reset
-        </Button>
+        </Button> */}
         <Button variant="text" disabled={isPending === true} onClick={handleOnDebug}>
           Debug
-        </Button> */}
+        </Button>
       </div>
       {instructionState?.status === 'success' && isPending === false && (
         <p className="ai-plugin-success-message">{instructionState.message}</p>

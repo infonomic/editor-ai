@@ -1,16 +1,16 @@
+import { extractTextNodesFromLexicalState, setAtPath } from './lexical-text-edits'
 import {
   getPatchDoc as getPatchAnthropicDoc,
   getPatchDocStreaming as getPatchAnthropicDocStreaming,
-} from '@/models/anthropic/patch'
+} from './models/anthropic/patch'
 import {
   getPatchDoc as getPatchGeminiDoc,
   getPatchDocStreaming as getPatchGeminiDocStreaming,
-} from '@/models/google/patch'
+} from './models/google/patch'
 import {
   getPatchDoc as getPatchOpenAIDoc,
   getPatchDocStreaming as getPatchOpenAIDocStreaming,
-} from '@/models/openai/patch'
-import { extractTextNodesFromLexicalState, setAtPath } from './lexical-text-edits'
+} from './models/openai/patch'
 import type { AiApi, Provider } from './@types'
 
 export interface PatchDocumentOptions {

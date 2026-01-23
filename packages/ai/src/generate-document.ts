@@ -1,23 +1,23 @@
 import Ajv from 'ajv'
 
-import { getLogger } from '@/lib/logger'
+import { getLogger } from './lib/logger'
 import {
   getGenerateDoc as getGenerateAnthropicDoc,
   getGenerateDocStreaming as getGenerateAnthropicDocStreaming,
   getGenerateHtml as getGenerateAnthropicHtml,
-} from '@/models/anthropic/generate'
+} from './models/anthropic/generate'
 import {
   getGenerateDoc as getGenerateGeminiDoc,
   getGenerateDocStreaming as getGenerateGeminiDocStreaming,
   getGenerateHtml as getGenerateGeminiHtml,
-} from '@/models/google/generate'
+} from './models/google/generate'
 import {
   getGenerateDoc as getGenerateOpenAIDoc,
   getGenerateDocStreaming as getGenerateOpenAIDocStreaming,
   getGenerateHtml as getGenerateOpenAIHtml,
-} from '@/models/openai/generate'
-import { documentSchema } from '@/schemas/lexical-json-schema'
-import { convertToLexical } from '@/utils/convert-to-lexical'
+} from './models/openai/generate'
+import { documentSchema } from './schemas/lexical-json-schema'
+import { convertToLexical } from './utils/convert-to-lexical'
 import type { AiApi, Provider } from './@types'
 
 const ajv = new Ajv({ allErrors: true, strict: false })

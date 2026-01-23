@@ -1,12 +1,12 @@
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
-import { getAiServerConfig as getServerConfig } from '@/config'
-import { getLogger } from '@/lib/logger'
-import { hasText } from '@/utils/has-text'
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
+import { getAiServerConfig as getServerConfig } from './config'
 import { generateDocumentStreaming } from './generate-document'
+import { getLogger } from './lib/logger'
 import { patchDocumentStreaming } from './patch-document'
+import { hasText } from './utils/has-text'
 
 const isAbortLikeError = (error: unknown): boolean => {
   if (error == null) return false
@@ -112,6 +112,7 @@ export function executeInstructionStreaming(
     }
 
     const documentHasContent = hasText(editorState)
+    console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
 
     const streamResult = documentHasContent
       ? patchDocumentStreaming({

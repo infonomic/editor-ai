@@ -3,7 +3,7 @@ import { AI_APIS, type AiApi, PROVIDERS, type Provider } from '@infonomic/ai'
 const STORAGE_KEY = 'editor-chat-configuration'
 
 export interface ChatConfiguration {
-  mode: 'edit' | 'generate'
+  // mode: 'edit' | 'generate'
   provider: Provider
   model: string
   api: AiApi
@@ -13,7 +13,7 @@ const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
   if (value == null || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
   return (
-    typeof v.mode === 'string' &&
+    // typeof v.mode === 'string' &&
     typeof v.provider === 'string' &&
     PROVIDERS.some((p) => p[0] === v.provider) &&
     typeof v.model === 'string' &&
