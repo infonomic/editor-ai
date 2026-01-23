@@ -295,13 +295,13 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
 
       while (true) {
         const { value, done } = await reader.read()
-        console.log('Streaming response read', { value, done })
+        // console.log('Streaming response read', { value, done })
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
         buffer = lines.pop() ?? ''
-        console.log('Streaming response decoded lines', { lines })
+        // console.log('Streaming response decoded lines', { lines })
 
         for (const line of lines) {
           const trimmed = line.trim()
@@ -313,7 +313,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
               state?: InstructionState
             }
 
-            console.log('Streaming response payload per line', payload)
+            // console.log('Streaming response payload per line', payload)
 
             if (payload.type === 'delta' && typeof payload.text === 'string') {
               appendStreamPreview(payload.text)
