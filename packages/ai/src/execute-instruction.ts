@@ -1,7 +1,7 @@
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
-import { getAiServerConfig as getServerConfig } from '@/config'
+import { getAiServerConfig } from '@/config/ai-config'
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
 import { generateDocument } from './generate-document'
 import { getLogger } from './lib/logger'
@@ -39,7 +39,7 @@ export async function executeInstruction(
     return { ...state, lastRun: Date.now() - startedAt }
   }
 
-  const config = getServerConfig()
+  const config = getAiServerConfig()
   const logger = getLogger()
 
   const validatedFields = instructionSchema.safeParse(fields)

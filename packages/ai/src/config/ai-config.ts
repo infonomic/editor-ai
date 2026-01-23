@@ -69,29 +69,29 @@ export const getAiServerConfig = (): AiServerConfig => {
  * Git repo - and so it's essential that these values
  * DO NOT contain secrets.
  */
-const AiPublicSchema = z.object({})
+const aiPublicSchema = z.object({})
 
-export type AiPublicConfig = z.infer<typeof AiPublicSchema>
+export type AiPublicConfig = z.infer<typeof aiPublicSchema>
 
-// const initPublicConfig = () =>
-//   AiPublicSchema.parse({
-//     // siteName: process.env.NEXT_PUBLIC_SITE_NAME,
-//     // siteDescription: process.env.NEXT_PUBLIC_SITE_DESCRIPTION,
-//     // publicServerUrl: process.env.NEXT_PUBLIC_PUBLIC_SERVER_URL,
-//     // apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-//     // cspEnabled: process.env.NEXT_PUBLIC_CSP_ENABLED,
-//     // recaptcha: {
-//     //   enabled: process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED,
-//     //   mandatory: process.env.NEXT_PUBLIC_RECAPTCHA_MANDATORY,
-//     //   siteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-//     // },
-//   })
+const initAiPublicConfig = () =>
+  aiPublicSchema.parse({
+    // siteName: process.env.NEXT_PUBLIC_SITE_NAME,
+    // siteDescription: process.env.NEXT_PUBLIC_SITE_DESCRIPTION,
+    // publicServerUrl: process.env.NEXT_PUBLIC_PUBLIC_SERVER_URL,
+    // apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    // cspEnabled: process.env.NEXT_PUBLIC_CSP_ENABLED,
+    // recaptcha: {
+    //   enabled: process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED,
+    //   mandatory: process.env.NEXT_PUBLIC_RECAPTCHA_MANDATORY,
+    //   siteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    // },
+  })
 
-// let cachedPublicConfig: PublicConfig
+let cachedAiPublicConfig: AiPublicConfig
 
-// export const getPublicConfig = (): PublicConfig => {
-//   if (cachedPublicConfig == null) {
-//     cachedPublicConfig = initPublicConfig()
-//   }
-//   return cachedPublicConfig
-// }
+export const getAiPublicConfig = (): AiPublicConfig => {
+  if (cachedAiPublicConfig == null) {
+    cachedAiPublicConfig = initAiPublicConfig()
+  }
+  return cachedAiPublicConfig
+}

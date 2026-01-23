@@ -2,7 +2,7 @@ import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
-import { getAiServerConfig as getServerConfig } from './config'
+import { getAiServerConfig } from './config/ai-config'
 import { generateDocumentStreaming } from './generate-document'
 import { getLogger } from './lib/logger'
 import { patchDocumentStreaming } from './patch-document'
@@ -47,7 +47,7 @@ export function executeInstructionStreaming(
     return { ...state, lastRun: Date.now() - startedAt }
   }
 
-  const config = getServerConfig()
+  const config = getAiServerConfig()
   const logger = getLogger()
 
   const validatedFields = instructionSchema.safeParse(fields)

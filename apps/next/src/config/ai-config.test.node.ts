@@ -1,9 +1,9 @@
 import { describe, test } from 'vitest'
 
-import { getServerConfig } from './index'
+import { getAiServerConfig } from './ai-config'
 
 describe('Config tests', () => {
-  // NOTE: Disable caching in getServerConfig for 'real'
+  // NOTE: Disable caching in getAiServerConfig for 'real'
   // benchmarks
   test.skip('should get config quickly', () => {
     // Record the start time
@@ -12,7 +12,7 @@ describe('Config tests', () => {
     let _config: any
     for (let i = 0; i < iterations; i++) {
       // const start = performance.now();
-      _config = getServerConfig()
+      _config = getAiServerConfig()
       // totalTime += performance.now() - start;
     }
 

@@ -8,7 +8,7 @@ import { z } from 'zod'
  * which is NOT committed to the project's Git repo and
  * CAN include secrets.
  */
-const serverSchema = z.object({
+const aiServerSchema = z.object({
   ai: z.object({
     defaultProvider: z.enum(['openai', 'google', 'anthropic']),
     openai: z.object({
@@ -26,10 +26,10 @@ const serverSchema = z.object({
   }),
 })
 
-type ServerConfig = z.infer<typeof serverSchema>
+type AiServerConfig = z.infer<typeof aiServerSchema>
 
-const initServerConfig = (): ServerConfig =>
-  serverSchema.parse({
+const initServerConfig = (): AiServerConfig =>
+  aiServerSchema.parse({
     ai: {
       defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'openai',
       openai: {
@@ -51,13 +51,13 @@ const initServerConfig = (): ServerConfig =>
     },
   })
 
-let cachedServerConfig: ServerConfig
+let cachedAiServerConfig: AiServerConfig
 
-export const getServerConfig = (): ServerConfig => {
-  if (cachedServerConfig == null) {
-    cachedServerConfig = initServerConfig()
+export const getAiServerConfig = (): AiServerConfig => {
+  if (cachedAiServerConfig == null) {
+    cachedAiServerConfig = initServerConfig()
   }
-  return cachedServerConfig
+  return cachedAiServerConfig
 }
 
 /**
@@ -69,29 +69,29 @@ export const getServerConfig = (): ServerConfig => {
  * Git repo - and so it's essential that these values
  * DO NOT contain secrets.
  */
-const publicSchema = z.object({})
+const aiPublicSchema = z.object({})
 
-export type PublicConfig = z.infer<typeof publicSchema>
+export type AiPublicConfig = z.infer<typeof aiPublicSchema>
 
-// const initPublicConfig = () =>
-//   publicSchema.parse({
-//     // siteName: process.env.NEXT_PUBLIC_SITE_NAME,
-//     // siteDescription: process.env.NEXT_PUBLIC_SITE_DESCRIPTION,
-//     // publicServerUrl: process.env.NEXT_PUBLIC_PUBLIC_SERVER_URL,
-//     // apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-//     // cspEnabled: process.env.NEXT_PUBLIC_CSP_ENABLED,
-//     // recaptcha: {
-//     //   enabled: process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED,
-//     //   mandatory: process.env.NEXT_PUBLIC_RECAPTCHA_MANDATORY,
-//     //   siteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-//     // },
-//   })
+const initAiPublicConfig = () =>
+  aiPublicSchema.parse({
+    // siteName: process.env.NEXT_PUBLIC_SITE_NAME,
+    // siteDescription: process.env.NEXT_PUBLIC_SITE_DESCRIPTION,
+    // publicServerUrl: process.env.NEXT_PUBLIC_PUBLIC_SERVER_URL,
+    // apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    // cspEnabled: process.env.NEXT_PUBLIC_CSP_ENABLED,
+    // recaptcha: {
+    //   enabled: process.env.NEXT_PUBLIC_RECAPTCHA_ENABLED,
+    //   mandatory: process.env.NEXT_PUBLIC_RECAPTCHA_MANDATORY,
+    //   siteKey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    // },
+  })
 
-// let cachedPublicConfig: PublicConfig
+let cachedAiPublicConfig: AiPublicConfig
 
-// export const getPublicConfig = (): PublicConfig => {
-//   if (cachedPublicConfig == null) {
-//     cachedPublicConfig = initPublicConfig()
-//   }
-//   return cachedPublicConfig
-// }
+export const getAiPublicConfig = (): AiPublicConfig => {
+  if (cachedAiPublicConfig == null) {
+    cachedAiPublicConfig = initAiPublicConfig()
+  }
+  return cachedAiPublicConfig
+}

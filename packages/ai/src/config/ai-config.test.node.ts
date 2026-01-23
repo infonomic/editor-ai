@@ -1,8 +1,8 @@
 import { describe, test } from 'vitest'
 
-import { getAiServerConfig } from './index'
+import { getAiServerConfig } from './ai-config'
 
-describe('AI Config tests', () => {
+describe('Config tests', () => {
   // NOTE: Disable caching in getAiServerConfig for 'real'
   // benchmarks
   test.skip('should get config quickly', () => {
