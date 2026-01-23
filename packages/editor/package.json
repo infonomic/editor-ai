@@ -1,7 +1,7 @@
 {
   "name": "@infonomic/editor",
   "version": "1.0.1",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "type": "module",
   "description": "Infonomic editor components.",
