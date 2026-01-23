@@ -89,7 +89,7 @@ export async function executeInstruction(
     }
 
     const documentHasContent = hasText(editorState)
-    console.log(`Execute instruction hasText: ${documentHasContent}`)
+    // console.log(`Execute instruction hasText: ${documentHasContent}`)
 
     if (documentHasContent) {
       const result = await patchDocument({

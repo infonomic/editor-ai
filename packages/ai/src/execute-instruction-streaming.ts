@@ -112,7 +112,7 @@ export function executeInstructionStreaming(
     }
 
     const documentHasContent = hasText(editorState)
-    console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
+    // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
 
     const streamResult = documentHasContent
       ? patchDocumentStreaming({

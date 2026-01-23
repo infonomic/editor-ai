@@ -649,6 +649,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
                 <li>Rephrase to make this more engaging.</li>
                 <li>Write a haiku poem about the wind and trees.</li>
               </ul>
+              <p><strong>Important:</strong> To generate new content (and see correctly formatted results), you must submit your request with an empty editor. You can clear the editor by clicking the “Clear” button. If you submit a request while content is still present, the AI will attempt to edit the existing content instead of generating new content.</p>
               <p className="lexical-ai-plugin__disclaimer--modal">
                 Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
                 verify information from reliable sources.
@@ -658,7 +659,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
           <Modal.Actions>
             <Button
               size="sm"
-              intent="noeffect"
+              style={{ minWidth: '80px' }}
+              intent="primary"
               onClick={() => {
                 setIsOpen(false)
               }}
