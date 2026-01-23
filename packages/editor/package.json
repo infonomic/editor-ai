@@ -1,7 +1,7 @@
 {
   "name": "@infonomic/editor",
   "version": "1.0.0",
-  "private": false,
+  "private": true,
   "license": "MIT",
   "type": "module",
   "description": "Infonomic editor components.",
@@ -15,14 +15,17 @@
     "headless cms",
     "react"
   ],
-  "homepage": "",
+  "homepage": "https://github.com/infonomic/editor-ai",
   "bugs": {
-    "url": ""
+    "url": "https://github.com/infonomic/editor-ai/issues"
   },
   "repository": {
     "type": "git",
-    "url": "",
+    "url": "git+https://github.com/infonomic/editor-ai.git",
     "directory": "packages/editor"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "sideEffects": false,
   "scripts": {

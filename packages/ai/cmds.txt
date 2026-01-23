@@ -50,8 +50,6 @@ EXPOSE 3000
 CMD ["npm", "start"]
 
 B. The Build Command
-You must use Docker BuildKit and the --secret flag to pass the .npmrc file: 
 bash
-DOCKER_BUILDKIT=1 docker build --secret id=npmrc,src=./.npmrc -t my-app-image .
-DOCKER_BUILDKIT=1: Ensures you are using the modern BuildKit backend.
+docker build --secret id=npmrc,src=./.npmrc -t my-app-image .
 --secret id=npmrc,src=./.npmrc: Maps your local .npmrc file to the secret ID used in the Dockerfile. 

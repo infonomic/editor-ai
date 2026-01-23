@@ -1,7 +1,7 @@
 {
   "name": "@infonomic/ai",
   "version": "1.0.0",
-  "private": false,
+  "private": true,
   "license": "MIT",
   "type": "module",
   "description": "Infonomic AI components.",
@@ -10,14 +10,17 @@
     "react",
     "lexical"
   ],
-  "homepage": "",
+  "homepage": "https://github.com/infonomic/editor-ai",
   "bugs": {
-    "url": ""
+    "url": "https://github.com/infonomic/editor-ai/issues"
   },
   "repository": {
     "type": "git",
-    "url": "",
+    "url": "git+https://github.com/infonomic/editor-ai.git",
     "directory": "packages/ai"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "sideEffects": false,
   "scripts": {
