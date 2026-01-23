@@ -1,6 +1,6 @@
-# Infonomic Editor
+# Infonomic Editor / AI
 
-Our experimental workbench for Lexical.
+Packages for both our Lexical editor and AI
 
 ## Editor Architecture
 
