@@ -632,17 +632,17 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
             </IconButton>
           </Modal.Header>
           <Modal.Content style={{ padding: '18px' }}>
-            <ScrollArea style={{ height: '400px', paddingRight: '18px' }} className="prose">
-              <p style={{ margin: '0.5rem 0' }}>
+            <ScrollArea style={{ height: '400px', paddingRight: '18px', fontSize: '14px' }} className="prose">
+              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
                 This is an experimental feature that allows you to generate and edit content using
                 AI.
               </p>
-              <p style={{ margin: '0.5rem 0' }}>
+              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
                 It can currently be used to generate new content as well as translate, summarize,
                 rephrase, check spelling, grammar and clarity in existing text.
               </p>
-              <p style={{ margin: '0.5rem 0' }}>Here are a few example prompts:</p>
-              <ul>
+              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>Here are a few example prompts:</p>
+              <ul style={{ margin: '0.5rem 0', fontSize: '16px' }}>
                 <li>Check for spelling, grammar and clarity.</li>
                 <li>
                   Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.).
@@ -650,15 +650,14 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
                 <li>Rephrase to make this more engaging.</li>
                 <li>Write a haiku poem about the wind and trees.</li>
               </ul>
-              <p></p>
-              <p>
+              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
                 <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> To generate new content (and see correctly formatted
                 results), you must submit your request with an empty editor. You can clear the
                 editor by clicking the “Clear” button. If you submit a request while content is
                 still present, the AI will attempt to edit the existing content instead of
                 generating new content.
               </p>
-              <p>
+              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
                 <strong style={{ color: 'var(--primary-500)' }}>Note:</strong> At the time of writing -
                 2026-01-24 - OpenAI GPT-5.2 is likely the strongest all-round model for both
                 generating new content, as well as for modifying / translating
