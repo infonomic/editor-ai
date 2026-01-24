@@ -1,1 +1,1 @@
-export { AiPlugin, TOGGLE_AI_DRAWER_COMMAND } from './plugin'
+export { AiPluginLexical as AiPlugin, TOGGLE_AI_DRAWER_COMMAND } from './plugin'

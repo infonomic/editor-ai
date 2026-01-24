@@ -75,7 +75,7 @@ const formatLastRun = (ms: number): string => {
 const STREAM_PREVIEW_MAX_CHARS = 200
 const STREAM_PREVIEW_UPDATE_INTERVAL_MS = 150
 
-export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | undefined {
+export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element | undefined {
   const { onDismiss, isOpen, setIsOpen } = useModal()
   const [state, setState] = useState<EditorChatState>(initialEditorChatState)
   const [instructionState, setInstructionState] =
