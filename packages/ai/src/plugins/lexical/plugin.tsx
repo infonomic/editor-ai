@@ -37,7 +37,7 @@ import { importHtmlToSerializedEditorState } from './import-html'
 import { loadChatConfiguration, saveChatConfiguration } from './storage'
 import { appendRollingPreviewText } from './streaming-preview'
 
-import './index.css'
+import './plugin.css'
 
 type EditorChatState = {
   // mode: 'edit' | 'generate'
@@ -475,20 +475,20 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
   }, [instructionState, editor])
 
   return (
-    <div className={`lexical-ai-plugin ${open ? 'lexical-ai-plugin--visible' : ''}`}>
+    <div className={`ai-plugin__drawer ${open ? 'ai-plugin__drawer--visible' : ''}`}>
       <div
-        className={`lexical-ai-plugin__stream-preview ${isPending && useStreaming ? 'lexical-ai-plugin__stream-preview--visible' : ''}`}
+        className={`ai-plugin__stream-preview ${isPending && useStreaming ? 'ai-plugin__stream-preview--visible' : ''}`}
         aria-live="polite"
         aria-busy="true"
       >
-        <div className="lexical-ai-plugin__stream-preview__label">Streaming preview</div>
-        <div className="lexical-ai-plugin__stream-preview__content">
+        <div className="ai-plugin__stream-preview__label">Streaming preview</div>
+        <div className="ai-plugin__stream-preview__content">
           {streamPreviewText || 'Receiving…'}
         </div>
       </div>
 
       <TextArea
-        className="lexical-ai-plugin__prompt"
+        className="ai-plugin__prompt"
         label="Prompt"
         id="prompt"
         name="prompt"
@@ -501,7 +501,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
           }`}
       />
-      <div className="lexical-ai-plugin__actions">
+      <div className="ai-plugin__actions">
         {/* <Select
           name="mode"
           disabled={isPending === true}
@@ -593,18 +593,18 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
         </Button>
       </div>
       {instructionState?.status === 'success' && isPending === false && (
-        <p className="ai-plugin-success-message">{instructionState.message}</p>
+        <p className="ai-plugin__messages--success-message">{instructionState.message}</p>
       )}
 
       {instructionState?.status === 'failed' && isPending === false && (
-        <p className="ai-plugin-error-message">{instructionState.message}</p>
+        <p className="ai-plugin__messages--error-message">{instructionState.message}</p>
       )}
-      <div className="lexical-ai-plugin__footer">
-        <p className="lexical-ai-plugin__disclaimer">
+      <div className="ai-plugin__footer">
+        <p className="ai-plugin__disclaimer">
           AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
           verify information from reliable sources.
         </p>
-        <span className="lexical-ai-plugin__help">
+        <span className="ai-plugin__help">
           <IconButton
             aria-label="Help"
             size="sm"
@@ -613,7 +613,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
               setIsOpen(true)
             }}
           >
-            <InfoIcon width="22px" height="22px" svgClassName="ai_help_icon" />
+            <InfoIcon width="22px" height="22px" svgClassName="ai-plugin__help_icon" />
           </IconButton>
         </span>
       </div>
@@ -665,7 +665,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
                 editing existing text. Google's Gemini models are improving rapidly, but still seem to lag
                 slightly behind in our tests.
               </p>
-              <p className="lexical-ai-plugin__disclaimer--modal">
+              <p className="ai-plugin__disclaimer--modal">
                 Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please
                 use caution and verify information from reliable sources.
               </p>
