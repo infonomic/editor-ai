@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-import { getAiServerConfig } from '@/config'
+import { getAiServerConfig } from '../../config/ai-config'
 
 // This script lists all available Anthropic models along with their descriptions.
 // From apps/next run: tsx --env-file=.env src/scripts/anthropic-models.ts

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { getAiServerConfig as getServerConfig } from '@/config'
+import { getAiServerConfig as getServerConfig } from '../../config/ai-config'
 import {
   patchDoc as patchDocNative,
   patchDocStreaming as patchDocStreamingNative,

@@ -1,4 +1,4 @@
-export { getAiServerConfig } from './config/index'
+export { getAiServerConfig } from './config/ai-config'
 export { executeInstruction } from './execute-instruction'
 export { executeInstructionStreaming } from './execute-instruction-streaming'
 export { generateDocument, generateDocumentStreaming } from './generate-document'

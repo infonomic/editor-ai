@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 
-import { getAiServerConfig as getServerConfig } from '@/config'
+import { getAiServerConfig as getServerConfig } from '../../config/ai-config'
 
 // This script lists all available OpenAI models along with their descriptions.
 // From apps/next run: tsx --env-file=.env src/scripts/openai-models.ts

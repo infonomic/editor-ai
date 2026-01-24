@@ -1,8 +1,8 @@
 import { stdSerializers } from 'pino'
 import { z } from 'zod'
 
-import { getAiServerConfig } from '@/config/ai-config'
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
+import { getAiServerConfig } from './config/ai-config'
 import { generateDocument } from './generate-document'
 import { getLogger } from './lib/logger'
 import { patchDocument } from './patch-document'

@@ -13,6 +13,7 @@ import {
   InfoIcon,
   LoaderEllipsis,
   Modal,
+  ScrollArea,
   Select,
   SelectItem,
   StopIcon,
@@ -612,7 +613,7 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
               setIsOpen(true)
             }}
           >
-            <InfoIcon width="22px" height="22px" className="mr-1" svgClassName="ai_help_icon" />
+            <InfoIcon width="22px" height="22px" svgClassName="ai_help_icon" />
           </IconButton>
         </span>
       </div>
@@ -630,8 +631,8 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
               <CloseIcon width="16px" height="16px" svgClassName="white-icon" />
             </IconButton>
           </Modal.Header>
-          <Modal.Content>
-            <div className="prose">
+          <Modal.Content style={{ padding: '18px' }}>
+            <ScrollArea style={{ height: '400px', paddingRight: '18px' }} className="prose">
               <p style={{ margin: '0.5rem 0' }}>
                 This is an experimental feature that allows you to generate and edit content using
                 AI.
@@ -649,12 +650,27 @@ export const AiPlugin = React.memo(function AiPlugin(): React.JSX.Element | unde
                 <li>Rephrase to make this more engaging.</li>
                 <li>Write a haiku poem about the wind and trees.</li>
               </ul>
-              <p><strong>Important:</strong> To generate new content (and see correctly formatted results), you must submit your request with an empty editor. You can clear the editor by clicking the “Clear” button. If you submit a request while content is still present, the AI will attempt to edit the existing content instead of generating new content.</p>
-              <p className="lexical-ai-plugin__disclaimer--modal">
-                Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
-                verify information from reliable sources.
+              <p></p>
+              <p>
+                <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> To generate new content (and see correctly formatted
+                results), you must submit your request with an empty editor. You can clear the
+                editor by clicking the “Clear” button. If you submit a request while content is
+                still present, the AI will attempt to edit the existing content instead of
+                generating new content.
               </p>
-            </div>
+              <p>
+                <strong style={{ color: 'var(--primary-500)' }}>Note:</strong> At the time of writing -
+                2026-01-24 - OpenAI GPT-5.2 is likely the strongest all-round model for both
+                generating new content, as well as for modifying / translating
+                existing content. Anthropic's Sonnet model is also very capable, especially for
+                editing existing text. Google's Gemini models are improving rapidly, but still seem to lag
+                slightly behind in our tests.
+              </p>
+              <p className="lexical-ai-plugin__disclaimer--modal">
+                Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please
+                use caution and verify information from reliable sources.
+              </p>
+            </ScrollArea>
           </Modal.Content>
           <Modal.Actions>
             <Button
