@@ -41,6 +41,9 @@ export const EditorComponent = memo(function EditorComponent({
   validate = richTextValidate,
   onError: _onError,
   lexicalEditorProps: _lexicalEditorProps,
+  featureBeforeEditor,
+  featureAfterEditor,
+  featureChildren,
 }: EditorFieldProps): React.JSX.Element {
   const disabled = readonly ?? false
   const dispatchFieldUpdateTask = useRef<number>(undefined)
@@ -152,7 +155,7 @@ export const EditorComponent = memo(function EditorComponent({
     <div className={baseClass}>
       <div className={`${baseClass}__wrap`}>
         {label && <Label id="label" label={label} htmlFor={id} required={required} />}
-        <ErrorBoundary fallbackRender={fallbackRender} onReset={() => {}}>
+        <ErrorBoundary fallbackRender={fallbackRender} onReset={() => { }}>
           <EditorContext
             composerKey={id}
             editorConfig={editorConfig}
@@ -162,6 +165,8 @@ export const EditorComponent = memo(function EditorComponent({
             value={incomingValue}
             minHeight={minHeight}
             maxHeight={maxHeight}
+            beforeEditor={featureBeforeEditor}
+            afterEditor={featureAfterEditor}
           >
             <ApplyValuePlugin
               value={incomingValue}
@@ -170,6 +175,7 @@ export const EditorComponent = memo(function EditorComponent({
               normalizedIncomingHashRef={normalizedIncomingHashRef}
               hasNormalizedBaselineRef={hasNormalizedBaselineRef}
             />
+            {featureChildren}
           </EditorContext>
         </ErrorBoundary>
         {description && <HelpText text={description} />}

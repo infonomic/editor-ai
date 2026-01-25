@@ -18,6 +18,9 @@ interface Props {
   maxHeight?: number | string
   onChange?: (value: SerializedEditorState) => void
   path?: string
+  featureBeforeEditor?: React.ReactNode[]
+  featureAfterEditor?: React.ReactNode[]
+  featureChildren?: React.ReactNode[]
 }
 
 export const RichTextField = ({
@@ -32,6 +35,9 @@ export const RichTextField = ({
   className,
   minHeight,
   maxHeight,
+  featureBeforeEditor,
+  featureAfterEditor,
+  featureChildren,
 }: Props) => {
   const _fieldPath = path ?? field.name
   // const fieldError = useFieldError(fieldPath)
@@ -71,6 +77,9 @@ export const RichTextField = ({
         maxHeight={maxHeight}
         // Ensure React fully remounts when instanceKey changes
         key={instanceKey ? `${field.name}-${instanceKey}` : field.name}
+        featureBeforeEditor={featureBeforeEditor}
+        featureAfterEditor={featureAfterEditor}
+        featureChildren={featureChildren}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import { Container, Section } from '@infonomic/uikit/react'
 
 import { RichTextField } from '@/ui/fields/richtext-field'
+import { AiFeature } from '@/ui/plugin/ai-feature'
 
 const Page = () => {
   return (
@@ -15,7 +16,7 @@ const Page = () => {
             // value={state.editorValue}
             editorSettings={{
               options: {
-                aiPlugin: true,
+                aiPlugin: false,
               },
               inlineImageUploadCollection: '',
               placeholderText: 'Start writing your content here...',
@@ -24,6 +25,7 @@ const Page = () => {
             maxHeight={'475px'}
             // readonly={isPending === true}
             field={{ name: 'editor', label: 'Editor' }}
+            featureAfterEditor={[<AiFeature key="ai-feature" />]}
           />
           {/* <EditorChat /> */}
         </Container>
