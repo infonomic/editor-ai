@@ -1,25 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AiApi, InstructionState, Provider } from '@infonomic/ai'
-import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '@infonomic/ai'
-import {
-  Button,
-  // Checkbox,
-  CloseIcon,
-  IconButton,
-  InfoIcon,
-  LoaderEllipsis,
-  Modal,
-  ScrollArea,
-  Select,
-  SelectItem,
-  StopIcon,
-  TextArea,
-  useModal,
-} from '@infonomic/uikit/react'
+import type { InstructionState } from '@infonomic/ai'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { mergeRegister } from '@lexical/utils'
 import {
@@ -32,23 +16,17 @@ import {
   type SerializedEditorState,
 } from 'lexical'
 
+import {
+  AiPluginBase,
+  type AiPluginBaseApi,
+  type AiPluginSubmitContext,
+} from '../ai-plugin-base'
 import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
-import { loadChatConfiguration, saveChatConfiguration } from './storage'
-import { appendRollingPreviewText } from './streaming-preview'
-
-import './plugin.css'
-
-type EditorChatState = {
-  // mode: 'edit' | 'generate'
-  api: AiApi
-  provider: Provider
-  model: string
-}
 
 export const TOGGLE_AI_DRAWER_COMMAND = createCommand('TOGGLE_AI_DRAWER_COMMAND')
 
-const initialInstructionState: InstructionState = {
+const emptyInstructionState: InstructionState = {
   prompt: '',
   editor: null,
   errors: {},
@@ -56,312 +34,275 @@ const initialInstructionState: InstructionState = {
   lastRun: null,
 }
 
-const initialEditorChatState: EditorChatState = {
-  // mode: 'edit',
-  api: 'native',
-  provider: 'openai',
-  model: getDefaultModel('openai'),
-}
-
-const formatLastRun = (ms: number): string => {
-  const safe = Number.isFinite(ms) ? Math.max(0, Math.floor(ms)) : 0
-  const minutes = Math.floor(safe / 60_000)
-  const seconds = Math.floor((safe % 60_000) / 1_000)
-  const milliseconds = safe % 1_000
-
-  return `${minutes}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(3, '0')}`
-}
-
-const STREAM_PREVIEW_MAX_CHARS = 200
-const STREAM_PREVIEW_UPDATE_INTERVAL_MS = 150
-
 export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element | undefined {
-  const { onDismiss, isOpen, setIsOpen } = useModal()
-  const [state, setState] = useState<EditorChatState>(initialEditorChatState)
-  const [instructionState, setInstructionState] =
-    useState<InstructionState>(initialInstructionState)
-  const [isPending, setIsPending] = useState(false)
-  const [useStreaming, _setUseStreaming] = useState(true)
-  const [prompt, setPrompt] = useState('')
-  const [streamPreviewText, setStreamPreviewText] = useState('')
-  const streamPreviewAccumulatorRef = useRef('')
-  const streamPreviewLastFlushMsRef = useRef(0)
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const baseApiRef = useRef<AiPluginBaseApi | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
-  const hydratedRef = useRef(false)
-  const skipPersistOnceRef = useRef(false)
-  const [open, setOpen] = React.useState(false)
   const [editor] = useLexicalComposerContext()
   const [activeEditor, setActiveEditor] = useState(editor)
 
-  const resetStreamPreview = () => {
-    streamPreviewAccumulatorRef.current = ''
-    streamPreviewLastFlushMsRef.current = 0
-    setStreamPreviewText('')
-  }
+  const handleApiReady = useCallback((api: AiPluginBaseApi) => {
+    baseApiRef.current = api
+  }, [])
 
-  const appendStreamPreview = (chunk: string) => {
-    streamPreviewAccumulatorRef.current = appendRollingPreviewText(
-      streamPreviewAccumulatorRef.current,
-      chunk,
-      { maxChars: STREAM_PREVIEW_MAX_CHARS }
-    )
-
-    const now = Date.now()
-    if (now - streamPreviewLastFlushMsRef.current < STREAM_PREVIEW_UPDATE_INTERVAL_MS) return
-    streamPreviewLastFlushMsRef.current = now
-    setStreamPreviewText(streamPreviewAccumulatorRef.current)
-  }
-
-  const handleOnPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(event.target.value)
-  }
-
-  const handleOnProviderChange = (value: string) => {
-    if (!isProvider(value)) return
-    setState((prev) => ({
-      ...prev,
-      provider: value,
-      model: getDefaultModel(value),
-    }))
-  }
-
-  // const handleOnModeChange = (value: string) => {
-  //   if (value !== 'edit' && value !== 'generate') return
-  //   setState((prev) => ({
-  //     ...prev,
-  //     mode: value,
-  //   }))
-  // }
-
-  const handleOnModelChange = (value: string) => {
-    if (!value) return
-    const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
-    if (!modelsForProvider.includes(value)) return
-    setState((prev) => ({ ...prev, model: value }))
-  }
-
-  // const handleOnApiChange = (value: string) => {
-  //   setState((prev) => ({ ...prev, api: normalizeChatApi(value) }))
-  // }
-
-  const handleOnKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault()
-      if (useStreaming) {
-        void handleOnSubmitStreaming()
+  const applyInstructionStateToEditor = useCallback(
+    (
+      nextState: InstructionState,
+      setInstructionState: React.Dispatch<React.SetStateAction<InstructionState>>
+    ) => {
+      if (nextState?.status !== 'success') return
+      const targetEditor = submitEditorRef.current ?? editor
+      if (nextState.format === 'html' && nextState.html) {
+        try {
+          importHtmlToSerializedEditorState(nextState.html, targetEditor)
+        } catch {
+          setInstructionState((prev) => ({
+            ...prev,
+            status: 'failed',
+            message: 'There was a problem parsing fallback HTML.',
+            errors: {},
+          }))
+        }
         return
       }
-      void handleOnSubmit()
-    }
-  }
 
-  const handleOnCancel = () => {
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
-    setIsPending(false)
-    resetStreamPreview()
-    setInstructionState((prev) => ({ ...prev, status: 'idle', message: 'Cancelled.', errors: {} }))
-  }
-
-  const handleOnSubmit = async () => {
-    if (!prompt.trim()) return
-    if (isPending) return
-
-    // Cancel any previous in-flight request before starting a new one.
-    abortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-
-    // if (state.mode === 'generate') {
-    //   handleOnClear()
-    // }
-
-    activeEditor.focus()
-    submitEditorRef.current = activeEditor
-    setIsPending(true)
-    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
-
-    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
-
-    try {
-      const response = await fetch('/routes/ai', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-          prompt: prompt,
-          editor: editorJson,
-          provider: state.provider,
-          model: state.model,
-          api: state.api,
-        }),
-      })
-
-      if (response.ok === false) {
-        console.error('AI Plugin request failed with status', response.status)
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
+      if (nextState.editor) {
+        const nextEditorState = targetEditor.parseEditorState(
+          nextState.editor as SerializedEditorState
+        )
+        targetEditor.update(
+          () => {
+            targetEditor.setEditorState(nextEditorState)
+          },
+          { discrete: true }
+        )
       }
-      const data = (await response.json()) as InstructionState
-      console.log('AI Plugin response data', data)
-      setInstructionState(data)
-    } catch (error) {
-      const err = error as any
-      if (err?.name === 'AbortError') {
-        setInstructionState((prev) => ({
-          ...prev,
-          status: 'idle',
-          message: 'Cancelled.',
-          errors: {},
-        }))
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
+    },
+    [editor]
+  )
+
+  const handleOnSubmit = useCallback(
+    async (context: AiPluginSubmitContext) => {
+      const {
+        prompt,
+        provider,
+        model,
+        api,
+        isPending,
+        setIsPending,
+        setInstructionState,
+        abortControllerRef,
+      } = context
+
+      if (!prompt.trim()) return
+      if (isPending) return
+
+      // Cancel any previous in-flight request before starting a new one.
+      abortControllerRef.current?.abort()
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      activeEditor.focus()
+      submitEditorRef.current = activeEditor
+      setIsPending(true)
+      setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+      const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+
+      try {
+        const response = await fetch('/routes/ai', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+          },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            prompt: prompt,
+            editor: editorJson,
+            provider,
+            model,
+            api,
+          }),
         })
-      }
-    } finally {
-      setIsPending(false)
-      abortControllerRef.current = null
-    }
-  }
 
-  const handleOnSubmitStreaming = async () => {
-    if (!prompt.trim()) return
-    if (isPending) return
-
-    // Cancel any previous in-flight request before starting a new one.
-    abortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    abortControllerRef.current = abortController
-
-    // if (state.mode === 'generate') {
-    //   handleOnClear()
-    // }
-
-    activeEditor.focus()
-    submitEditorRef.current = activeEditor
-    setIsPending(true)
-    resetStreamPreview()
-    setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
-
-    const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
-
-    try {
-      const response = await fetch('/routes/ai-streaming', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-          prompt: prompt,
-          editor: editorJson,
-          provider: state.provider,
-          model: state.model,
-          api: state.api,
-        }),
-      })
-
-      if (response.ok === false) {
-        console.error('AI Plugin streaming request failed with status', response.status)
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
-      }
-
-      if (response.body == null) {
-        console.log('Streaming request has no body - falling back to non-streaming handling.')
+        if (response.ok === false) {
+          console.error('AI Plugin request failed with status', response.status)
+          setInstructionState({
+            ...emptyInstructionState,
+            status: 'failed',
+            message: 'There was a problem submitting your instructions.',
+            errors: {},
+          })
+        }
         const data = (await response.json()) as InstructionState
+        console.log('AI Plugin response data', data)
         setInstructionState(data)
-        return
+        applyInstructionStateToEditor(data, setInstructionState)
+      } catch (error) {
+        const err = error as any
+        if (err?.name === 'AbortError') {
+          setInstructionState((prev) => ({
+            ...prev,
+            status: 'idle',
+            message: 'Cancelled.',
+            errors: {},
+          }))
+        } else {
+          setInstructionState({
+            ...emptyInstructionState,
+            status: 'failed',
+            message: 'There was a problem submitting your instructions.',
+            errors: {},
+          })
+        }
+      } finally {
+        setIsPending(false)
+        abortControllerRef.current = null
       }
+    },
+    [activeEditor, applyInstructionStateToEditor]
+  )
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let finalState: InstructionState | null = null
+  const handleOnSubmitStreaming = useCallback(
+    async (context: AiPluginSubmitContext) => {
+      const {
+        prompt,
+        provider,
+        model,
+        api,
+        isPending,
+        setIsPending,
+        setInstructionState,
+        abortControllerRef,
+        appendStreamPreview,
+        resetStreamPreview,
+      } = context
 
-      while (true) {
-        const { value, done } = await reader.read()
-        // console.log('Streaming response read', { value, done })
-        if (done) break
+      if (!prompt.trim()) return
+      if (isPending) return
 
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
-        // console.log('Streaming response decoded lines', { lines })
+      // Cancel any previous in-flight request before starting a new one.
+      abortControllerRef.current?.abort()
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
 
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed) continue
-          try {
-            const payload = JSON.parse(trimmed) as {
-              type?: string
-              text?: string
-              state?: InstructionState
+      activeEditor.focus()
+      submitEditorRef.current = activeEditor
+      setIsPending(true)
+      resetStreamPreview()
+      setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
+
+      const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+
+      try {
+        const response = await fetch('/routes/ai-streaming', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+          },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            prompt: prompt,
+            editor: editorJson,
+            provider,
+            model,
+            api,
+          }),
+        })
+
+        if (response.ok === false) {
+          console.error('AI Plugin streaming request failed with status', response.status)
+          setInstructionState({
+            ...emptyInstructionState,
+            status: 'failed',
+            message: 'There was a problem submitting your instructions.',
+            errors: {},
+          })
+        }
+
+        if (response.body == null) {
+          console.log('Streaming request has no body - falling back to non-streaming handling.')
+          const data = (await response.json()) as InstructionState
+          setInstructionState(data)
+          applyInstructionStateToEditor(data, setInstructionState)
+          return
+        }
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let finalState: InstructionState | null = null
+
+        while (true) {
+          const { value, done } = await reader.read()
+          // console.log('Streaming response read', { value, done })
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() ?? ''
+          // console.log('Streaming response decoded lines', { lines })
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed) continue
+            try {
+              const payload = JSON.parse(trimmed) as {
+                type?: string
+                text?: string
+                state?: InstructionState
+              }
+
+              // console.log('Streaming response payload per line', payload)
+
+              if (payload.type === 'delta' && typeof payload.text === 'string') {
+                appendStreamPreview(payload.text)
+              }
+
+              if (payload.type === 'final' && payload.state) {
+                finalState = payload.state
+              }
+            } catch {
+              // ignore malformed chunks
             }
-
-            // console.log('Streaming response payload per line', payload)
-
-            if (payload.type === 'delta' && typeof payload.text === 'string') {
-              appendStreamPreview(payload.text)
-            }
-
-            if (payload.type === 'final' && payload.state) {
-              finalState = payload.state
-            }
-          } catch {
-            // ignore malformed chunks
           }
         }
-      }
 
-      if (finalState) {
-        setInstructionState(finalState)
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
+        if (finalState) {
+          setInstructionState(finalState)
+          applyInstructionStateToEditor(finalState, setInstructionState)
+        } else {
+          setInstructionState({
+            ...emptyInstructionState,
+            status: 'failed',
+            message: 'There was a problem submitting your instructions.',
+            errors: {},
+          })
+        }
+      } catch (error) {
+        const err = error as any
+        if (err?.name === 'AbortError') {
+          setInstructionState((prev) => ({
+            ...prev,
+            status: 'idle',
+            message: 'Cancelled.',
+            errors: {},
+          }))
+        } else {
+          setInstructionState({
+            ...emptyInstructionState,
+            status: 'failed',
+            message: 'There was a problem submitting your instructions.',
+            errors: {},
+          })
+        }
+      } finally {
+        setIsPending(false)
+        resetStreamPreview()
+        abortControllerRef.current = null
       }
-    } catch (error) {
-      const err = error as any
-      if (err?.name === 'AbortError') {
-        setInstructionState((prev) => ({
-          ...prev,
-          status: 'idle',
-          message: 'Cancelled.',
-          errors: {},
-        }))
-      } else {
-        setInstructionState({
-          ...initialInstructionState,
-          status: 'failed',
-          message: 'There was a problem submitting your instructions.',
-          errors: {},
-        })
-      }
-    } finally {
-      setIsPending(false)
-      resetStreamPreview()
-      abortControllerRef.current = null
-    }
-  }
+    },
+    [activeEditor, applyInstructionStateToEditor]
+  )
 
   function handleOnDebug(): void {
     // eslint-disable-next-line no-console
@@ -400,7 +341,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       editor.registerCommand<null>(
         TOGGLE_AI_DRAWER_COMMAND,
         () => {
-          setOpen((prevOpen) => !prevOpen)
+          baseApiRef.current?.toggleOpen()
           return true
         },
         COMMAND_PRIORITY_NORMAL
@@ -408,284 +349,52 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
     )
   }, [editor])
 
-  useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort()
-      abortControllerRef.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    const config = loadChatConfiguration()
-    if (config && PROVIDER_MODELS[config.provider]) {
-      const modelsForProvider = PROVIDER_MODELS[config.provider] ?? []
-      const model = modelsForProvider.includes(config.model)
-        ? config.model
-        : getDefaultModel(config.provider)
-
-      setState({
-        api: normalizeChatApi(config.api),
-        // mode: config.mode,
-        provider: config.provider,
-        model,
-      })
-      skipPersistOnceRef.current = true
-    }
-    hydratedRef.current = true
-  }, [])
-
-  useEffect(() => {
-    if (!hydratedRef.current) return
-    if (skipPersistOnceRef.current) {
-      skipPersistOnceRef.current = false
-      return
-    }
-    saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
-  }, [state.provider, state.model, state.api])
-
-  useEffect(() => {
-    if (instructionState?.status === 'success') {
-      const targetEditor = submitEditorRef.current ?? editor
-      if (instructionState.format === 'html' && instructionState.html) {
-        try {
-          importHtmlToSerializedEditorState(instructionState.html, targetEditor)
-        } catch {
-          setInstructionState({
-            ...initialInstructionState,
-            status: 'failed',
-            message: 'There was a problem parsing fallback HTML.',
-            errors: {},
-          })
-        }
-        return
-      }
-
-      if (instructionState.editor) {
-        const nextState = targetEditor.parseEditorState(
-          instructionState.editor as SerializedEditorState
-        )
-        targetEditor.update(
-          () => {
-            targetEditor.setEditorState(nextState)
-          },
-          { discrete: true }
-        )
-      }
-    }
-  }, [instructionState, editor])
+  const helpContent = (
+    <>
+      <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        This is an experimental feature that allows you to generate and edit content using AI.
+      </p>
+      <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        It can currently be used to generate new content as well as translate, summarize, rephrase,
+        check spelling, grammar and clarity in existing text.
+      </p>
+      <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>Here are a few example prompts:</p>
+      <ul style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        <li>Check for spelling, grammar and clarity.</li>
+        <li>Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.).</li>
+        <li>Rephrase to make this more engaging.</li>
+        <li>Write a haiku poem about the wind and trees.</li>
+      </ul>
+      <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> To generate new content
+        (and see correctly formatted results), you must submit your request with an empty editor.
+        You can clear the editor by clicking the “Clear” button. If you submit a request while
+        content is still present, the AI will attempt to edit the existing content instead of
+        generating new content.
+      </p>
+      <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        <strong style={{ color: 'var(--primary-500)' }}>Note:</strong> At the time of writing -
+        2026-01-24 - OpenAI GPT-5.2 is likely the strongest all-round model for both generating new
+        content, as well as for modifying / translating existing content. Anthropic's Sonnet model
+        is also very capable, especially for editing existing text. Google's Gemini models are
+        improving rapidly, but still seem to lag slightly behind in our tests.
+      </p>
+      <p className="ai-plugin__disclaimer--modal">
+        Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please use
+        caution and verify information from reliable sources.
+      </p>
+    </>
+  )
 
   return (
-    <div className={`ai-plugin__drawer ${open ? 'ai-plugin__drawer--visible' : ''}`}>
-      <div
-        className={`ai-plugin__stream-preview ${isPending && useStreaming ? 'ai-plugin__stream-preview--visible' : ''}`}
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <div className="ai-plugin__stream-preview__label">Streaming preview</div>
-        <div className="ai-plugin__stream-preview__content">
-          {streamPreviewText || 'Receiving…'}
-        </div>
-      </div>
-
-      <TextArea
-        className="ai-plugin__prompt"
-        label="Prompt"
-        id="prompt"
-        name="prompt"
-        rows={5}
-        value={prompt}
-        onChange={handleOnPromptChange}
-        onKeyDown={handleOnKeyDown}
-        disabled={isPending === true}
-        spellCheck={true}
-        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
-          }`}
-      />
-      <div className="ai-plugin__actions">
-        {/* <Select
-          name="mode"
-          disabled={isPending === true}
-          value={state.mode}
-          onValueChange={handleOnModeChange}
-          variant="outlined"
-        >
-          <SelectItem value="generate">Create New</SelectItem>
-          <SelectItem value="edit">Edit Existing</SelectItem>
-        </Select> */}
-        <Select
-          name="provider"
-          disabled={isPending === true}
-          value={state.provider}
-          onValueChange={handleOnProviderChange}
-          variant="outlined"
-        >
-          <SelectItem value="openai">OpenAI</SelectItem>
-          <SelectItem value="google">Google</SelectItem>
-          <SelectItem value="anthropic">Anthropic</SelectItem>
-        </Select>
-        <Select
-          name="model"
-          disabled={isPending === true}
-          value={state.model}
-          onValueChange={handleOnModelChange}
-          variant="outlined"
-        >
-          {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
-            <SelectItem key={modelOption} value={modelOption}>
-              {modelOption}
-            </SelectItem>
-          ))}
-        </Select>
-        {/* <Select
-          key={state.api}
-          name="api"
-          value={state.api}
-          onValueChange={handleOnApiChange}
-          disabled={isPending === true}
-          variant="outlined"
-        >
-          <SelectItem value="native">Native</SelectItem>
-          <SelectItem value="vercel">Vercel</SelectItem>
-        </Select> */}
-        {/* <div className="mr-2">
-          <Checkbox
-            name="streaming"
-            id="streaming"
-            disabled={isPending === true}
-            checked={useStreaming}
-            onCheckedChange={(checked) => {
-              setUseStreaming(checked === true)
-            }}
-            label="Streaming"
-          />
-        </div> */}
-        <Button
-          fullWidth={false}
-          type="button"
-          onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
-          disabled={!prompt.trim() || isPending === true}
-        >
-          {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
-        </Button>
-        <Button
-          className="py-0 px-4"
-          title="Stop"
-          aria-label="Stop"
-          onClick={handleOnCancel}
-          disabled={isPending === false}
-          type="button"
-        >
-          <StopIcon width="22px" height="22px" />
-        </Button>
-        <Button
-          fullWidth={false}
-          type="button"
-          onClick={handleOnClear}
-          disabled={isPending === true}
-        >
-          Clear
-        </Button>
-        {/* <Button variant="text" disabled={isPending === true} onClick={handleOnFullReset}>
-          Full Reset
-        </Button> */}
-        <Button variant="text" disabled={isPending === true} onClick={handleOnDebug}>
-          Debug
-        </Button>
-      </div>
-      {instructionState?.status === 'success' && isPending === false && (
-        <p className="ai-plugin__messages--success-message">{instructionState.message}</p>
-      )}
-
-      {instructionState?.status === 'failed' && isPending === false && (
-        <p className="ai-plugin__messages--error-message">{instructionState.message}</p>
-      )}
-      <div className="ai-plugin__footer">
-        <p className="ai-plugin__disclaimer">
-          AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
-          verify information from reliable sources.
-        </p>
-        <span className="ai-plugin__help">
-          <IconButton
-            aria-label="Help"
-            size="sm"
-            variant="text"
-            onClick={() => {
-              setIsOpen(true)
-            }}
-          >
-            <InfoIcon width="22px" height="22px" svgClassName="ai-plugin__help_icon" />
-          </IconButton>
-        </span>
-      </div>
-      <Modal isOpen={isOpen} onDismiss={onDismiss} closeOnOverlayClick={true}>
-        <Modal.Container style={{ maxWidth: '600px', borderRadius: '4px' }}>
-          <Modal.Header style={{ marginBottom: '0.5rem' }}>
-            <h2 style={{ fontSize: '1.75rem' }}>AI Help</h2>
-            <IconButton
-              arial-label="Close"
-              size="sm"
-              onClick={() => {
-                setIsOpen(false)
-              }}
-            >
-              <CloseIcon width="16px" height="16px" svgClassName="white-icon" />
-            </IconButton>
-          </Modal.Header>
-          <Modal.Content style={{ padding: '18px' }}>
-            <ScrollArea style={{ height: '400px', paddingRight: '18px', fontSize: '14px' }} className="prose">
-              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-                This is an experimental feature that allows you to generate and edit content using
-                AI.
-              </p>
-              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-                It can currently be used to generate new content as well as translate, summarize,
-                rephrase, check spelling, grammar and clarity in existing text.
-              </p>
-              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>Here are a few example prompts:</p>
-              <ul style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-                <li>Check for spelling, grammar and clarity.</li>
-                <li>
-                  Translate into Thai (English, French, Spanish, Vietnamese, Laos, Khmer etc.).
-                </li>
-                <li>Rephrase to make this more engaging.</li>
-                <li>Write a haiku poem about the wind and trees.</li>
-              </ul>
-              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-                <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> To generate new content (and see correctly formatted
-                results), you must submit your request with an empty editor. You can clear the
-                editor by clicking the “Clear” button. If you submit a request while content is
-                still present, the AI will attempt to edit the existing content instead of
-                generating new content.
-              </p>
-              <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-                <strong style={{ color: 'var(--primary-500)' }}>Note:</strong> At the time of writing -
-                2026-01-24 - OpenAI GPT-5.2 is likely the strongest all-round model for both
-                generating new content, as well as for modifying / translating
-                existing content. Anthropic's Sonnet model is also very capable, especially for
-                editing existing text. Google's Gemini models are improving rapidly, but still seem to lag
-                slightly behind in our tests.
-              </p>
-              <p className="ai-plugin__disclaimer--modal">
-                Warning: AI-generated content may be inaccurate, incomplete, or misleading. Please
-                use caution and verify information from reliable sources.
-              </p>
-            </ScrollArea>
-          </Modal.Content>
-          <Modal.Actions>
-            <Button
-              size="sm"
-              style={{ minWidth: '80px' }}
-              intent="primary"
-              onClick={() => {
-                setIsOpen(false)
-              }}
-              data-autofocus
-            >
-              Close
-            </Button>
-          </Modal.Actions>
-        </Modal.Container>
-      </Modal>
-    </div>
+    <AiPluginBase
+      helpTitle="AI Help"
+      helpContent={helpContent}
+      onSubmit={handleOnSubmit}
+      onSubmitStreaming={handleOnSubmitStreaming}
+      onClear={handleOnClear}
+      onDebug={handleOnDebug}
+      onApiReady={handleApiReady}
+    />
   )
 })
