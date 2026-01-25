@@ -121,6 +121,8 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
             provider,
             model,
             api,
+            streaming: false,
+            plugin: 'lexical',
           }),
         })
 
@@ -194,7 +196,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
 
       try {
-        const response = await fetch('/routes/ai-streaming', {
+        const response = await fetch('/routes/ai', {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -206,6 +208,8 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
             provider,
             model,
             api,
+            streaming: true,
+            plugin: 'lexical',
           }),
         })
 
