@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@infonomic/ai": "workspace:*",
-    "@infonomic/uikit": "^5.22.0",
+    "@infonomic/uikit": "^5.26.0",
     "@lexical/clipboard": "0.39.0",
     "@lexical/code": "0.39.0",
     "@lexical/hashtag": "0.39.0",
@@ -79,7 +79,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
+    "@biomejs/biome": "2.3.12",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^25.0.10",
     "@types/react": "19.2.9",
