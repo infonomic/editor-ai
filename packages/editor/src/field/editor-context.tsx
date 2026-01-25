@@ -12,6 +12,7 @@ import { SharedHistoryContext } from './context/shared-history-context'
 import { SharedOnChangeContext } from './context/shared-on-change-context'
 import { Editor } from './editor'
 import { Nodes } from './nodes'
+import { ToolbarExtensionsProvider } from './toolbar-extensions'
 import type { EditorConfig } from './config/types'
 
 // Catch any errors that occur during Lexical updates and log them
@@ -31,8 +32,11 @@ export function EditorContext(props: {
   minHeight?: number | string
   maxHeight?: number | string
   children?: React.ReactNode
+  beforeEditor?: React.ReactNode[]
+  afterEditor?: React.ReactNode[]
 }): React.JSX.Element {
-  const { composerKey, editorConfig, onChange, readOnly, value, children } = props
+  const { composerKey, editorConfig, onChange, readOnly, value, beforeEditor,
+    afterEditor, children } = props
 
   // useMemo for the initialConfig that depends on readOnly and value
   // biome-ignore lint/correctness/useExhaustiveDependencies: TODO: revisit
@@ -66,10 +70,14 @@ export function EditorContext(props: {
       <EditorConfigContext config={editorConfig.settings}>
         <SharedOnChangeContext onChange={onChange}>
           <SharedHistoryContext>
-            <div className="editor-shell">
-              <Editor minHeight={props.minHeight} maxHeight={props.maxHeight} />
-            </div>
-            {children}
+            <ToolbarExtensionsProvider>
+              <div className="editor-shell">
+                {beforeEditor}
+                <Editor minHeight={props.minHeight} maxHeight={props.maxHeight} />
+                {afterEditor}
+                {children}
+              </div>
+            </ToolbarExtensionsProvider>
           </SharedHistoryContext>
         </SharedOnChangeContext>
       </EditorConfigContext>

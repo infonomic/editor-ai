@@ -16,7 +16,7 @@
  *
  */
 import type * as React from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 
 import {
   $createCodeNode,
@@ -78,6 +78,7 @@ import {
 import { useEditorConfig } from '../../config/editor-config-context'
 import { $isLinkNode, type LinkAttributes, TOGGLE_LINK_COMMAND } from '../../nodes/link-nodes'
 import { IS_APPLE } from '../../shared/environment'
+import { useToolbarExtensions } from '../../toolbar-extensions'
 import { DropDown, DropDownItem } from '../../ui/dropdown'
 import { getSelectedNode } from '../../utils/getSelectedNode'
 import { sanitizeUrl } from '../../utils/url'
@@ -345,6 +346,7 @@ export function ToolbarPlugin(): React.JSX.Element {
   const [isRTL, _setIsRTL] = useState(false)
   const [codeLanguage, setCodeLanguage] = useState<string>('')
   const [isEditable, setIsEditable] = useState(() => editor.isEditable())
+  const { items: toolbarExtensionItems } = useToolbarExtensions()
   const {
     uuid,
     config: {
@@ -958,6 +960,14 @@ export function ToolbarPlugin(): React.JSX.Element {
             )}
         </>
       )}
+
+      {toolbarExtensionItems
+        .slice()
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((item) => (
+          <Fragment key={item.id}>{item.node}</Fragment>
+        ))}
+
     </div>
   )
 }

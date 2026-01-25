@@ -21,6 +21,9 @@ export type EditorFieldProps = {
   editorConfig: EditorConfig
   defaultValue?: SerializedEditorState
   value?: SerializedEditorState
+  featureBeforeEditor?: React.ReactNode[]
+  featureAfterEditor?: React.ReactNode[]
+  featureChildren?: React.ReactNode[]
   onChange?: (value: SerializedEditorState) => void
   validate?: (
     value: SerializedEditorState | undefined,
