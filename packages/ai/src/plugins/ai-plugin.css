@@ -5,7 +5,7 @@
   --border-radius-lg: 0;
 }
 
-.lexical-ai-plugin {
+.ai-plugin__drawer {
   display: flex;
   flex-direction: column;
   margin-top: 6px;
@@ -19,13 +19,13 @@
   transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
 }
 
-.lexical-ai-plugin--visible {
+.ai-plugin__drawer--visible {
   max-height: 500px;
   opacity: 1;
   transform: translateY(0);
 }
 
-.lexical-ai-plugin__actions {
+.ai-plugin__actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -33,7 +33,7 @@
   margin-top: 8px;
 }
 
-.lexical-ai-plugin__stream-preview {
+.ai-plugin__stream-preview {
   max-height: 0;
   opacity: 0;
   border: 1px solid #cccccc;
@@ -46,7 +46,7 @@
   transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
 }
 
-.lexical-ai-plugin__stream-preview--visible {
+.ai-plugin__stream-preview--visible {
   margin-bottom: 8px;
   padding: 6px 8px;
   max-height: 100px;
@@ -54,13 +54,13 @@
   transform: translateY(0);
 }
 
-.lexical-ai-plugin__stream-preview__label {
+.ai-plugin__stream-preview__label {
   font-size: 11px;
   color: #666666;
   margin-bottom: 4px;
 }
 
-.lexical-ai-plugin__stream-preview__content {
+.ai-plugin__stream-preview__content {
   height: 50px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
@@ -73,24 +73,24 @@
   color: #222222;
 }
 
-.lexical-ai-plugin__prompt {
+.ai-plugin__prompt {
   border-radius: 0;
 }
 
-.lexical-ai-plugin .ai-plugin-success-message {
+.ai-plugin__messages--success-message {
   color: green;
   font-size: 14px;
   margin-top: 4px;
 }
 
-.lexical-ai-plugin .ai-plugin-error-message {
+.ai-plugin__messages--error-message {
   color: red;
   font-size: 14px;
   margin-top: 4px;
 }
 
 
-.lexical-ai-plugin__footer {
+.ai-plugin__footer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -98,21 +98,21 @@
   margin-top: 0;
 }
 
-.lexical-ai-plugin__disclaimer,
-.lexical-ai-plugin__disclaimer--modal {
+.ai-plugin__disclaimer,
+.ai-plugin__disclaimer--modal {
   line-height: 1.2;
   font-size: 11px;
   color: #666666;
   margin-top: 0;
 }
 
-.lexical-ai-plugin__disclaimer--modal {
+.ai-plugin__disclaimer--modal {
   margin-top: 1rem;
   line-height: 1.2;
   font-size: 14px;
 }
 
-.ai_help_icon {
+.ai-plugin__help_icon {
   fill: #222222;
   cursor: pointer;
 }
@@ -122,30 +122,30 @@
 .dark,
 [data-theme="dark"],
 [data-theme="dark"] ::backdrop {
-  .lexical-ai-plugin {
+  .ai-plugin__drawer {
     border: 1px solid #444444;
     background-color: #121212;
   }
 
-  .lexical-ai-plugin__stream-preview {
+  .ai-plugin__stream-preview {
     border: 1px solid #333333;
     background: #0f0f0f;
   }
 
-  .lexical-ai-plugin__stream-preview__label {
+  .ai-plugin__stream-preview__label {
     color: #888888;
   }
 
-  .lexical-ai-plugin__stream-preview__content {
+  .ai-plugin__stream-preview__content {
     color: #dddddd;
   }
 
-  .lexical-ai-plugin__disclaimer,
-  .lexical-ai-plugin__disclaimer--modal {
+  .ai-plugin__disclaimer,
+  .ai-plugin__disclaimer--modal {
     color: #aaaaaa;
   }
 
-  .ai_help_icon {
+  .ai-plugin__help_icon {
     fill: #cccccc;
   }
 }
