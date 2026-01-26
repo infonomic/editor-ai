@@ -8,7 +8,6 @@ export type OptionName =
   | 'collab'
   | 'maxLength'
   | 'richText'
-  | 'aiPlugin'
   | 'measureTypingPerf'
   | 'showNestedEditorTreeView'
   | 'showTableOfContents'

@@ -15,9 +15,6 @@ const Page = () => {
             // onChange={handleOnEditorChange}
             // value={state.editorValue}
             editorSettings={{
-              options: {
-                aiPlugin: false,
-              },
               inlineImageUploadCollection: '',
               placeholderText: 'Start writing your content here...',
             }}

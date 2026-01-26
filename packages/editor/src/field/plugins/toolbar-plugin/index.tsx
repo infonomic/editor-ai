@@ -355,7 +355,6 @@ export function ToolbarPlugin(): React.JSX.Element {
         tablePlugin,
         inlineImagePlugin,
         admonitionPlugin,
-        aiPlugin,
         horizontalRulePlugin,
         layoutPlugin,
         autoEmbedPlugin,
@@ -368,31 +367,6 @@ export function ToolbarPlugin(): React.JSX.Element {
   } = useEditorConfig()
   // const { openModal } = usePayloadModal()
   // const editDepth = useEditDepth()
-
-  useEffect(() => {
-    if (!aiPlugin) {
-      setToggleAiDrawerCommand(null)
-      return
-    }
-
-    let isMounted = true
-
-    import('@infonomic/ai/plugins/lexical')
-      .then((module) => {
-        if (isMounted) {
-          setToggleAiDrawerCommand(() => module.TOGGLE_AI_DRAWER_COMMAND)
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setToggleAiDrawerCommand(null)
-        }
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [aiPlugin])
 
   const $updateToolbar = useCallback(() => {
     const selection = $getSelection()
@@ -941,21 +915,6 @@ export function ToolbarPlugin(): React.JSX.Element {
                       </DropDownItem>
                     ))}
                 </DropDown>
-                {aiPlugin && toggleAiDrawerCommand && (
-                  <button
-                    key="ai"
-                    type="button"
-                    disabled={!isEditable}
-                    onClick={() => {
-                      activeEditor.dispatchCommand(toggleAiDrawerCommand, undefined)
-                    }}
-                    className="toolbar-item spaced"
-                    aria-label="AI Assistant"
-                    title="AI Assistant"
-                  >
-                    <i className="format ai" />
-                  </button>
-                )}
               </>
             )}
         </>

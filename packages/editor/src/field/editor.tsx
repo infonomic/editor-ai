@@ -22,8 +22,7 @@
  */
 
 import type * as React from 'react'
-import { lazy, Suspense } from 'react'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { TRANSFORMERS } from '@lexical/markdown'
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
@@ -91,7 +90,6 @@ export const Editor = memo(function Editor({
     config: {
       options: {
         debug,
-        aiPlugin,
         richText,
         showTreeView,
         autoFocusPlugin,
@@ -244,11 +242,6 @@ export const Editor = memo(function Editor({
           </>
         )}
         <ClearEditorPlugin />
-        {aiPlugin && (
-          <Suspense fallback={null}>
-            <AiPlugin />
-          </Suspense>
-        )}
         {debug && (
           <>
             <Debug />
