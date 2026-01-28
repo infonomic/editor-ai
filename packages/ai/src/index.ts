@@ -1,9 +1,9 @@
 export { getAiServerConfig } from './config/ai-config'
-export { executeInstruction } from './execute-instruction'
-export { executeInstructionStreaming } from './execute-instruction-streaming'
+export { executeInstruction, executeInstructionStreaming } from './execute'
 export { generate, generateStreaming } from './generate'
 export { patch, patchStreaming } from './patch'
 export type { AiApi, InstructionState, Provider } from './@types'
+export type { ExecuteInstructionStreamingResult } from './execute'
 export type {
   GenerateError,
   GenerateOptions,
