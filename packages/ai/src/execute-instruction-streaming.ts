@@ -3,9 +3,9 @@ import { z } from 'zod'
 
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
-import { generateDocumentStreaming } from './generate-document'
+import { generateStreaming } from './generate'
 import { getLogger } from './lib/logger'
-import { patchDocumentStreaming } from './patch-document'
+import { patchStreaming } from './patch'
 import { hasText } from './utils/has-text'
 
 const isAbortLikeError = (error: unknown): boolean => {
@@ -115,7 +115,7 @@ export function executeInstructionStreaming(
     // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
 
     const streamResult = documentHasContent
-      ? patchDocumentStreaming({
+      ? patchStreaming({
           provider,
           apiKey,
           modelName,
@@ -124,7 +124,7 @@ export function executeInstructionStreaming(
           editorState,
           signal: options?.signal,
         })
-      : generateDocumentStreaming({
+      : generateStreaming({
           provider,
           apiKey,
           modelName,

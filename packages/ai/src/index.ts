@@ -1,21 +1,21 @@
 export { getAiServerConfig } from './config/ai-config'
 export { executeInstruction } from './execute-instruction'
 export { executeInstructionStreaming } from './execute-instruction-streaming'
-export { generateDocument, generateDocumentStreaming } from './generate-document'
-export { patchDocument, patchDocumentStreaming } from './patch-document'
+export { generate, generateStreaming } from './generate'
+export { patch, patchStreaming } from './patch'
 export type { AiApi, InstructionState, Provider } from './@types'
 export type {
-  GenerateDocumentError,
-  GenerateDocumentOptions,
-  GenerateDocumentResult,
-  GenerateDocumentStreamingResult,
-} from './generate-document'
+  GenerateError,
+  GenerateOptions,
+  GenerateResult,
+  GenerateStreamingResult,
+} from './generate'
 export type {
-  PatchDocumentError,
-  PatchDocumentOptions,
-  PatchDocumentResult,
-  PatchDocumentStreamingResult,
-} from './patch-document'
+  PatchError,
+  PatchOptions,
+  PatchResult,
+  PatchStreamingResult,
+} from './patch'
 
 import {
   DEFAULT_MODEL as ANTHROPIC_DEFAULT_MODEL,

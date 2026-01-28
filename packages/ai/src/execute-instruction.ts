@@ -3,9 +3,9 @@ import { z } from 'zod'
 
 import { type ExecuteInstructionFields, type InstructionState, instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
-import { generateDocument } from './generate-document'
+import { generate } from './generate'
 import { getLogger } from './lib/logger'
-import { patchDocument } from './patch-document'
+import { patch } from './patch'
 import { hasText } from './utils/has-text'
 
 const isAbortLikeError = (error: unknown): boolean => {
@@ -92,7 +92,7 @@ export async function executeInstruction(
     // console.log(`Execute instruction hasText: ${documentHasContent}`)
 
     if (documentHasContent) {
-      const result = await patchDocument({
+      const result = await patch({
         provider,
         apiKey,
         modelName,
@@ -119,7 +119,7 @@ export async function executeInstruction(
       })
     }
 
-    const result = await generateDocument({
+    const result = await generate({
       provider,
       apiKey,
       modelName,

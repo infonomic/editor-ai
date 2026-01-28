@@ -13,7 +13,7 @@ import {
 } from './models/openai/patch'
 import type { AiApi, Provider } from './@types'
 
-export interface PatchDocumentOptions {
+export interface PatchOptions {
   provider: Provider
   apiKey: string
   modelName: string
@@ -23,21 +23,21 @@ export interface PatchDocumentOptions {
   signal?: AbortSignal
 }
 
-export interface PatchDocumentResult {
+export interface PatchResult {
   success: true
   editor: any
   message: string
 }
 
-export interface PatchDocumentError {
+export interface PatchError {
   success: false
   message: string
   errors: Record<string, string[]>
 }
 
-export type PatchDocumentStreamingResult = {
+export type PatchStreamingResult = {
   text: AsyncIterable<string>
-  final: Promise<PatchDocumentResult | PatchDocumentError>
+  final: Promise<PatchResult | PatchError>
 }
 
 const createEmptyTextStream = (): AsyncIterable<string> =>
@@ -49,7 +49,7 @@ async function processPatchResult(
   result: { edits: Array<{ id: number; text: string }> },
   extracted: Array<{ id: number; text: string; path: any[] }>,
   editorState: any
-): Promise<PatchDocumentResult | PatchDocumentError> {
+): Promise<PatchResult | PatchError> {
   const edits = result.edits
 
   if (edits.length !== extracted.length) {
@@ -97,9 +97,7 @@ async function processPatchResult(
  * This preserves all formatting (headings, lists, bold, italic, etc.)
  * while only modifying the text content.
  */
-export async function patchDocument(
-  options: PatchDocumentOptions
-): Promise<PatchDocumentResult | PatchDocumentError> {
+export async function patch(options: PatchOptions): Promise<PatchResult | PatchError> {
   const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
@@ -143,9 +141,7 @@ export async function patchDocument(
 /**
  * Streams a Lexical document patch. Only OpenAI supports streaming for now.
  */
-export function patchDocumentStreaming(
-  options: PatchDocumentOptions
-): PatchDocumentStreamingResult {
+export function patchStreaming(options: PatchOptions): PatchStreamingResult {
   const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
@@ -188,7 +184,7 @@ export function patchDocumentStreaming(
     signal,
   })
 
-  const final = (async (): Promise<PatchDocumentResult | PatchDocumentError> => {
+  const final = (async (): Promise<PatchResult | PatchError> => {
     const result = await streamResult.final
     return processPatchResult(result, extracted, editorState)
   })()

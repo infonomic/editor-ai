@@ -24,7 +24,7 @@ const ajv = new Ajv({ allErrors: true, strict: false })
 const validateLexicalDocument = ajv.compile(documentSchema as any)
 const logger = getLogger()
 
-export interface GenerateDocumentOptions {
+export interface GenerateOptions {
   provider: Provider
   apiKey: string
   modelName: string
@@ -33,7 +33,7 @@ export interface GenerateDocumentOptions {
   signal?: AbortSignal
 }
 
-export type GenerateDocumentResult =
+export type GenerateResult =
   | {
       success: true
       format: 'lexical'
@@ -47,12 +47,12 @@ export type GenerateDocumentResult =
       message: string
     }
 
-export type GenerateDocumentStreamingResult = {
+export type GenerateStreamingResult = {
   text: AsyncIterable<string>
-  final: Promise<GenerateDocumentResult | GenerateDocumentError>
+  final: Promise<GenerateResult | GenerateError>
 }
 
-export interface GenerateDocumentError {
+export interface GenerateError {
   success: false
   message: string
   errors: Record<string, string[]>
@@ -60,8 +60,8 @@ export interface GenerateDocumentError {
 
 async function processGenerationResult(
   generated: any,
-  options: GenerateDocumentOptions
-): Promise<GenerateDocumentResult | GenerateDocumentError> {
+  options: GenerateOptions
+): Promise<GenerateResult | GenerateError> {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
   const generatedDocument = convertToLexical(generated)
@@ -121,9 +121,7 @@ async function processGenerationResult(
  * Uses the documentSchema to ensure the AI generates valid Lexical JSON
  * with proper structure including headings, paragraphs, lists, etc.
  */
-export async function generateDocument(
-  options: GenerateDocumentOptions
-): Promise<GenerateDocumentResult | GenerateDocumentError> {
+export async function generate(options: GenerateOptions): Promise<GenerateResult | GenerateError> {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
   const generate =
@@ -141,9 +139,7 @@ export async function generateDocument(
 /**
  * Streams a Lexical document generation.
  */
-export function generateDocumentStreaming(
-  options: GenerateDocumentOptions
-): GenerateDocumentStreamingResult {
+export function generateStreaming(options: GenerateOptions): GenerateStreamingResult {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
   const generateStreaming =
@@ -160,7 +156,7 @@ export function generateDocumentStreaming(
     signal,
   })
 
-  const final = (async (): Promise<GenerateDocumentResult | GenerateDocumentError> => {
+  const final = (async (): Promise<GenerateResult | GenerateError> => {
     const generated = await streamResult.final
     return processGenerationResult(generated, options)
   })()
