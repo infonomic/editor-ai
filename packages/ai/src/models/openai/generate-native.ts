@@ -7,7 +7,7 @@ import {
   buildGenerateTextSystemPrompt,
   buildGenerateTextUserPrompt,
 } from '@/prompts'
-import { openaiGenerationSchema, openaiHtmlGenerationSchema } from './schema'
+import { openaiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/utils/convert-to-lexical'
 
 export type GenerateDocStreamingResult = {
@@ -33,12 +33,7 @@ export async function generateHtml(options: {
 }): Promise<string> {
   const client = new OpenAI({ apiKey: options.apiKey })
 
-  const format = {
-    type: 'json_schema',
-    ...openaiHtmlGenerationSchema,
-  } as any
-
-  const result = await client.responses.parse(
+  const result = await client.responses.create(
     {
       model: options.model,
       input: [
@@ -46,28 +41,11 @@ export async function generateHtml(options: {
         { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
       ],
       text: {
-        format,
+        format: { type: 'text' },
       },
-    },
+    } as any,
     options.signal ? { signal: options.signal } : undefined
   )
-
-  const parsed = (result as any).output_parsed
-  if (parsed && typeof parsed === 'object' && typeof parsed.html === 'string') {
-    return parsed.html
-  }
-
-  const outputText = getOutputText(result)
-  if (typeof outputText === 'string' && outputText.trim().length > 0) {
-    try {
-      const json = JSON.parse(outputText)
-      if (json && typeof json === 'object' && typeof json.html === 'string') {
-        return json.html
-      }
-    } catch {
-      // fall through
-    }
-  }
 
   const refusal = (result as any)?.output?.[0]?.content?.find(
     (c: any) => c?.type === 'refusal'
@@ -76,7 +54,12 @@ export async function generateHtml(options: {
     throw new Error(refusal)
   }
 
-  throw new Error('OpenAI structured output did not return a parsed HTML object.')
+  const outputText = getOutputText(result)
+  if (typeof outputText === 'string' && outputText.trim().length > 0) {
+    return outputText.trim()
+  }
+
+  throw new Error('OpenAI did not return any HTML output.')
 }
 
 export function generateHtmlStreaming(options: {
@@ -87,11 +70,6 @@ export function generateHtmlStreaming(options: {
 }): GenerateHtmlStreamingResult {
   const client = new OpenAI({ apiKey: options.apiKey })
 
-  const format = {
-    type: 'json_schema',
-    ...openaiHtmlGenerationSchema,
-  } as any
-
   const stream = client.responses.stream(
     {
       model: options.model,
@@ -100,7 +78,7 @@ export function generateHtmlStreaming(options: {
         { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
       ],
       text: {
-        format,
+        format: { type: 'text' },
       },
       stream: true,
     },
@@ -118,23 +96,6 @@ export function generateHtmlStreaming(options: {
   const final = (async () => {
     const result = await stream.finalResponse()
 
-    const parsed = (result as any).output_parsed
-    if (parsed && typeof parsed === 'object' && typeof parsed.html === 'string') {
-      return parsed.html
-    }
-
-    const outputText = getOutputText(result)
-    if (typeof outputText === 'string' && outputText.trim().length > 0) {
-      try {
-        const json = JSON.parse(outputText)
-        if (json && typeof json === 'object' && typeof json.html === 'string') {
-          return json.html
-        }
-      } catch {
-        // fall through
-      }
-    }
-
     const refusal = (result as any)?.output?.[0]?.content?.find(
       (c: any) => c?.type === 'refusal'
     )?.refusal
@@ -142,7 +103,12 @@ export function generateHtmlStreaming(options: {
       throw new Error(refusal)
     }
 
-    throw new Error('OpenAI structured output did not return a parsed HTML object.')
+    const outputText = getOutputText(result)
+    if (typeof outputText === 'string' && outputText.trim().length > 0) {
+      return outputText.trim()
+    }
+
+    throw new Error('OpenAI did not return any HTML output.')
   })()
 
   return { text, final }
