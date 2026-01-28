@@ -4,9 +4,21 @@ import {
   buildGenerateHtmlSystemPrompt,
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
+  buildGenerateTextSystemPrompt,
+  buildGenerateTextUserPrompt,
 } from '@/prompts'
 import { anthropicGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/utils/convert-to-lexical'
+
+export type GenerateTextStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
+}
+
+export type GenerateHtmlStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
+}
 
 export async function generateHtml(options: {
   apiKey: string
@@ -32,6 +44,183 @@ export async function generateHtml(options: {
 
   const textBlock = message.content.find((b) => b.type === 'text')
   return textBlock?.text ?? ''
+}
+
+export function generateHtmlStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateHtmlStreamingResult {
+  const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
+    ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
+    : 'https://api.anthropic.com'
+
+  const client = new Anthropic({ apiKey: options.apiKey, baseURL })
+
+  const stream = client.messages.stream(
+    {
+      model: options.model,
+      max_tokens: 4096,
+      system: buildGenerateHtmlSystemPrompt(),
+      messages: [{ role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) }],
+      stream: true,
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta') {
+        const deltaText = (event as any)?.delta?.text
+        if (typeof deltaText === 'string' && deltaText.length > 0) {
+          yield deltaText
+        }
+      }
+    }
+  })()
+
+  const final = (async () => {
+    const message = await stream.finalMessage()
+    const html = (message.content ?? [])
+      .filter((b: any) => b?.type === 'text')
+      .map((b: any) => b?.text)
+      .filter((t: any) => typeof t === 'string' && t.length > 0)
+      .join('')
+
+    return html.trim()
+  })()
+
+  return { text, final }
+}
+
+export async function generateText(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): Promise<string> {
+  const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
+    ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
+    : 'https://api.anthropic.com'
+
+  const client = new Anthropic({ apiKey: options.apiKey, baseURL })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const message = await client.messages.create(
+    {
+      model: options.model,
+      max_tokens: 4096,
+      system: buildGenerateTextSystemPrompt(),
+      messages: [{ role: 'user', content: buildGenerateTextUserPrompt(promptWithLength) }],
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (message.content ?? [])
+    .filter((b: any) => b?.type === 'text')
+    .map((b: any) => b?.text)
+    .filter((t: any) => typeof t === 'string' && t.length > 0)
+    .join('')
+    .trim()
+
+  if (typeof maxLength === 'number' && maxLength > 0) {
+    return text.length > maxLength ? text.slice(0, maxLength).trimEnd() : text
+  }
+
+  return text
+}
+
+export function generateTextStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): GenerateTextStreamingResult {
+  const baseURL = isValidHttpUrl(process.env.ANTHROPIC_BASE_URL)
+    ? normalizeAnthropicBaseURLForSdk(process.env.ANTHROPIC_BASE_URL)
+    : 'https://api.anthropic.com'
+
+  const client = new Anthropic({ apiKey: options.apiKey, baseURL })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const stream = client.messages.stream(
+    {
+      model: options.model,
+      max_tokens: 4096,
+      system: buildGenerateTextSystemPrompt(),
+      messages: [{ role: 'user', content: buildGenerateTextUserPrompt(promptWithLength) }],
+      stream: true,
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    let remaining = typeof maxLength === 'number' && maxLength > 0 ? maxLength : undefined
+
+    for await (const event of stream) {
+      if (event.type !== 'content_block_delta') {
+        continue
+      }
+
+      const deltaText = (event as any)?.delta?.text
+      if (typeof deltaText !== 'string' || deltaText.length === 0) {
+        continue
+      }
+
+      if (typeof remaining === 'number') {
+        if (remaining <= 0) {
+          continue
+        }
+        const chunk = deltaText.slice(0, remaining)
+        remaining -= chunk.length
+        if (chunk.length > 0) {
+          yield chunk
+        }
+        continue
+      }
+
+      yield deltaText
+    }
+  })()
+
+  const final = (async () => {
+    const message = await stream.finalMessage()
+    const combined = (message.content ?? [])
+      .filter((b: any) => b?.type === 'text')
+      .map((b: any) => b?.text)
+      .filter((t: any) => typeof t === 'string' && t.length > 0)
+      .join('')
+      .trim()
+
+    if (typeof maxLength === 'number' && maxLength > 0) {
+      return combined.length > maxLength ? combined.slice(0, maxLength).trimEnd() : combined
+    }
+
+    return combined
+  })()
+
+  return { text, final }
 }
 
 const isValidHttpUrl = (value: string | undefined): value is string => {

@@ -5,16 +5,25 @@ import {
   getGenerateDoc as getGenerateAnthropicDoc,
   getGenerateDocStreaming as getGenerateAnthropicDocStreaming,
   getGenerateHtml as getGenerateAnthropicHtml,
+  getGenerateHtmlStreaming as getGenerateAnthropicHtmlStreaming,
+  getGenerateText as getGenerateAnthropicText,
+  getGenerateTextStreaming as getGenerateAnthropicTextStreaming,
 } from './models/anthropic/generate'
 import {
   getGenerateDoc as getGenerateGeminiDoc,
   getGenerateDocStreaming as getGenerateGeminiDocStreaming,
   getGenerateHtml as getGenerateGeminiHtml,
+  getGenerateHtmlStreaming as getGenerateGeminiHtmlStreaming,
+  getGenerateText as getGenerateGeminiText,
+  getGenerateTextStreaming as getGenerateGeminiTextStreaming,
 } from './models/google/generate'
 import {
   getGenerateDoc as getGenerateOpenAIDoc,
   getGenerateDocStreaming as getGenerateOpenAIDocStreaming,
   getGenerateHtml as getGenerateOpenAIHtml,
+  getGenerateHtmlStreaming as getGenerateOpenAIHtmlStreaming,
+  getGenerateText as getGenerateOpenAIText,
+  getGenerateTextStreaming as getGenerateOpenAITextStreaming,
 } from './models/openai/generate'
 import { documentSchema } from './schemas/lexical-json-schema'
 import { convertToLexical } from './utils/convert-to-lexical'

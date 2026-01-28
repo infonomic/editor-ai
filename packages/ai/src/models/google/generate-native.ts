@@ -4,10 +4,22 @@ import {
   buildGenerateHtmlSystemPrompt,
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
+  buildGenerateTextSystemPrompt,
+  buildGenerateTextUserPrompt,
 } from '@/prompts'
 import { normalizeGeneratedDoc } from './normalize-generated-doc'
-import { geminiGenerationSchema, geminiGenerationSchema2 } from './schema'
+import { geminiGenerationSchema2 } from './schema'
 import type { GeneratedDoc } from '@/utils/convert-to-lexical'
+
+export type GenerateTextStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
+}
+
+export type GenerateHtmlStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
+}
 
 export async function generateHtml(options: {
   apiKey: string
@@ -31,6 +43,186 @@ export async function generateHtml(options: {
   return response.text?.trim() ?? ''
 }
 
+export function generateHtmlStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateHtmlStreamingResult {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const streamPromise = ai.models.generateContentStream({
+    model: options.model,
+    config: {
+      systemInstruction: buildGenerateHtmlSystemPrompt(),
+      abortSignal: options.signal,
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: buildGenerateHtmlUserPrompt(options.prompt) }],
+      },
+    ],
+  })
+
+  let resolveFinal!: (value: string) => void
+  let rejectFinal!: (reason?: unknown) => void
+  const final = new Promise<string>((resolve, reject) => {
+    resolveFinal = resolve
+    rejectFinal = reject
+  })
+
+  const text = (async function* () {
+    let buffered = ''
+    try {
+      const stream = await streamPromise
+      for await (const chunk of stream) {
+        const chunkText =
+          typeof (chunk as any)?.text === 'function' ? (chunk as any).text() : (chunk as any)?.text
+        if (typeof chunkText === 'string' && chunkText.length > 0) {
+          buffered += chunkText
+          yield chunkText
+        }
+      }
+
+      resolveFinal(buffered.trim())
+    } catch (error) {
+      rejectFinal(error)
+      throw error
+    }
+  })()
+
+  return { text, final }
+}
+
+export async function generateText(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const response = await ai.models.generateContent({
+    model: options.model,
+    config: {
+      systemInstruction: buildGenerateTextSystemPrompt(),
+      abortSignal: options.signal,
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: buildGenerateTextUserPrompt(promptWithLength) }],
+      },
+    ],
+  })
+
+  const normalized = response.text?.trim() ?? ''
+  if (typeof maxLength === 'number' && maxLength > 0) {
+    return normalized.length > maxLength ? normalized.slice(0, maxLength).trimEnd() : normalized
+  }
+
+  return normalized
+}
+
+export function generateTextStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): GenerateTextStreamingResult {
+  const ai = new GoogleGenAI({ apiKey: options.apiKey })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const streamPromise = ai.models.generateContentStream({
+    model: options.model,
+    config: {
+      systemInstruction: buildGenerateTextSystemPrompt(),
+      abortSignal: options.signal,
+    },
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: buildGenerateTextUserPrompt(promptWithLength) }],
+      },
+    ],
+  })
+
+  let resolveFinal!: (value: string) => void
+  let rejectFinal!: (reason?: unknown) => void
+  const final = new Promise<string>((resolve, reject) => {
+    resolveFinal = resolve
+    rejectFinal = reject
+  })
+
+  const text = (async function* () {
+    let buffered = ''
+    let remaining = typeof maxLength === 'number' && maxLength > 0 ? maxLength : undefined
+
+    try {
+      const stream = await streamPromise
+      for await (const chunk of stream) {
+        const chunkText =
+          typeof (chunk as any)?.text === 'function' ? (chunk as any).text() : (chunk as any)?.text
+        if (typeof chunkText !== 'string' || chunkText.length === 0) {
+          continue
+        }
+
+        buffered += chunkText
+
+        if (typeof remaining === 'number') {
+          if (remaining <= 0) {
+            continue
+          }
+          const sliced = chunkText.slice(0, remaining)
+          remaining -= sliced.length
+          if (sliced.length > 0) {
+            yield sliced
+          }
+          continue
+        }
+
+        yield chunkText
+      }
+
+      const normalized = buffered.trim()
+      if (typeof maxLength === 'number' && maxLength > 0) {
+        resolveFinal(
+          normalized.length > maxLength ? normalized.slice(0, maxLength).trimEnd() : normalized
+        )
+      } else {
+        resolveFinal(normalized)
+      }
+    } catch (error) {
+      rejectFinal(error)
+      throw error
+    }
+  })()
+
+  return { text, final }
+}
+
 const tryParseJson = (text: string): unknown => {
   const trimmed = text.trim()
   if (trimmed.length === 0) return undefined
@@ -42,31 +234,6 @@ const tryParseJson = (text: string): unknown => {
   return JSON.parse(candidate)
 }
 
-const normalizeJsonSchemaForGemini = (schema: unknown): unknown => {
-  if (schema == null) return schema
-  if (Array.isArray(schema)) return schema.map(normalizeJsonSchemaForGemini)
-  if (typeof schema !== 'object') return schema
-
-  const obj = schema as Record<string, any>
-  const next: Record<string, any> = {}
-
-  for (const [key, value] of Object.entries(obj)) {
-    if (key === 'const') {
-      next.enum = [value]
-      continue
-    }
-
-    if (key === 'type' && Array.isArray(value)) {
-      next.anyOf = value.map((t) => ({ type: t }))
-      continue
-    }
-
-    next[key] = normalizeJsonSchemaForGemini(value)
-  }
-
-  return next
-}
-
 export async function generateDoc(options: {
   apiKey: string
   model: string
@@ -75,22 +242,12 @@ export async function generateDoc(options: {
 }): Promise<GeneratedDoc> {
   const ai = new GoogleGenAI({ apiKey: options.apiKey })
 
-  // Google recommends using `responseJsonSchema` for full JSON Schema support.
-  // Remove draft-07 $schema field to avoid confusing the API.
-  const responseJsonSchema = {
-    ...(geminiGenerationSchema as any),
-    $schema: undefined,
-  }
-
-  const normalizedResponseJsonSchema = normalizeJsonSchemaForGemini(responseJsonSchema)
-
   const response = await ai.models.generateContent({
     model: options.model,
     contents: options.prompt,
     config: {
       systemInstruction: buildGenerateSystemPrompt(),
       responseMimeType: 'application/json',
-      // responseJsonSchema: normalizedResponseJsonSchema,
       responseJsonSchema: geminiGenerationSchema2,
       abortSignal: options.signal,
     },
