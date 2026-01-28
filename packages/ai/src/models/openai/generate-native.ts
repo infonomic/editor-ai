@@ -4,13 +4,25 @@ import {
   buildGenerateHtmlSystemPrompt,
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
+  buildGenerateTextSystemPrompt,
+  buildGenerateTextUserPrompt,
 } from '@/prompts'
-import { openaiGenerationSchema, openaiHtmlGenerationSchema } from './schema'
+import { openaiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/utils/convert-to-lexical'
 
 export type GenerateDocStreamingResult = {
   text: AsyncIterable<string>
   final: Promise<GeneratedDoc>
+}
+
+export type GenerateTextStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
+}
+
+export type GenerateHtmlStreamingResult = {
+  text: AsyncIterable<string>
+  final: Promise<string>
 }
 
 export async function generateHtml(options: {
@@ -21,12 +33,7 @@ export async function generateHtml(options: {
 }): Promise<string> {
   const client = new OpenAI({ apiKey: options.apiKey })
 
-  const format = {
-    type: 'json_schema',
-    ...openaiHtmlGenerationSchema,
-  } as any
-
-  const result = await client.responses.parse(
+  const result = await client.responses.create(
     {
       model: options.model,
       input: [
@@ -34,28 +41,11 @@ export async function generateHtml(options: {
         { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
       ],
       text: {
-        format,
+        format: { type: 'text' },
       },
-    },
+    } as any,
     options.signal ? { signal: options.signal } : undefined
   )
-
-  const parsed = (result as any).output_parsed
-  if (parsed && typeof parsed === 'object' && typeof parsed.html === 'string') {
-    return parsed.html
-  }
-
-  const outputText = getOutputText(result)
-  if (typeof outputText === 'string' && outputText.trim().length > 0) {
-    try {
-      const json = JSON.parse(outputText)
-      if (json && typeof json === 'object' && typeof json.html === 'string') {
-        return json.html
-      }
-    } catch {
-      // fall through
-    }
-  }
 
   const refusal = (result as any)?.output?.[0]?.content?.find(
     (c: any) => c?.type === 'refusal'
@@ -64,7 +54,201 @@ export async function generateHtml(options: {
     throw new Error(refusal)
   }
 
-  throw new Error('OpenAI structured output did not return a parsed HTML object.')
+  const outputText = getOutputText(result)
+  if (typeof outputText === 'string' && outputText.trim().length > 0) {
+    return outputText.trim()
+  }
+
+  throw new Error('OpenAI did not return any HTML output.')
+}
+
+export function generateHtmlStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  signal?: AbortSignal
+}): GenerateHtmlStreamingResult {
+  const client = new OpenAI({ apiKey: options.apiKey })
+
+  const stream = client.responses.stream(
+    {
+      model: options.model,
+      input: [
+        { role: 'system', content: buildGenerateHtmlSystemPrompt() },
+        { role: 'user', content: buildGenerateHtmlUserPrompt(options.prompt) },
+      ],
+      text: {
+        format: { type: 'text' },
+      },
+      stream: true,
+    },
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    for await (const event of stream) {
+      if (event.type === 'response.output_text.delta') {
+        yield event.delta
+      }
+    }
+  })()
+
+  const final = (async () => {
+    const result = await stream.finalResponse()
+
+    const refusal = (result as any)?.output?.[0]?.content?.find(
+      (c: any) => c?.type === 'refusal'
+    )?.refusal
+    if (typeof refusal === 'string' && refusal.length > 0) {
+      throw new Error(refusal)
+    }
+
+    const outputText = getOutputText(result)
+    if (typeof outputText === 'string' && outputText.trim().length > 0) {
+      return outputText.trim()
+    }
+
+    throw new Error('OpenAI did not return any HTML output.')
+  })()
+
+  return { text, final }
+}
+
+export async function generateText(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): Promise<string> {
+  const client = new OpenAI({ apiKey: options.apiKey })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const result = await client.responses.create(
+    {
+      model: options.model,
+      input: [
+        { role: 'system', content: buildGenerateTextSystemPrompt() },
+        { role: 'user', content: buildGenerateTextUserPrompt(promptWithLength) },
+      ],
+      text: {
+        format: { type: 'text' },
+      },
+    } as any,
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const refusal = (result as any)?.output?.[0]?.content?.find(
+    (c: any) => c?.type === 'refusal'
+  )?.refusal
+  if (typeof refusal === 'string' && refusal.length > 0) {
+    throw new Error(refusal)
+  }
+
+  const outputText = getOutputText(result)
+  if (typeof outputText !== 'string' || outputText.trim().length === 0) {
+    throw new Error('OpenAI did not return any plain text output.')
+  }
+
+  const normalized = outputText.trim()
+  if (typeof maxLength === 'number' && maxLength > 0) {
+    return normalized.length > maxLength ? normalized.slice(0, maxLength).trimEnd() : normalized
+  }
+
+  return normalized
+}
+
+export function generateTextStreaming(options: {
+  apiKey: string
+  model: string
+  prompt: string
+  maxLength?: number
+  signal?: AbortSignal
+}): GenerateTextStreamingResult {
+  const client = new OpenAI({ apiKey: options.apiKey })
+
+  const maxLength =
+    typeof options.maxLength === 'number' && Number.isFinite(options.maxLength)
+      ? Math.floor(options.maxLength)
+      : undefined
+
+  const promptWithLength =
+    typeof maxLength === 'number' && maxLength > 0
+      ? `${options.prompt}\n\nConstraints:\n- Maximum length: ${maxLength} characters.`
+      : options.prompt
+
+  const stream = client.responses.stream(
+    {
+      model: options.model,
+      input: [
+        { role: 'system', content: buildGenerateTextSystemPrompt() },
+        { role: 'user', content: buildGenerateTextUserPrompt(promptWithLength) },
+      ],
+      text: {
+        format: { type: 'text' },
+      },
+      stream: true,
+    } as any,
+    options.signal ? { signal: options.signal } : undefined
+  )
+
+  const text = (async function* () {
+    let remaining = typeof maxLength === 'number' && maxLength > 0 ? maxLength : undefined
+
+    for await (const event of stream) {
+      if (event.type !== 'response.output_text.delta') {
+        continue
+      }
+
+      if (typeof remaining === 'number') {
+        if (remaining <= 0) {
+          continue
+        }
+        const chunk = event.delta.slice(0, remaining)
+        remaining -= chunk.length
+        if (chunk.length > 0) {
+          yield chunk
+        }
+        continue
+      }
+
+      yield event.delta
+    }
+  })()
+
+  const final = (async () => {
+    const result = await stream.finalResponse()
+
+    const refusal = (result as any)?.output?.[0]?.content?.find(
+      (c: any) => c?.type === 'refusal'
+    )?.refusal
+    if (typeof refusal === 'string' && refusal.length > 0) {
+      throw new Error(refusal)
+    }
+
+    const outputText = getOutputText(result)
+    if (typeof outputText !== 'string' || outputText.trim().length === 0) {
+      throw new Error('OpenAI did not return any plain text output.')
+    }
+
+    const normalized = outputText.trim()
+    if (typeof maxLength === 'number' && maxLength > 0) {
+      return normalized.length > maxLength ? normalized.slice(0, maxLength).trimEnd() : normalized
+    }
+
+    return normalized
+  })()
+
+  return { text, final }
 }
 
 const getOutputText = (result: any) => {
