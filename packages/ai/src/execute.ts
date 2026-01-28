@@ -4,10 +4,10 @@ import { z } from 'zod'
 import { instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
 import {
-  generate,
   generateHtml,
   generateHtmlStreaming,
-  generateStreaming,
+  generateStructured,
+  generateStructuredStreaming,
   generateText,
   generateTextStreaming,
 } from './generate'
@@ -239,7 +239,7 @@ export async function executeInstruction(
       })
     }
 
-    const result = await generate({
+    const result = await generateStructured({
       provider,
       apiKey,
       modelName,
@@ -369,7 +369,7 @@ export function executeInstructionStreaming(
                     editorState,
                     signal: options?.signal,
                   })
-                : generateStreaming({
+                : generateStructuredStreaming({
                     provider,
                     apiKey,
                     modelName,

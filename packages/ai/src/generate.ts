@@ -140,17 +140,19 @@ async function processGenerationResult(
  * Uses the documentSchema to ensure the AI generates valid Lexical JSON
  * with proper structure including headings, paragraphs, lists, etc.
  */
-export async function generate(options: GenerateOptions): Promise<GenerateResult | GenerateError> {
+export async function generateStructured(
+  options: GenerateOptions
+): Promise<GenerateResult | GenerateError> {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
-  const generate =
+  const generateDoc =
     provider === 'openai'
       ? getGenerateOpenAIDoc(api)
       : provider === 'google'
         ? getGenerateGeminiDoc(api)
         : getGenerateAnthropicDoc(api)
 
-  const generated = await generate({ apiKey, model: modelName, prompt, signal })
+  const generated = await generateDoc({ apiKey, model: modelName, prompt, signal })
 
   return processGenerationResult(generated, options)
 }
@@ -297,17 +299,17 @@ export function generateTextStreaming(options: GenerateTextOptions): GenerateStr
 /**
  * Streams a Lexical document generation.
  */
-export function generateStreaming(options: GenerateOptions): GenerateStreamingResult {
+export function generateStructuredStreaming(options: GenerateOptions): GenerateStreamingResult {
   const { provider, apiKey, modelName, prompt, api, signal } = options
 
-  const generateStreaming =
+  const generateDocStreaming =
     provider === 'openai'
       ? getGenerateOpenAIDocStreaming(api)
       : provider === 'google'
         ? getGenerateGeminiDocStreaming(api)
         : getGenerateAnthropicDocStreaming(api)
 
-  const streamResult = generateStreaming({
+  const streamResult = generateDocStreaming({
     apiKey,
     model: modelName,
     prompt,
