@@ -5,6 +5,8 @@ import {
   buildGenerateHtmlSystemPrompt,
   buildGenerateHtmlUserPrompt,
   buildGenerateSystemPrompt,
+  buildGenerateTextSystemPrompt,
+  buildGenerateTextUserPrompt,
 } from '@/prompts'
 import { openaiGenerationSchema } from './schema'
 import type { GeneratedDoc } from '@/utils/convert-to-lexical'

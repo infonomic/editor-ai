@@ -46,7 +46,7 @@ export const buildGenerateSystemPrompt = () => {
 }
 
 /**
- * System prompt for GENERATE HTML fallback mode.
+ * System prompt for HTML
  * (html)
  */
 export const buildGenerateHtmlSystemPrompt = () => {
@@ -60,4 +60,21 @@ export const buildGenerateHtmlSystemPrompt = () => {
 
 export const buildGenerateHtmlUserPrompt = (instruction: string) => {
   return `Write HTML for the following request:\n\n${instruction}`
+}
+
+/**
+ * System prompt for plain text
+ * (text)
+ */
+export const buildGenerateTextSystemPrompt = () => {
+  return [
+    'You are writing plain text.',
+    'Return ONLY plain text (no HTML, no Markdown, no code fences, no surrounding quotes).',
+    'If the user provides constraints (for example: a maximum character length), you MUST follow them.',
+    'If a maximum character length is specified, ensure the output is at most that many characters.',
+  ].join('\n')
+}
+
+export const buildGenerateTextUserPrompt = (instruction: string) => {
+  return `Write plain text for the following request:\n\n${instruction}`
 }
