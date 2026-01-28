@@ -39,11 +39,24 @@ export interface InstructionState {
   message?: string
   editor?: any
   html?: string
-  format?: 'lexical' | 'html'
+  text?: string
+  format?: 'lexical' | 'html' | 'text'
   prompt?: string
   lastRun?: number | null
   status: 'success' | 'failed' | 'idle'
 }
+
+const outputPreferenceSchema = z
+  .discriminatedUnion('type', [
+    z.object({ type: z.literal('structured') }),
+    z.object({ type: z.literal('html') }),
+    z.object({
+      type: z.literal('text'),
+      length: z.enum(['short', 'long']),
+      maxLength: z.number().optional(),
+    }),
+  ])
+  .optional()
 
 export const instructionSchema = z.object({
   prompt: z
@@ -70,6 +83,7 @@ export const instructionSchema = z.object({
   api: z.enum(APIS, {
     error: 'API must be one of native or vercel.',
   }),
+  output: outputPreferenceSchema,
 })
 
 export type Provider = z.infer<typeof instructionSchema>['provider']

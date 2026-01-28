@@ -55,6 +55,12 @@ export type GenerateResult =
       html: string
       message: string
     }
+  | {
+      success: true
+      format: 'text'
+      text: string
+      message: string
+    }
 
 export type GenerateStreamingResult = {
   text: AsyncIterable<string>
@@ -65,6 +71,10 @@ export interface GenerateError {
   success: false
   message: string
   errors: Record<string, string[]>
+}
+
+export interface GenerateTextOptions extends GenerateOptions {
+  maxLength?: number
 }
 
 async function processGenerationResult(
@@ -143,6 +153,145 @@ export async function generate(options: GenerateOptions): Promise<GenerateResult
   const generated = await generate({ apiKey, model: modelName, prompt, signal })
 
   return processGenerationResult(generated, options)
+}
+
+export async function generateHtml(
+  options: GenerateOptions
+): Promise<Extract<GenerateResult, { format: 'html' }> | GenerateError> {
+  const { provider, apiKey, modelName, prompt, api, signal } = options
+
+  const generateHtml =
+    provider === 'openai'
+      ? getGenerateOpenAIHtml(api)
+      : provider === 'google'
+        ? getGenerateGeminiHtml(api)
+        : getGenerateAnthropicHtml(api)
+
+  const html = await generateHtml({ apiKey, model: modelName, prompt, signal })
+  const trimmed = html?.trim() ?? ''
+  if (trimmed.length === 0) {
+    return {
+      success: false,
+      message: 'AI returned empty HTML.',
+      errors: { prompt: ['AI returned empty HTML.'] },
+    }
+  }
+
+  return {
+    success: true,
+    format: 'html',
+    html: trimmed,
+    message: 'Generated HTML successfully.',
+  }
+}
+
+export function generateHtmlStreaming(options: GenerateOptions): GenerateStreamingResult {
+  const { provider, apiKey, modelName, prompt, api, signal } = options
+
+  const generateHtmlStreaming =
+    provider === 'openai'
+      ? getGenerateOpenAIHtmlStreaming(api)
+      : provider === 'google'
+        ? getGenerateGeminiHtmlStreaming(api)
+        : getGenerateAnthropicHtmlStreaming(api)
+
+  const streamResult = generateHtmlStreaming({
+    apiKey,
+    model: modelName,
+    prompt,
+    signal,
+  })
+
+  const final = (async (): Promise<GenerateResult | GenerateError> => {
+    const html = await streamResult.final
+    const trimmed = html?.trim() ?? ''
+    if (trimmed.length === 0) {
+      return {
+        success: false,
+        message: 'AI returned empty HTML.',
+        errors: { prompt: ['AI returned empty HTML.'] },
+      }
+    }
+
+    return {
+      success: true,
+      format: 'html',
+      html: trimmed,
+      message: 'Generated HTML successfully.',
+    }
+  })()
+
+  return { text: streamResult.text, final }
+}
+
+export async function generateText(
+  options: GenerateTextOptions
+): Promise<Extract<GenerateResult, { format: 'text' }> | GenerateError> {
+  const { provider, apiKey, modelName, prompt, api, signal, maxLength } = options
+
+  const generateText =
+    provider === 'openai'
+      ? getGenerateOpenAIText(api)
+      : provider === 'google'
+        ? getGenerateGeminiText(api)
+        : getGenerateAnthropicText(api)
+
+  const text = await generateText({ apiKey, model: modelName, prompt, maxLength, signal } as any)
+  const trimmed = text?.trim() ?? ''
+  if (trimmed.length === 0) {
+    return {
+      success: false,
+      message: 'AI returned empty text.',
+      errors: { prompt: ['AI returned empty text.'] },
+    }
+  }
+
+  return {
+    success: true,
+    format: 'text',
+    text: trimmed,
+    message: 'Generated text successfully.',
+  }
+}
+
+export function generateTextStreaming(options: GenerateTextOptions): GenerateStreamingResult {
+  const { provider, apiKey, modelName, prompt, api, signal, maxLength } = options
+
+  const generateTextStreaming =
+    provider === 'openai'
+      ? getGenerateOpenAITextStreaming(api)
+      : provider === 'google'
+        ? getGenerateGeminiTextStreaming(api)
+        : getGenerateAnthropicTextStreaming(api)
+
+  const streamResult = generateTextStreaming({
+    apiKey,
+    model: modelName,
+    prompt,
+    maxLength,
+    signal,
+  } as any)
+
+  const final = (async (): Promise<GenerateResult | GenerateError> => {
+    const text = await streamResult.final
+    const trimmed = text?.trim() ?? ''
+    if (trimmed.length === 0) {
+      return {
+        success: false,
+        message: 'AI returned empty text.',
+        errors: { prompt: ['AI returned empty text.'] },
+      }
+    }
+
+    return {
+      success: true,
+      format: 'text',
+      text: trimmed,
+      message: 'Generated text successfully.',
+    }
+  })()
+
+  return { text: streamResult.text, final }
 }
 
 /**

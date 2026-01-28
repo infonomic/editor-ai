@@ -3,7 +3,14 @@ import { z } from 'zod'
 
 import { instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
-import { generate, generateStreaming } from './generate'
+import {
+  generate,
+  generateHtml,
+  generateHtmlStreaming,
+  generateStreaming,
+  generateText,
+  generateTextStreaming,
+} from './generate'
 import { getLogger } from './lib/logger'
 import { patch, patchStreaming } from './patch'
 import { hasText } from './utils/has-text'
@@ -12,6 +19,7 @@ import type {
   ExecuteInstructionParams,
   InstructionApi,
   InstructionState,
+  OutputPreference,
   Provider,
 } from './@types'
 
@@ -22,6 +30,7 @@ type ValidatedInstruction = {
   modelName: string
   prompt: string
   provider: Provider
+  output: OutputPreference
 }
 
 const isAbortLikeError = (error: unknown): boolean => {
@@ -67,6 +76,7 @@ const validateInstructionFields = (
   }
 
   const { prompt, editor, provider, model: modelName, api } = validatedFields.data
+  const output = validatedFields.data.output ?? ({ type: 'structured' } as const)
 
   // Validate that the appropriate API key exists for the selected provider
   let apiKey: string | undefined
@@ -116,6 +126,7 @@ const validateInstructionFields = (
       modelName,
       prompt,
       provider,
+      output,
     },
   }
 }
@@ -138,9 +149,65 @@ export async function executeInstruction(
     return withLastRun(validated.errorState)
   }
 
-  const { prompt, editorState, provider, modelName, api, apiKey } = validated.data
+  const { prompt, editorState, provider, modelName, api, apiKey, output } = validated.data
 
   try {
+    if (output.type === 'html') {
+      const result = await generateHtml({
+        provider,
+        apiKey,
+        modelName,
+        prompt,
+        api,
+        signal: options?.signal,
+      })
+
+      if (result.success) {
+        return withLastRun({
+          errors: {},
+          message: result.message,
+          format: 'html',
+          html: result.html,
+          status: 'success',
+        })
+      }
+
+      return withLastRun({
+        errors: result.errors,
+        message: result.message,
+        status: 'failed',
+      })
+    }
+
+    if (output.type === 'text') {
+      const result = await generateText({
+        provider,
+        apiKey,
+        modelName,
+        prompt,
+        api,
+        maxLength: output.maxLength,
+        signal: options?.signal,
+      })
+
+      if (result.success) {
+        return withLastRun({
+          errors: {},
+          message: result.message,
+          format: 'text',
+          text: result.text,
+          status: 'success',
+        })
+      }
+
+      return withLastRun({
+        errors: result.errors,
+        message: result.message,
+        status: 'failed',
+      })
+    }
+
+    // output.type === 'structured'
     const documentHasContent = hasText(editorState)
     // console.log(`Execute instruction hasText: ${documentHasContent}`)
 
@@ -182,23 +249,32 @@ export async function executeInstruction(
     })
 
     if (result.success) {
-      if (result.format === 'html') {
-        return withLastRun({
-          errors: {},
-          message: result.message,
-          format: 'html',
-          html: result.html,
-          status: 'success',
-        })
+      switch (result.format) {
+        case 'html':
+          return withLastRun({
+            errors: {},
+            message: result.message,
+            format: 'html',
+            html: result.html,
+            status: 'success',
+          })
+        case 'text':
+          return withLastRun({
+            errors: {},
+            message: result.message,
+            format: 'text',
+            text: result.text,
+            status: 'success',
+          })
+        case 'lexical':
+          return withLastRun({
+            errors: {},
+            message: result.message,
+            format: 'lexical',
+            editor: result.editor,
+            status: 'success',
+          })
       }
-
-      return withLastRun({
-        errors: {},
-        message: result.message,
-        format: 'lexical',
-        editor: result.editor,
-        status: 'success',
-      })
     }
 
     return withLastRun({
@@ -257,46 +333,87 @@ export function executeInstructionStreaming(
     }
   }
 
-  const { prompt, editorState, provider, modelName, api, apiKey } = validated.data
+  const { prompt, editorState, provider, modelName, api, apiKey, output } = validated.data
 
   try {
-    const documentHasContent = hasText(editorState)
-    // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
-
-    const streamResult = documentHasContent
-      ? patchStreaming({
-          provider,
-          apiKey,
-          modelName,
-          prompt,
-          api,
-          editorState,
-          signal: options?.signal,
-        })
-      : generateStreaming({
-          provider,
-          apiKey,
-          modelName,
-          prompt,
-          api,
-          signal: options?.signal,
-        })
+    const streamResult =
+      output.type === 'html'
+        ? generateHtmlStreaming({
+            provider,
+            apiKey,
+            modelName,
+            prompt,
+            api,
+            signal: options?.signal,
+          })
+        : output.type === 'text'
+          ? generateTextStreaming({
+              provider,
+              apiKey,
+              modelName,
+              prompt,
+              api,
+              maxLength: output.maxLength,
+              signal: options?.signal,
+            })
+          : (() => {
+              const documentHasContent = hasText(editorState)
+              // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
+              return documentHasContent
+                ? patchStreaming({
+                    provider,
+                    apiKey,
+                    modelName,
+                    prompt,
+                    api,
+                    editorState,
+                    signal: options?.signal,
+                  })
+                : generateStreaming({
+                    provider,
+                    apiKey,
+                    modelName,
+                    prompt,
+                    api,
+                    signal: options?.signal,
+                  })
+            })()
 
     const final = (async (): Promise<InstructionState> => {
       try {
         const result = await streamResult.final
 
         if (result.success) {
-          if ('format' in result && result.format === 'html') {
-            return withLastRun({
-              errors: {},
-              message: result.message,
-              format: 'html',
-              html: result.html,
-              status: 'success',
-            })
+          if ('format' in result) {
+            switch (result.format) {
+              case 'html':
+                return withLastRun({
+                  errors: {},
+                  message: result.message,
+                  format: 'html',
+                  html: result.html,
+                  status: 'success',
+                })
+              case 'text':
+                return withLastRun({
+                  errors: {},
+                  message: result.message,
+                  format: 'text',
+                  text: result.text,
+                  status: 'success',
+                })
+              case 'lexical':
+                return withLastRun({
+                  errors: {},
+                  message: result.message,
+                  format: 'lexical',
+                  editor: result.editor,
+                  status: 'success',
+                })
+            }
           }
 
+          // Patch success (structured patch) returns an editor.
           return withLastRun({
             errors: {},
             message: result.message,
