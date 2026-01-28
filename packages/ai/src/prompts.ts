@@ -1,3 +1,7 @@
+/**
+ * Prompt for PATCH requests to update text nodes in a Lexical document.
+ * (structured content)
+ */
 export const buildPatchSystemPrompt = () => {
   return [
     'You are editing a Lexical document by updating text-node strings.',
@@ -16,21 +20,9 @@ export const buildPatchSystemPrompt = () => {
 }
 
 /**
- * System prompt for GENERATE HTML fallback mode.
+ * Prompt for GENERATE requests to create a new Lexical document.
+ * (structured content)
  */
-export const buildGenerateHtmlSystemPrompt = () => {
-  return [
-    'You are writing HTML for a rich text editor.',
-    'Return ONLY valid HTML (no Markdown, no code fences).',
-    'Use semantic tags: h1/h2/h3, p, ul/ol/li, blockquote, strong, em.',
-    'Do not include <html>, <head>, or <body> wrappers.',
-  ].join('\n')
-}
-
-export const buildGenerateHtmlUserPrompt = (instruction: string) => {
-  return `Write HTML for the following request:\n\n${instruction}`
-}
-
 export const buildGenerateSystemPrompt = () => {
   return [
     'You are generating a rich text document using a shallow block structure.',
@@ -51,4 +43,21 @@ export const buildGenerateSystemPrompt = () => {
     '- Quote blocks contain paragraphs only.',
     '- List items contain paragraphs only and indent is 0 or 1.',
   ].join('\n')
+}
+
+/**
+ * System prompt for GENERATE HTML fallback mode.
+ * (html)
+ */
+export const buildGenerateHtmlSystemPrompt = () => {
+  return [
+    'You are writing HTML for a rich text editor.',
+    'Return ONLY valid HTML (no Markdown, no code fences).',
+    'Use semantic tags: h1/h2/h3, p, ul/ol/li, blockquote, strong, em.',
+    'Do not include <html>, <head>, or <body> wrappers.',
+  ].join('\n')
+}
+
+export const buildGenerateHtmlUserPrompt = (instruction: string) => {
+  return `Write HTML for the following request:\n\n${instruction}`
 }
