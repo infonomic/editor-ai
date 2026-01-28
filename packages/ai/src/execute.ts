@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
 import {
+  type GenerateStreamingResult,
   generateHtml,
   generateHtmlStreaming,
   generateStructured,
@@ -12,7 +13,7 @@ import {
   generateTextStreaming,
 } from './generate'
 import { getLogger } from './lib/logger'
-import { patch, patchStreaming } from './patch'
+import { type PatchStreamingResult, patch, patchStreaming } from './patch'
 import { hasText } from './utils/has-text'
 import type {
   ExecuteInstructionOptions,
@@ -336,9 +337,41 @@ export function executeInstructionStreaming(
   const { prompt, editorState, provider, modelName, api, apiKey, output } = validated.data
 
   try {
-    const streamResult =
-      output.type === 'html'
-        ? generateHtmlStreaming({
+    let streamResult: GenerateStreamingResult | PatchStreamingResult
+
+    if (output.type === 'html') {
+      streamResult = generateHtmlStreaming({
+        provider,
+        apiKey,
+        modelName,
+        prompt,
+        api,
+        signal: options?.signal,
+      })
+    } else if (output.type === 'text') {
+      streamResult = generateTextStreaming({
+        provider,
+        apiKey,
+        modelName,
+        prompt,
+        api,
+        maxLength: output.maxLength,
+        signal: options?.signal,
+      })
+    } else {
+      const documentHasContent = hasText(editorState)
+      // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
+      streamResult = documentHasContent
+        ? patchStreaming({
+            provider,
+            apiKey,
+            modelName,
+            prompt,
+            api,
+            editorState,
+            signal: options?.signal,
+          })
+        : generateStructuredStreaming({
             provider,
             apiKey,
             modelName,
@@ -346,38 +379,7 @@ export function executeInstructionStreaming(
             api,
             signal: options?.signal,
           })
-        : output.type === 'text'
-          ? generateTextStreaming({
-              provider,
-              apiKey,
-              modelName,
-              prompt,
-              api,
-              maxLength: output.maxLength,
-              signal: options?.signal,
-            })
-          : (() => {
-              const documentHasContent = hasText(editorState)
-              // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
-              return documentHasContent
-                ? patchStreaming({
-                    provider,
-                    apiKey,
-                    modelName,
-                    prompt,
-                    api,
-                    editorState,
-                    signal: options?.signal,
-                  })
-                : generateStructuredStreaming({
-                    provider,
-                    apiKey,
-                    modelName,
-                    prompt,
-                    api,
-                    signal: options?.signal,
-                  })
-            })()
+    }
 
     const final = (async (): Promise<InstructionState> => {
       try {

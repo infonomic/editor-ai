@@ -157,6 +157,34 @@ export async function generateStructured(
   return processGenerationResult(generated, options)
 }
 
+/**
+ * Streams a Lexical document generation.
+ */
+export function generateStructuredStreaming(options: GenerateOptions): GenerateStreamingResult {
+  const { provider, apiKey, modelName, prompt, api, signal } = options
+
+  const generateDocStreaming =
+    provider === 'openai'
+      ? getGenerateOpenAIDocStreaming(api)
+      : provider === 'google'
+        ? getGenerateGeminiDocStreaming(api)
+        : getGenerateAnthropicDocStreaming(api)
+
+  const streamResult = generateDocStreaming({
+    apiKey,
+    model: modelName,
+    prompt,
+    signal,
+  })
+
+  const final = (async (): Promise<GenerateResult | GenerateError> => {
+    const generated = await streamResult.final
+    return processGenerationResult(generated, options)
+  })()
+
+  return { text: streamResult.text, final }
+}
+
 export async function generateHtml(
   options: GenerateOptions
 ): Promise<Extract<GenerateResult, { format: 'html' }> | GenerateError> {
@@ -291,34 +319,6 @@ export function generateTextStreaming(options: GenerateTextOptions): GenerateStr
       text: trimmed,
       message: 'Generated text successfully.',
     }
-  })()
-
-  return { text: streamResult.text, final }
-}
-
-/**
- * Streams a Lexical document generation.
- */
-export function generateStructuredStreaming(options: GenerateOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
-
-  const generateDocStreaming =
-    provider === 'openai'
-      ? getGenerateOpenAIDocStreaming(api)
-      : provider === 'google'
-        ? getGenerateGeminiDocStreaming(api)
-        : getGenerateAnthropicDocStreaming(api)
-
-  const streamResult = generateDocStreaming({
-    apiKey,
-    model: modelName,
-    prompt,
-    signal,
-  })
-
-  const final = (async (): Promise<GenerateResult | GenerateError> => {
-    const generated = await streamResult.final
-    return processGenerationResult(generated, options)
   })()
 
   return { text: streamResult.text, final }
