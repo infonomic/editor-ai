@@ -1,3 +1,5 @@
+'use client'
+
 import { defaultEditorConfig, EditorField, type EditorSettingsOverride } from '@infonomic/editor'
 import type { SerializedEditorState } from 'lexical'
 

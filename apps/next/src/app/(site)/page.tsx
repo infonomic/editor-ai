@@ -24,7 +24,6 @@ const Page = () => {
             field={{ name: 'editor', label: 'Editor' }}
             featureAfterEditor={[<AiFeature key="ai-feature" />]}
           />
-          {/* <EditorChat /> */}
         </Container>
       </Section>
     </main>
