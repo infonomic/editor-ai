@@ -7,7 +7,13 @@ import { generate, generateStreaming } from './generate'
 import { getLogger } from './lib/logger'
 import { patch, patchStreaming } from './patch'
 import { hasText } from './utils/has-text'
-import type { ExecuteInstructionFields, InstructionApi, InstructionState, Provider } from './@types'
+import type {
+  ExecuteInstructionOptions,
+  ExecuteInstructionParams,
+  InstructionApi,
+  InstructionState,
+  Provider,
+} from './@types'
 
 type ValidatedInstruction = {
   api: InstructionApi
@@ -44,7 +50,7 @@ const createEmptyTextStream = (): AsyncIterable<string> =>
   })()
 
 const validateInstructionFields = (
-  fields: ExecuteInstructionFields
+  fields: ExecuteInstructionParams
 ): { ok: true; data: ValidatedInstruction } | { ok: false; errorState: InstructionState } => {
   const config = getAiServerConfig()
   const validatedFields = instructionSchema.safeParse(fields)
@@ -115,8 +121,8 @@ const validateInstructionFields = (
 }
 
 export async function executeInstruction(
-  fields: ExecuteInstructionFields,
-  options?: { signal?: AbortSignal }
+  params: ExecuteInstructionParams,
+  options?: ExecuteInstructionOptions
 ): Promise<InstructionState> {
   const startedAt = Date.now()
 
@@ -126,7 +132,7 @@ export async function executeInstruction(
   }
 
   const logger = getLogger()
-  const validated = validateInstructionFields(fields)
+  const validated = validateInstructionFields(params)
 
   if (validated.ok === false) {
     return withLastRun(validated.errorState)
@@ -233,8 +239,8 @@ export type ExecuteInstructionStreamingResult = {
 }
 
 export function executeInstructionStreaming(
-  fields: ExecuteInstructionFields,
-  options?: { signal?: AbortSignal }
+  params: ExecuteInstructionParams,
+  options?: ExecuteInstructionOptions
 ): ExecuteInstructionStreamingResult {
   const startedAt = Date.now()
   const withLastRun = (state: InstructionState): InstructionState => {
@@ -242,7 +248,7 @@ export function executeInstructionStreaming(
   }
 
   const logger = getLogger()
-  const validated = validateInstructionFields(fields)
+  const validated = validateInstructionFields(params)
 
   if (validated.ok === false) {
     return {

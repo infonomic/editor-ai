@@ -10,12 +10,24 @@ import { z } from 'zod'
 
 export const PROVIDERS = ['openai', 'google', 'anthropic'] as const
 
-export type ExecuteInstructionFields = {
-  prompt: unknown
-  editor: unknown
-  api: unknown
-  provider: unknown
-  model: unknown
+export type OutputPreference =
+  | { type: 'structured' }
+  | { type: 'html' }
+  | { type: 'text'; length: 'short' | 'long'; maxLength?: number }
+
+export type ExecuteInstructionParams = {
+  prompt: string
+  editor: string
+  api: InstructionApi
+  provider: Provider
+  model: string
+  output?: OutputPreference
+}
+
+export type ExecuteInstructionOptions = {
+  signal?: AbortSignal
+  timeoutMs?: number
+  telemetryContext?: Record<string, unknown>
 }
 
 export const APIS = ['native', 'vercel'] as const
