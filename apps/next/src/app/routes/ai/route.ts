@@ -1,10 +1,10 @@
-import type { InstructionState } from '@infonomic/ai'
+import type { ExecuteInstruction, InstructionState } from '@infonomic/ai'
 import { executeInstruction, executeInstructionStreaming } from '@infonomic/ai'
 
 export async function POST(request: Request) {
-  let body: any
+  let body: ExecuteInstruction | undefined
   try {
-    body = await request.json()
+    body = (await request.json()) as ExecuteInstruction
   } catch {
     const state: InstructionState = {
       status: 'failed',
@@ -15,19 +15,19 @@ export async function POST(request: Request) {
     return Response.json(state, { status: 400 })
   }
 
-  const isStreaming = body?.streaming === true
+  // IMPORTANT: Pass the request's AbortSignal to the execution functions so
+  // that downstream operations can be cancelled if the client disconnects.
+  // This helps to save tokens and the cost of our AI SDK usage. Most AI SDK
+  // functions support AbortSignal - in particular on streaming calls.
+  const options = body?.options
+    ? { ...body.options, signal: request.signal }
+    : { signal: request.signal }
+
+  const isStreaming = options?.streaming === true
 
   if (isStreaming) {
-    const result = executeInstructionStreaming(
-      {
-        prompt: body?.prompt,
-        editor: body?.editor,
-        provider: body?.provider,
-        model: body?.model,
-        api: body?.api,
-      },
-      { signal: request.signal }
-    )
+    // Stream the response
+    const result = executeInstructionStreaming(body.params, options)
 
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
@@ -84,16 +84,8 @@ export async function POST(request: Request) {
     })
   }
 
-  const state = await executeInstruction(
-    {
-      prompt: body?.prompt,
-      editor: body?.editor,
-      provider: body?.provider,
-      model: body?.model,
-      api: body?.api,
-    },
-    { signal: request.signal }
-  )
+  // Non-streaming response
+  const state = await executeInstruction(body.params, options)
 
   return Response.json(state)
 }

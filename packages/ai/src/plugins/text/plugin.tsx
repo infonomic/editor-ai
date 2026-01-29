@@ -4,27 +4,12 @@ import * as React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ExecuteInstruction, InstructionState } from '@infonomic/ai'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { mergeRegister } from '@lexical/utils'
-import {
-  // CLEAR_EDITOR_COMMAND,
-  COMMAND_PRIORITY_CRITICAL,
-  COMMAND_PRIORITY_NORMAL,
-  createCommand,
-  type LexicalEditor,
-  SELECTION_CHANGE_COMMAND,
-  type SerializedEditorState,
-} from 'lexical'
 
 import {
   AiPluginBase,
   type AiPluginBaseApi,
   type AiPluginSubmitContext,
 } from '../ai-plugin-base'
-import { createEmptyEditorState } from './create-empty-editor-state'
-import { importHtmlToSerializedEditorState } from './import-html'
-
-export const TOGGLE_AI_DRAWER_COMMAND = createCommand('TOGGLE_AI_DRAWER_COMMAND')
 
 const emptyInstructionState: InstructionState = {
   prompt: '',
@@ -34,51 +19,12 @@ const emptyInstructionState: InstructionState = {
   lastRun: null,
 }
 
-export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element | undefined {
+export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | undefined {
   const baseApiRef = useRef<AiPluginBaseApi | null>(null)
-  const submitEditorRef = useRef<LexicalEditor | null>(null)
-  const [editor] = useLexicalComposerContext()
-  const [activeEditor, setActiveEditor] = useState(editor)
 
   const handleApiReady = useCallback((api: AiPluginBaseApi) => {
     baseApiRef.current = api
   }, [])
-
-  const applyInstructionStateToEditor = useCallback(
-    (
-      nextState: InstructionState,
-      setInstructionState: React.Dispatch<React.SetStateAction<InstructionState>>
-    ) => {
-      if (nextState?.status !== 'success') return
-      const targetEditor = submitEditorRef.current ?? editor
-      if (nextState.format === 'html' && nextState.html) {
-        try {
-          importHtmlToSerializedEditorState(nextState.html, targetEditor)
-        } catch {
-          setInstructionState((prev) => ({
-            ...prev,
-            status: 'failed',
-            message: 'There was a problem parsing fallback HTML.',
-            errors: {},
-          }))
-        }
-        return
-      }
-
-      if (nextState.editor) {
-        const nextEditorState = targetEditor.parseEditorState(
-          nextState.editor as SerializedEditorState
-        )
-        targetEditor.update(
-          () => {
-            targetEditor.setEditorState(nextEditorState)
-          },
-          { discrete: true }
-        )
-      }
-    },
-    [editor]
-  )
 
   const handleOnSubmit = useCallback(
     async (context: AiPluginSubmitContext) => {
@@ -101,23 +47,25 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       const abortController = new AbortController()
       abortControllerRef.current = abortController
 
-      activeEditor.focus()
-      submitEditorRef.current = activeEditor
+      // activeEditor.focus()
+      // submitEditorRef.current = activeEditor
       setIsPending(true)
       setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
-      const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+      const inputText = ''
 
       try {
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: editorJson,
+            editor: inputText,
             api,
             provider,
             model,
             output: {
-              type: 'structured',
+              type: 'text',
+              length: 'short',
+              maxLength: 200,
             },
           },
           options: {
@@ -146,7 +94,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         const data = (await response.json()) as InstructionState
         console.log('AI Plugin response data', data)
         setInstructionState(data)
-        applyInstructionStateToEditor(data, setInstructionState)
+        // applyInstructionStateToEditor(data, setInstructionState)
       } catch (error) {
         const err = error as any
         if (err?.name === 'AbortError') {
@@ -169,7 +117,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         abortControllerRef.current = null
       }
     },
-    [activeEditor, applyInstructionStateToEditor]
+    []
   )
 
   const handleOnSubmitStreaming = useCallback(
@@ -195,28 +143,30 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       const abortController = new AbortController()
       abortControllerRef.current = abortController
 
-      activeEditor.focus()
-      submitEditorRef.current = activeEditor
+      // activeEditor.focus()
+      // submitEditorRef.current = activeEditor
       setIsPending(true)
       resetStreamPreview()
       setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
-      const editorJson = JSON.stringify(activeEditor.getEditorState().toJSON())
+      const inputText = ''
 
       try {
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: editorJson,
+            editor: inputText,
             api,
             provider,
             model,
             output: {
-              type: 'structured',
+              type: 'text',
+              length: 'short',
+              maxLength: 200,
             },
           },
           options: {
-            streaming: true,
+            streaming: false,
           },
         }
 
@@ -243,7 +193,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
           console.log('Streaming request has no body - falling back to non-streaming handling.')
           const data = (await response.json()) as InstructionState
           setInstructionState(data)
-          applyInstructionStateToEditor(data, setInstructionState)
+          // applyInstructionStateToEditor(data, setInstructionState)
           return
         }
 
@@ -289,7 +239,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
 
         if (finalState) {
           setInstructionState(finalState)
-          applyInstructionStateToEditor(finalState, setInstructionState)
+          // applyInstructionStateToEditor(finalState, setInstructionState)
         } else {
           setInstructionState({
             ...emptyInstructionState,
@@ -321,12 +271,12 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         abortControllerRef.current = null
       }
     },
-    [activeEditor, applyInstructionStateToEditor]
+    []
   )
 
   function handleOnDebug(): void {
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify(activeEditor.getEditorState()))
+    // console.log(JSON.stringify(activeEditor.getEditorState()))
   }
 
   // function handleOnFullReset(): void {
@@ -335,39 +285,9 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
   // }
 
   const handleOnClear = () => {
-    const emptyState = activeEditor.parseEditorState(createEmptyEditorState())
-    activeEditor.update(
-      () => {
-        activeEditor.setEditorState(emptyState)
-      },
-      { discrete: true }
-    )
-    activeEditor.focus()
+    const emptyState = ''
+    // activeEditor.focus()
   }
-
-  useEffect(() => {
-    return editor.registerCommand(
-      SELECTION_CHANGE_COMMAND,
-      (_payload, newEditor) => {
-        setActiveEditor(newEditor)
-        return false
-      },
-      COMMAND_PRIORITY_CRITICAL
-    )
-  }, [editor])
-
-  useEffect(() => {
-    return mergeRegister(
-      editor.registerCommand<null>(
-        TOGGLE_AI_DRAWER_COMMAND,
-        () => {
-          baseApiRef.current?.toggleOpen()
-          return true
-        },
-        COMMAND_PRIORITY_NORMAL
-      )
-    )
-  }, [editor])
 
   const helpContent = (
     <>

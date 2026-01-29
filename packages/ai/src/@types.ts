@@ -17,9 +17,15 @@ export type ExecuteInstructionParams = {
 }
 
 export type ExecuteInstructionOptions = {
+  streaming?: boolean
   signal?: AbortSignal
   timeoutMs?: number
   telemetryContext?: Record<string, unknown>
+}
+
+export type ExecuteInstruction = {
+  params: ExecuteInstructionParams
+  options?: ExecuteInstructionOptions
 }
 
 export const APIS = ['native', 'vercel'] as const

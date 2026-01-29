@@ -42,6 +42,10 @@
       "types": "./dist/plugins/lexical/index.d.ts",
       "import": "./dist/plugins/lexical/index.js"
     },
+    "./plugins/text": {
+      "types": "./dist/plugins/text/index.d.ts",
+      "import": "./dist/plugins/text/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

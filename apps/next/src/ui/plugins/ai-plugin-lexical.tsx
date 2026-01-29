@@ -3,11 +3,11 @@
 import type * as React from 'react'
 import { useEffect } from 'react'
 
-import { AiPlugin, TOGGLE_AI_DRAWER_COMMAND } from '@infonomic/ai/plugins/lexical'
+import { AiPluginLexical as AiPluginLexicalRoot, TOGGLE_AI_DRAWER_COMMAND } from '@infonomic/ai/plugins/lexical'
 import { useToolbarExtensions } from '@infonomic/editor/toolbar-extensions'
 import { AiIcon } from '@infonomic/uikit/react'
 
-export function AiFeature(): React.JSX.Element {
+export function AiPluginLexical(): React.JSX.Element {
   const { register, rootEditor } = useToolbarExtensions()
 
   useEffect(() => {
@@ -28,5 +28,5 @@ export function AiFeature(): React.JSX.Element {
     })
   }, [register, rootEditor])
 
-  return <AiPlugin />
+  return <AiPluginLexicalRoot />
 }

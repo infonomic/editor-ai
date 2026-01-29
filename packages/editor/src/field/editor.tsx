@@ -114,10 +114,6 @@ export const Editor = memo(function Editor({
     },
   } = useEditorConfig()
 
-  const AiPlugin = lazy(() =>
-    import('@infonomic/ai/plugins/lexical').then((m) => ({ default: m.AiPlugin }))
-  )
-
   const onRef = useCallback((_floatingAnchorElem: HTMLDivElement): void => {
     if (_floatingAnchorElem != null) {
       setFloatingAnchorElem(_floatingAnchorElem)

@@ -4,6 +4,7 @@ export { generateStructured, generateStructuredStreaming } from './generate'
 export { patch, patchStreaming } from './patch'
 export type {
   AiApi,
+  ExecuteInstruction,
   ExecuteInstructionOptions,
   ExecuteInstructionParams,
   InstructionState,
