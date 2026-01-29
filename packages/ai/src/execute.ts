@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { instructionSchema } from './@types'
 import { getAiServerConfig } from './config/ai-config'
 import {
-  type GenerateStreamingResult,
   generateHtml,
   generateHtmlStreaming,
   generateStructured,
@@ -13,7 +12,7 @@ import {
   generateTextStreaming,
 } from './generate'
 import { getLogger } from './lib/logger'
-import { type PatchStreamingResult, patch, patchStreaming } from './patch'
+import { patch, patchStreaming } from './patch'
 import { hasText } from './utils/has-text'
 import type {
   ExecuteInstructionOptions,
@@ -23,6 +22,8 @@ import type {
   OutputPreference,
   Provider,
 } from './@types'
+import type { GenerateStreamingResult } from './generate'
+import type { PatchStreamingResult } from './patch'
 
 type ValidatedInstruction = {
   api: InstructionApi

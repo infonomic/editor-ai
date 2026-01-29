@@ -276,6 +276,9 @@ export async function generateText(
         : getGenerateAnthropicText(api)
 
   const composedPrompt = composeTextPrompt(prompt, inputText)
+
+  // console.log('Composed Prompt:', composedPrompt)
+
   const text = await generateText({
     apiKey,
     model: modelName,
@@ -311,6 +314,9 @@ export function generateTextStreaming(options: GenerateTextOptions): GenerateStr
         : getGenerateAnthropicTextStreaming(api)
 
   const composedPrompt = composeTextPrompt(prompt, inputText)
+
+  // console.log('Composed Prompt:', composedPrompt)
+
   const streamResult = generateTextStreaming({
     apiKey,
     model: modelName,
