@@ -27,7 +27,7 @@ import type {
 type ValidatedInstruction = {
   api: InstructionApi
   apiKey: string
-  editorState: any
+  input: { type: 'structured' | 'text'; value: any | null }
   modelName: string
   prompt: string
   provider: Provider
@@ -60,10 +60,10 @@ const createEmptyTextStream = (): AsyncIterable<string> =>
   })()
 
 const validateInstructionFields = (
-  fields: ExecuteInstructionParams
+  params: ExecuteInstructionParams
 ): { ok: true; data: ValidatedInstruction } | { ok: false; errorState: InstructionState } => {
   const config = getAiServerConfig()
-  const validatedFields = instructionSchema.safeParse(fields)
+  const validatedFields = instructionSchema.safeParse(params)
 
   if (validatedFields.success === false) {
     return {
@@ -76,7 +76,7 @@ const validateInstructionFields = (
     }
   }
 
-  const { prompt, editor, provider, model: modelName, api } = validatedFields.data
+  const { prompt, input, provider, model: modelName, api } = validatedFields.data
   const output = validatedFields.data.output ?? ({ type: 'structured' } as const)
 
   // Validate that the appropriate API key exists for the selected provider
@@ -104,18 +104,35 @@ const validateInstructionFields = (
     }
   }
 
-  let editorState: any
-  try {
-    editorState = JSON.parse(editor)
-  } catch {
+  let inputValue: any | null = null
+  if (input.type === 'structured') {
+    try {
+      inputValue = JSON.parse(input.editorJson)
+    } catch {
+      return {
+        ok: false,
+        errorState: {
+          errors: { editor: ['Editor state must be valid JSON.'] },
+          message: 'Editor state is invalid JSON.',
+          status: 'failed',
+        },
+      }
+    }
+  }
+
+  if (output.type === 'structured' && input.type !== 'structured') {
     return {
       ok: false,
       errorState: {
-        errors: { editor: ['Editor state must be valid JSON.'] },
-        message: 'Editor state is invalid JSON.',
+        errors: { editor: ['Structured output requires structured editor input.'] },
+        message: 'Structured output requires structured editor input.',
         status: 'failed',
       },
     }
+  }
+
+  if (input.type === 'text') {
+    inputValue = input.text
   }
 
   return {
@@ -123,7 +140,10 @@ const validateInstructionFields = (
     data: {
       api,
       apiKey,
-      editorState,
+      input: {
+        type: input.type,
+        value: inputValue,
+      },
       modelName,
       prompt,
       provider,
@@ -150,7 +170,7 @@ export async function executeInstruction(
     return withLastRun(validated.errorState)
   }
 
-  const { prompt, editorState, provider, modelName, api, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, api, apiKey, output } = validated.data
 
   try {
     if (output.type === 'html') {
@@ -187,6 +207,7 @@ export async function executeInstruction(
         modelName,
         prompt,
         api,
+        inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
         maxLength: output.maxLength,
         signal: options?.signal,
       })
@@ -209,7 +230,15 @@ export async function executeInstruction(
     }
 
     // output.type === 'structured'
-    const documentHasContent = hasText(editorState)
+    if (input.type !== 'structured' || input.value == null) {
+      return withLastRun({
+        errors: { editor: ['Structured output requires structured editor input.'] },
+        message: 'Structured output requires structured editor input.',
+        status: 'failed',
+      })
+    }
+
+    const documentHasContent = hasText(input.value)
     // console.log(`Execute instruction hasText: ${documentHasContent}`)
 
     if (documentHasContent) {
@@ -219,7 +248,7 @@ export async function executeInstruction(
         modelName,
         prompt,
         api,
-        editorState,
+        editorState: input.value,
         signal: options?.signal,
       })
 
@@ -334,7 +363,7 @@ export function executeInstructionStreaming(
     }
   }
 
-  const { prompt, editorState, provider, modelName, api, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, api, apiKey, output } = validated.data
 
   try {
     let streamResult: GenerateStreamingResult | PatchStreamingResult
@@ -355,11 +384,25 @@ export function executeInstructionStreaming(
         modelName,
         prompt,
         api,
+        inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
         maxLength: output.maxLength,
         signal: options?.signal,
       })
     } else {
-      const documentHasContent = hasText(editorState)
+      if (input.type !== 'structured' || input.value == null) {
+        return {
+          text: createEmptyTextStream(),
+          final: Promise.resolve(
+            withLastRun({
+              errors: { editor: ['Structured output requires structured editor input.'] },
+              message: 'Structured output requires structured editor input.',
+              status: 'failed',
+            })
+          ),
+        }
+      }
+
+      const documentHasContent = hasText(input.value)
       // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
       streamResult = documentHasContent
         ? patchStreaming({
@@ -368,7 +411,7 @@ export function executeInstructionStreaming(
             modelName,
             prompt,
             api,
-            editorState,
+            editorState: input.value,
             signal: options?.signal,
           })
         : generateStructuredStreaming({

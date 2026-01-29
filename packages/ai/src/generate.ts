@@ -39,6 +39,7 @@ export interface GenerateOptions {
   modelName: string
   prompt: string
   api: AiApi
+  inputText?: string
   signal?: AbortSignal
 }
 
@@ -75,6 +76,14 @@ export interface GenerateError {
 
 export interface GenerateTextOptions extends GenerateOptions {
   maxLength?: number
+}
+
+const composeTextPrompt = (prompt: string, inputText?: string): string => {
+  const trimmedPrompt = prompt.trim()
+  const trimmedInput = inputText?.trim()
+  const delimiter = '\n\n---\n'
+  if (trimmedInput == null) return trimmedPrompt
+  return `${trimmedPrompt}${delimiter}${trimmedInput}`
 }
 
 async function processGenerationResult(
@@ -257,7 +266,7 @@ export function generateHtmlStreaming(options: GenerateOptions): GenerateStreami
 export async function generateText(
   options: GenerateTextOptions
 ): Promise<Extract<GenerateResult, { format: 'text' }> | GenerateError> {
-  const { provider, apiKey, modelName, prompt, api, signal, maxLength } = options
+  const { provider, apiKey, modelName, prompt, api, signal, maxLength, inputText } = options
 
   const generateText =
     provider === 'openai'
@@ -266,7 +275,14 @@ export async function generateText(
         ? getGenerateGeminiText(api)
         : getGenerateAnthropicText(api)
 
-  const text = await generateText({ apiKey, model: modelName, prompt, maxLength, signal } as any)
+  const composedPrompt = composeTextPrompt(prompt, inputText)
+  const text = await generateText({
+    apiKey,
+    model: modelName,
+    prompt: composedPrompt,
+    maxLength,
+    signal,
+  } as any)
   const trimmed = text?.trim() ?? ''
   if (trimmed.length === 0) {
     return {
@@ -285,7 +301,7 @@ export async function generateText(
 }
 
 export function generateTextStreaming(options: GenerateTextOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, signal, maxLength } = options
+  const { provider, apiKey, modelName, prompt, api, signal, maxLength, inputText } = options
 
   const generateTextStreaming =
     provider === 'openai'
@@ -294,10 +310,11 @@ export function generateTextStreaming(options: GenerateTextOptions): GenerateStr
         ? getGenerateGeminiTextStreaming(api)
         : getGenerateAnthropicTextStreaming(api)
 
+  const composedPrompt = composeTextPrompt(prompt, inputText)
   const streamResult = generateTextStreaming({
     apiKey,
     model: modelName,
-    prompt,
+    prompt: composedPrompt,
     maxLength,
     signal,
   } as any)

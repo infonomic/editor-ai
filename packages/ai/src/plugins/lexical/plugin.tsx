@@ -112,7 +112,10 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: editorJson,
+            input: {
+              type: 'structured',
+              editorJson,
+            },
             api,
             provider,
             model,
@@ -144,7 +147,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
           })
         }
         const data = (await response.json()) as InstructionState
-        console.log('AI Plugin response data', data)
+        // console.log('AI Plugin response data', data)
         setInstructionState(data)
         applyInstructionStateToEditor(data, setInstructionState)
       } catch (error) {
@@ -207,7 +210,10 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: editorJson,
+            input: {
+              type: 'structured',
+              editorJson,
+            },
             api,
             provider,
             model,

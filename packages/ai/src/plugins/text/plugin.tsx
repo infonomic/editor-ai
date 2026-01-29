@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 
 import type { ExecuteInstruction, InstructionState } from '@infonomic/ai'
 
@@ -19,12 +19,34 @@ const emptyInstructionState: InstructionState = {
   lastRun: null,
 }
 
-export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | undefined {
+export type AiPluginTextProps = {
+  inputText: string
+  onApplyResult?: (nextText: string) => void
+  onApiReady?: (api: AiPluginBaseApi) => void
+  onClearInput?: () => void
+}
+
+export const AiPluginText = React.memo(function AiPlugin(
+  props: AiPluginTextProps
+): React.JSX.Element | undefined {
   const baseApiRef = useRef<AiPluginBaseApi | null>(null)
 
-  const handleApiReady = useCallback((api: AiPluginBaseApi) => {
-    baseApiRef.current = api
-  }, [])
+  const handleApiReady = useCallback(
+    (api: AiPluginBaseApi) => {
+      baseApiRef.current = api
+      props.onApiReady?.(api)
+    },
+    [props.onApiReady]
+  )
+
+  const applyResult = useCallback(
+    (nextState: InstructionState) => {
+      if (nextState.status !== 'success') return
+      if (typeof nextState.text !== 'string') return
+      props.onApplyResult?.(nextState.text)
+    },
+    [props.onApplyResult]
+  )
 
   const handleOnSubmit = useCallback(
     async (context: AiPluginSubmitContext) => {
@@ -47,18 +69,19 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
       const abortController = new AbortController()
       abortControllerRef.current = abortController
 
-      // activeEditor.focus()
-      // submitEditorRef.current = activeEditor
       setIsPending(true)
       setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
-      const inputText = ''
+      const inputText = props.inputText ?? ''
 
       try {
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: inputText,
+            input: {
+              type: 'text',
+              text: inputText,
+            },
             api,
             provider,
             model,
@@ -92,9 +115,9 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
           })
         }
         const data = (await response.json()) as InstructionState
-        console.log('AI Plugin response data', data)
+        // console.log('AI Plugin response data', data)
         setInstructionState(data)
-        // applyInstructionStateToEditor(data, setInstructionState)
+        applyResult(data)
       } catch (error) {
         const err = error as any
         if (err?.name === 'AbortError') {
@@ -117,7 +140,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
         abortControllerRef.current = null
       }
     },
-    []
+    [applyResult, props.inputText]
   )
 
   const handleOnSubmitStreaming = useCallback(
@@ -143,19 +166,20 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
       const abortController = new AbortController()
       abortControllerRef.current = abortController
 
-      // activeEditor.focus()
-      // submitEditorRef.current = activeEditor
       setIsPending(true)
       resetStreamPreview()
       setInstructionState((prev) => ({ ...prev, status: 'idle', errors: {}, message: undefined }))
 
-      const inputText = ''
+      const inputText = props.inputText ?? ''
 
       try {
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
-            editor: inputText,
+            input: {
+              type: 'text',
+              text: inputText,
+            },
             api,
             provider,
             model,
@@ -166,7 +190,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
             },
           },
           options: {
-            streaming: false,
+            streaming: true,
           },
         }
 
@@ -193,6 +217,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
           console.log('Streaming request has no body - falling back to non-streaming handling.')
           const data = (await response.json()) as InstructionState
           setInstructionState(data)
+          applyResult(data)
           // applyInstructionStateToEditor(data, setInstructionState)
           return
         }
@@ -239,7 +264,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
 
         if (finalState) {
           setInstructionState(finalState)
-          // applyInstructionStateToEditor(finalState, setInstructionState)
+          applyResult(finalState)
         } else {
           setInstructionState({
             ...emptyInstructionState,
@@ -271,7 +296,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
         abortControllerRef.current = null
       }
     },
-    []
+    [applyResult, props.inputText]
   )
 
   function handleOnDebug(): void {
@@ -285,8 +310,7 @@ export const AiPluginText = React.memo(function AiPlugin(): React.JSX.Element | 
   // }
 
   const handleOnClear = () => {
-    const emptyState = ''
-    // activeEditor.focus()
+    props.onClearInput?.()
   }
 
   const helpContent = (

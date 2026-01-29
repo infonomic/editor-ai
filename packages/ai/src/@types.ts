@@ -7,9 +7,13 @@ export type OutputPreference =
   | { type: 'html' }
   | { type: 'text'; length: 'short' | 'long'; maxLength?: number }
 
+export type ExecuteInstructionInput =
+  | { type: 'structured'; editorJson: string }
+  | { type: 'text'; text: string }
+
 export type ExecuteInstructionParams = {
   prompt: string
-  editor: string
+  input: ExecuteInstructionInput
   api: InstructionApi
   provider: Provider
   model: string
@@ -64,6 +68,23 @@ const outputPreferenceSchema = z
   ])
   .optional()
 
+const inputSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('structured'),
+    editorJson: z.string({
+      error: (issue) =>
+        issue.input === undefined ? 'Editor state is required.' : 'Editor state must be a string.',
+    }),
+  }),
+  z.object({
+    type: z.literal('text'),
+    text: z.string({
+      error: (issue) =>
+        issue.input === undefined ? 'Input text is required.' : 'Input text must be a string.',
+    }),
+  }),
+])
+
 export const instructionSchema = z.object({
   prompt: z
     .string({
@@ -75,10 +96,7 @@ export const instructionSchema = z.object({
     })
     .transform((s) => s.trim())
     .refine((s) => s.length > 0, 'Prompt input cannot be empty.'),
-  editor: z.string({
-    error: (issue) =>
-      issue.input === undefined ? 'Editor state is required.' : 'Editor state must be a string.',
-  }),
+  input: inputSchema,
   provider: z.enum(PROVIDERS, {
     error: 'Provider must be one of openai, google, or anthropic.',
   }),
