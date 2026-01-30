@@ -14,8 +14,8 @@ export function AiPluginText() {
     toggleOpenRef.current?.()
   }, [])
 
-  const handleApiReady = useCallback((api: { toggleOpen: () => void }) => {
-    toggleOpenRef.current = api.toggleOpen
+  const handleOnDrawer = useCallback((drawer: { toggleOpen: () => void }) => {
+    toggleOpenRef.current = drawer.toggleOpen
   }, [])
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +49,7 @@ export function AiPluginText() {
         inputText={inputText}
         onApplyResult={handleApplyResult}
         onClearInput={handleClearInput}
-        onApiReady={handleApiReady}
+        onDrawer={handleOnDrawer}
       />
     </div>
   )

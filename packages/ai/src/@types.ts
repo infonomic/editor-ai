@@ -14,7 +14,7 @@ export type ExecuteInstructionInput =
 export type ExecuteInstructionParams = {
   prompt: string
   input: ExecuteInstructionInput
-  api: InstructionApi
+  sdk: InstructionSdk
   provider: Provider
   model: string
   output?: OutputPreference
@@ -32,10 +32,10 @@ export type ExecuteInstruction = {
   options?: ExecuteInstructionOptions
 }
 
-export const APIS = ['native', 'vercel'] as const
-export type AiApi = (typeof APIS)[number]
+export const SDKS = ['native', 'vercel'] as const
+export type Sdk = (typeof SDKS)[number]
 
-export const normalizeAiApi = (value: unknown): AiApi => {
+export const normalizeSdk = (value: unknown): Sdk => {
   if (typeof value !== 'string') return 'native'
   const normalized = value.trim().toLowerCase()
   return normalized === 'vercel' ? 'vercel' : 'native'
@@ -104,11 +104,11 @@ export const instructionSchema = z.object({
     error: (issue) =>
       issue.input === undefined ? 'Model is required.' : 'Model must be a string.',
   }),
-  api: z.enum(APIS, {
-    error: 'API must be one of native or vercel.',
+  sdk: z.enum(SDKS, {
+    error: 'SDK must be one of native or vercel.',
   }),
   output: outputPreferenceSchema,
 })
 
 export type Provider = z.infer<typeof instructionSchema>['provider']
-export type InstructionApi = z.infer<typeof instructionSchema>['api']
+export type InstructionSdk = z.infer<typeof instructionSchema>['sdk']

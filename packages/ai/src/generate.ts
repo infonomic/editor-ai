@@ -27,7 +27,7 @@ import {
 } from './models/openai/generate'
 import { documentSchema } from './schemas/lexical-json-schema'
 import { convertToLexical } from './utils/convert-to-lexical'
-import type { AiApi, Provider } from './@types'
+import type { Provider, Sdk } from './@types'
 
 const ajv = new Ajv({ allErrors: true, strict: false })
 const validateLexicalDocument = ajv.compile(documentSchema as any)
@@ -38,7 +38,7 @@ export interface GenerateOptions {
   apiKey: string
   modelName: string
   prompt: string
-  api: AiApi
+  sdk: Sdk
   inputText?: string
   signal?: AbortSignal
 }
@@ -90,7 +90,7 @@ async function processGenerationResult(
   generated: any,
   options: GenerateOptions
 ): Promise<GenerateResult | GenerateError> {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal } = options
 
   const generatedDocument = convertToLexical(generated)
 
@@ -115,10 +115,10 @@ async function processGenerationResult(
   // Fallback: generate HTML when the model cannot reliably produce valid Lexical JSON.
   const generateHtml =
     provider === 'openai'
-      ? getGenerateOpenAIHtml(api)
+      ? getGenerateOpenAIHtml(sdk)
       : provider === 'google'
-        ? getGenerateGeminiHtml(api)
-        : getGenerateAnthropicHtml(api)
+        ? getGenerateGeminiHtml(sdk)
+        : getGenerateAnthropicHtml(sdk)
 
   try {
     const html = await generateHtml({ apiKey, model: modelName, prompt, signal })
@@ -152,14 +152,14 @@ async function processGenerationResult(
 export async function generateStructured(
   options: GenerateOptions
 ): Promise<GenerateResult | GenerateError> {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal } = options
 
   const generateDoc =
     provider === 'openai'
-      ? getGenerateOpenAIDoc(api)
+      ? getGenerateOpenAIDoc(sdk)
       : provider === 'google'
-        ? getGenerateGeminiDoc(api)
-        : getGenerateAnthropicDoc(api)
+        ? getGenerateGeminiDoc(sdk)
+        : getGenerateAnthropicDoc(sdk)
 
   const generated = await generateDoc({ apiKey, model: modelName, prompt, signal })
 
@@ -170,14 +170,14 @@ export async function generateStructured(
  * Streams a Lexical document generation.
  */
 export function generateStructuredStreaming(options: GenerateOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal } = options
 
   const generateDocStreaming =
     provider === 'openai'
-      ? getGenerateOpenAIDocStreaming(api)
+      ? getGenerateOpenAIDocStreaming(sdk)
       : provider === 'google'
-        ? getGenerateGeminiDocStreaming(api)
-        : getGenerateAnthropicDocStreaming(api)
+        ? getGenerateGeminiDocStreaming(sdk)
+        : getGenerateAnthropicDocStreaming(sdk)
 
   const streamResult = generateDocStreaming({
     apiKey,
@@ -197,14 +197,14 @@ export function generateStructuredStreaming(options: GenerateOptions): GenerateS
 export async function generateHtml(
   options: GenerateOptions
 ): Promise<Extract<GenerateResult, { format: 'html' }> | GenerateError> {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal } = options
 
   const generateHtml =
     provider === 'openai'
-      ? getGenerateOpenAIHtml(api)
+      ? getGenerateOpenAIHtml(sdk)
       : provider === 'google'
-        ? getGenerateGeminiHtml(api)
-        : getGenerateAnthropicHtml(api)
+        ? getGenerateGeminiHtml(sdk)
+        : getGenerateAnthropicHtml(sdk)
 
   const html = await generateHtml({ apiKey, model: modelName, prompt, signal })
   const trimmed = html?.trim() ?? ''
@@ -225,14 +225,14 @@ export async function generateHtml(
 }
 
 export function generateHtmlStreaming(options: GenerateOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal } = options
 
   const generateHtmlStreaming =
     provider === 'openai'
-      ? getGenerateOpenAIHtmlStreaming(api)
+      ? getGenerateOpenAIHtmlStreaming(sdk)
       : provider === 'google'
-        ? getGenerateGeminiHtmlStreaming(api)
-        : getGenerateAnthropicHtmlStreaming(api)
+        ? getGenerateGeminiHtmlStreaming(sdk)
+        : getGenerateAnthropicHtmlStreaming(sdk)
 
   const streamResult = generateHtmlStreaming({
     apiKey,
@@ -266,14 +266,14 @@ export function generateHtmlStreaming(options: GenerateOptions): GenerateStreami
 export async function generateText(
   options: GenerateTextOptions
 ): Promise<Extract<GenerateResult, { format: 'text' }> | GenerateError> {
-  const { provider, apiKey, modelName, prompt, api, signal, maxLength, inputText } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, maxLength, inputText } = options
 
   const generateText =
     provider === 'openai'
-      ? getGenerateOpenAIText(api)
+      ? getGenerateOpenAIText(sdk)
       : provider === 'google'
-        ? getGenerateGeminiText(api)
-        : getGenerateAnthropicText(api)
+        ? getGenerateGeminiText(sdk)
+        : getGenerateAnthropicText(sdk)
 
   const composedPrompt = composeTextPrompt(prompt, inputText)
 
@@ -304,14 +304,14 @@ export async function generateText(
 }
 
 export function generateTextStreaming(options: GenerateTextOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, signal, maxLength, inputText } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, maxLength, inputText } = options
 
   const generateTextStreaming =
     provider === 'openai'
-      ? getGenerateOpenAITextStreaming(api)
+      ? getGenerateOpenAITextStreaming(sdk)
       : provider === 'google'
-        ? getGenerateGeminiTextStreaming(api)
-        : getGenerateAnthropicTextStreaming(api)
+        ? getGenerateGeminiTextStreaming(sdk)
+        : getGenerateAnthropicTextStreaming(sdk)
 
   const composedPrompt = composeTextPrompt(prompt, inputText)
 

@@ -3,13 +3,13 @@ export { executeInstruction, executeInstructionStreaming } from './execute'
 export { generateStructured, generateStructuredStreaming } from './generate'
 export { patch, patchStreaming } from './patch'
 export type {
-  AiApi,
   ExecuteInstruction,
   ExecuteInstructionOptions,
   ExecuteInstructionParams,
   InstructionState,
   OutputPreference,
   Provider,
+  Sdk,
 } from './@types'
 export type { ExecuteInstructionStreamingResult } from './execute'
 export type {
@@ -31,7 +31,7 @@ import {
 } from './models/anthropic'
 import { DEFAULT_MODEL as GOOGLE_DEFAULT_MODEL, MODELS as GOOGLE_MODELS } from './models/google'
 import { DEFAULT_MODEL as OPENAI_DEFAULT_MODEL, MODELS as OPENAI_MODELS } from './models/openai'
-import type { AiApi, Provider } from '@/@types'
+import type { Provider, Sdk } from './@types'
 
 export const PROVIDERS: Array<[Provider, string]> = [
   ['openai', 'OpenAI'],
@@ -39,7 +39,7 @@ export const PROVIDERS: Array<[Provider, string]> = [
   ['anthropic', 'Anthropic'],
 ]
 
-export const AI_APIS: AiApi[] = ['native', 'vercel']
+export const SDKS: Sdk[] = ['native', 'vercel']
 
 export const PROVIDER_MODELS: Record<Provider, readonly string[]> = {
   openai: OPENAI_MODELS,
@@ -66,7 +66,7 @@ export const getDefaultModel = (provider: Provider): string => {
   }
 }
 
-export const normalizeChatApi = (value: unknown): AiApi => {
+export const normalizeSdk = (value: unknown): Sdk => {
   if (typeof value !== 'string') return 'native'
   const normalized = value.trim().toLowerCase()
   return normalized === 'vercel' ? 'vercel' : 'native'

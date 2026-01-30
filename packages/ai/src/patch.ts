@@ -11,14 +11,14 @@ import {
   getPatchDoc as getPatchOpenAIDoc,
   getPatchDocStreaming as getPatchOpenAIDocStreaming,
 } from './models/openai/patch'
-import type { AiApi, Provider } from './@types'
+import type { Provider, Sdk } from './@types'
 
 export interface PatchOptions {
   provider: Provider
   apiKey: string
   modelName: string
   prompt: string
-  api: AiApi
+  sdk: Sdk
   editorState: any
   signal?: AbortSignal
 }
@@ -98,7 +98,7 @@ async function processPatchResult(
  * while only modifying the text content.
  */
 export async function patch(options: PatchOptions): Promise<PatchResult | PatchError> {
-  const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, editorState, signal } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
@@ -122,10 +122,10 @@ export async function patch(options: PatchOptions): Promise<PatchResult | PatchE
 
   const patch =
     provider === 'openai'
-      ? getPatchOpenAIDoc(api)
+      ? getPatchOpenAIDoc(sdk)
       : provider === 'google'
-        ? getPatchGeminiDoc(api)
-        : getPatchAnthropicDoc(api)
+        ? getPatchGeminiDoc(sdk)
+        : getPatchAnthropicDoc(sdk)
 
   const result = await patch({
     apiKey,
@@ -142,7 +142,7 @@ export async function patch(options: PatchOptions): Promise<PatchResult | PatchE
  * Streams a Lexical document patch. Only OpenAI supports streaming for now.
  */
 export function patchStreaming(options: PatchOptions): PatchStreamingResult {
-  const { provider, apiKey, modelName, prompt, api, editorState, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, editorState, signal } = options
 
   const extracted = extractTextNodesFromLexicalState(editorState)
   const inputTextNodes = extracted.map(({ id, text }) => ({ id, text }))
@@ -171,10 +171,10 @@ export function patchStreaming(options: PatchOptions): PatchStreamingResult {
 
   const patchStreaming =
     provider === 'openai'
-      ? getPatchOpenAIDocStreaming(api)
+      ? getPatchOpenAIDocStreaming(sdk)
       : provider === 'google'
-        ? getPatchGeminiDocStreaming(api)
-        : getPatchAnthropicDocStreaming(api)
+        ? getPatchGeminiDocStreaming(sdk)
+        : getPatchAnthropicDocStreaming(sdk)
 
   const streamResult = patchStreaming({
     apiKey,

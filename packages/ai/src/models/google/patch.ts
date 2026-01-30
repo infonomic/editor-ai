@@ -6,12 +6,12 @@ import {
   patchDoc as patchVercelDoc,
   patchDocStreaming as patchVercelDocStreaming,
 } from './patch-vercel'
-import type { AiApi } from '@/@types'
+import type { Sdk } from '@/@types'
 
-export const getPatchDoc = (api: AiApi) => {
-  return api === 'vercel' ? patchVercelDoc : patchNativeDoc
+export const getPatchDoc = (sdk: Sdk) => {
+  return sdk === 'vercel' ? patchVercelDoc : patchNativeDoc
 }
 
-export const getPatchDocStreaming = (api: AiApi) => {
-  return api === 'vercel' ? patchVercelDocStreaming : patchNativeDocStreaming
+export const getPatchDocStreaming = (sdk: Sdk) => {
+  return sdk === 'vercel' ? patchVercelDocStreaming : patchNativeDocStreaming
 }

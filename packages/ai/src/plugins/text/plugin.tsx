@@ -7,7 +7,7 @@ import type { ExecuteInstruction, InstructionState } from '@infonomic/ai'
 
 import {
   AiPluginBase,
-  type AiPluginBaseApi,
+  type AiPluginBaseDrawer,
   type AiPluginSubmitContext,
 } from '../ai-plugin-base'
 
@@ -22,21 +22,21 @@ const emptyInstructionState: InstructionState = {
 export type AiPluginTextProps = {
   inputText: string
   onApplyResult?: (nextText: string) => void
-  onApiReady?: (api: AiPluginBaseApi) => void
+  onDrawer?: (drawer: AiPluginBaseDrawer) => void
   onClearInput?: () => void
 }
 
 export const AiPluginText = React.memo(function AiPlugin(
   props: AiPluginTextProps
 ): React.JSX.Element | undefined {
-  const baseApiRef = useRef<AiPluginBaseApi | null>(null)
+  const baseDrawerRef = useRef<AiPluginBaseDrawer | null>(null)
 
-  const handleApiReady = useCallback(
-    (api: AiPluginBaseApi) => {
-      baseApiRef.current = api
-      props.onApiReady?.(api)
+  const handleOnDrawer = useCallback(
+    (drawer: AiPluginBaseDrawer) => {
+      baseDrawerRef.current = drawer
+      props.onDrawer?.(drawer)
     },
-    [props.onApiReady]
+    [props.onDrawer]
   )
 
   const applyResult = useCallback(
@@ -54,7 +54,7 @@ export const AiPluginText = React.memo(function AiPlugin(
         prompt,
         provider,
         model,
-        api,
+        sdk,
         isPending,
         setIsPending,
         setInstructionState,
@@ -82,7 +82,7 @@ export const AiPluginText = React.memo(function AiPlugin(
               type: 'text',
               text: inputText,
             },
-            api,
+            sdk,
             provider,
             model,
             output: {
@@ -149,7 +149,7 @@ export const AiPluginText = React.memo(function AiPlugin(
         prompt,
         provider,
         model,
-        api,
+        sdk,
         isPending,
         setIsPending,
         setInstructionState,
@@ -180,7 +180,7 @@ export const AiPluginText = React.memo(function AiPlugin(
               type: 'text',
               text: inputText,
             },
-            api,
+            sdk,
             provider,
             model,
             output: {
@@ -358,7 +358,7 @@ export const AiPluginText = React.memo(function AiPlugin(
       onSubmitStreaming={handleOnSubmitStreaming}
       onClear={handleOnClear}
       onDebug={handleOnDebug}
-      onApiReady={handleApiReady}
+      onDrawer={handleOnDrawer}
     />
   )
 })

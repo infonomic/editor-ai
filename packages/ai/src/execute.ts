@@ -17,7 +17,7 @@ import { hasText } from './utils/has-text'
 import type {
   ExecuteInstructionOptions,
   ExecuteInstructionParams,
-  InstructionApi,
+  InstructionSdk,
   InstructionState,
   OutputPreference,
   Provider,
@@ -26,7 +26,7 @@ import type { GenerateStreamingResult } from './generate'
 import type { PatchStreamingResult } from './patch'
 
 type ValidatedInstruction = {
-  api: InstructionApi
+  sdk: InstructionSdk
   apiKey: string
   input: { type: 'structured' | 'text'; value: any | null }
   modelName: string
@@ -77,7 +77,7 @@ const validateInstructionFields = (
     }
   }
 
-  const { prompt, input, provider, model: modelName, api } = validatedFields.data
+  const { prompt, input, provider, model: modelName, sdk } = validatedFields.data
   const output = validatedFields.data.output ?? ({ type: 'structured' } as const)
 
   // Validate that the appropriate API key exists for the selected provider
@@ -139,7 +139,7 @@ const validateInstructionFields = (
   return {
     ok: true,
     data: {
-      api,
+      sdk,
       apiKey,
       input: {
         type: input.type,
@@ -160,7 +160,7 @@ export async function executeInstruction(
   const startedAt = Date.now()
 
   const withLastRun = (state: InstructionState): InstructionState => {
-    console.log('executeInstruction result', state)
+    // console.log('executeInstruction result', state)
     return { ...state, lastRun: Date.now() - startedAt }
   }
 
@@ -171,7 +171,7 @@ export async function executeInstruction(
     return withLastRun(validated.errorState)
   }
 
-  const { prompt, input, provider, modelName, api, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, sdk, apiKey, output } = validated.data
 
   try {
     if (output.type === 'html') {
@@ -180,7 +180,7 @@ export async function executeInstruction(
         apiKey,
         modelName,
         prompt,
-        api,
+        sdk,
         signal: options?.signal,
       })
 
@@ -207,7 +207,7 @@ export async function executeInstruction(
         apiKey,
         modelName,
         prompt,
-        api,
+        sdk,
         inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
         maxLength: output.maxLength,
         signal: options?.signal,
@@ -248,7 +248,7 @@ export async function executeInstruction(
         apiKey,
         modelName,
         prompt,
-        api,
+        sdk,
         editorState: input.value,
         signal: options?.signal,
       })
@@ -275,7 +275,7 @@ export async function executeInstruction(
       apiKey,
       modelName,
       prompt,
-      api,
+      sdk,
       signal: options?.signal,
     })
 
@@ -364,7 +364,7 @@ export function executeInstructionStreaming(
     }
   }
 
-  const { prompt, input, provider, modelName, api, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, sdk, apiKey, output } = validated.data
 
   try {
     let streamResult: GenerateStreamingResult | PatchStreamingResult
@@ -375,7 +375,7 @@ export function executeInstructionStreaming(
         apiKey,
         modelName,
         prompt,
-        api,
+        sdk,
         signal: options?.signal,
       })
     } else if (output.type === 'text') {
@@ -384,7 +384,7 @@ export function executeInstructionStreaming(
         apiKey,
         modelName,
         prompt,
-        api,
+        sdk,
         inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
         maxLength: output.maxLength,
         signal: options?.signal,
@@ -411,7 +411,7 @@ export function executeInstructionStreaming(
             apiKey,
             modelName,
             prompt,
-            api,
+            sdk,
             editorState: input.value,
             signal: options?.signal,
           })
@@ -420,7 +420,7 @@ export function executeInstructionStreaming(
             apiKey,
             modelName,
             prompt,
-            api,
+            sdk,
             signal: options?.signal,
           })
     }

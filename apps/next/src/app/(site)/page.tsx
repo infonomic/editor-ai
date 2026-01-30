@@ -20,13 +20,13 @@ const Page = () => {
               </Link>
             </li>
             <li>
-              <Link href="/html" className="text-blue-600 underline">
-                HTML AI Demo
+              <Link href="/text" className="text-blue-600 underline">
+                Text AI Demo
               </Link>
             </li>
             <li>
-              <Link href="/text" className="text-blue-600 underline">
-                Text AI Demo
+              <Link href="/html" className="text-blue-600 underline">
+                HTML AI Demo (not yet implemented)
               </Link>
             </li>
           </ul>

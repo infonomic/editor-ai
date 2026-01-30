@@ -3,10 +3,11 @@
 import * as React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AiApi, InstructionState, Provider } from '@infonomic/ai'
-import { getDefaultModel, isProvider, normalizeChatApi, PROVIDER_MODELS } from '@infonomic/ai'
+import type { InstructionState, Provider, Sdk } from '@infonomic/ai'
+import { getDefaultModel, isProvider, normalizeSdk, PROVIDER_MODELS } from '@infonomic/ai'
 import {
   Button,
+  Checkbox,
   // Checkbox,
   CloseIcon,
   IconButton,
@@ -28,7 +29,7 @@ import './ai-plugin.css'
 
 type EditorChatState = {
   // mode: 'edit' | 'generate'
-  api: AiApi
+  sdk: Sdk
   provider: Provider
   model: string
 }
@@ -37,7 +38,7 @@ export type AiPluginSubmitContext = {
   prompt: string
   provider: Provider
   model: string
-  api: AiApi
+  sdk: Sdk
   isPending: boolean
   setIsPending: React.Dispatch<React.SetStateAction<boolean>>
   instructionState: InstructionState
@@ -49,7 +50,7 @@ export type AiPluginSubmitContext = {
   setUseStreaming: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export type AiPluginBaseApi = {
+export type AiPluginBaseDrawer = {
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
   toggleOpen: () => void
 }
@@ -62,7 +63,7 @@ export type AiPluginBaseProps = {
   onDebug?: () => void
   helpTitle?: React.ReactNode
   helpContent?: React.ReactNode
-  onApiReady?: (api: AiPluginBaseApi) => void
+  onDrawer?: (drawer: AiPluginBaseDrawer) => void
 }
 
 const initialInstructionState: InstructionState = {
@@ -75,7 +76,7 @@ const initialInstructionState: InstructionState = {
 
 const initialEditorChatState: EditorChatState = {
   // mode: 'edit',
-  api: 'native',
+  sdk: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
 }
@@ -146,6 +147,13 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     }))
   }
 
+  const handleOnSdkChange = (value: 'native' | 'vercel') => {
+    setState((prev) => ({
+      ...prev,
+      sdk: value,
+    }))
+  }
+
   const handleOnModelChange = (value: string) => {
     if (!value) return
     const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
@@ -157,7 +165,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     prompt,
     provider: state.provider,
     model: state.model,
-    api: state.api,
+    sdk: state.sdk,
     isPending,
     setIsPending,
     instructionState,
@@ -212,7 +220,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         : getDefaultModel(config.provider)
 
       setState({
-        api: normalizeChatApi(config.api),
+        sdk: normalizeSdk(config.sdk),
         // mode: config.mode,
         provider: config.provider,
         model,
@@ -228,12 +236,12 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       skipPersistOnceRef.current = false
       return
     }
-    saveChatConfiguration({ provider: state.provider, model: state.model, api: state.api })
-  }, [state.provider, state.model, state.api])
+    saveChatConfiguration({ provider: state.provider, model: state.model, sdk: state.sdk })
+  }, [state.provider, state.model, state.sdk])
 
   useEffect(() => {
-    props.onApiReady?.({ setOpen, toggleOpen })
-  }, [props.onApiReady, toggleOpen])
+    props.onDrawer?.({ setOpen, toggleOpen })
+  }, [props.onDrawer, toggleOpen])
 
   useEffect(() => {
     return () => {
@@ -250,7 +258,9 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         aria-busy="true"
       >
         <div className="ai-plugin__stream-preview__label">Streaming preview</div>
-        <div className="ai-plugin__stream-preview__content">{streamPreviewText || 'Receiving…'}</div>
+        <div className="ai-plugin__stream-preview__content">
+          {streamPreviewText || 'Receiving…'}
+        </div>
       </div>
 
       <TextArea
@@ -292,18 +302,18 @@ export const AiPluginBase = React.memo(function AiPluginBase(
             </SelectItem>
           ))}
         </Select>
-        {/* <Select
-          key={state.api}
-          name="api"
-          value={state.api}
-          onValueChange={handleOnApiChange}
+        <Select
+          key={state.sdk}
+          name="sdk"
+          value={state.sdk}
+          onValueChange={handleOnSdkChange}
           disabled={isPending === true}
           variant="outlined"
         >
           <SelectItem value="native">Native</SelectItem>
           <SelectItem value="vercel">Vercel</SelectItem>
-        </Select> */}
-        {/* <div className="mr-2">
+        </Select>
+        <div className="mr-2">
           <Checkbox
             name="streaming"
             id="streaming"
@@ -314,7 +324,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
             }}
             label="Streaming"
           />
-        </div> */}
+        </div>
         <Button
           fullWidth={false}
           type="button"

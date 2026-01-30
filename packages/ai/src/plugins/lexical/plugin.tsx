@@ -18,7 +18,7 @@ import {
 
 import {
   AiPluginBase,
-  type AiPluginBaseApi,
+  type AiPluginBaseDrawer,
   type AiPluginSubmitContext,
 } from '../ai-plugin-base'
 import { createEmptyEditorState } from './create-empty-editor-state'
@@ -35,13 +35,13 @@ const emptyInstructionState: InstructionState = {
 }
 
 export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element | undefined {
-  const baseApiRef = useRef<AiPluginBaseApi | null>(null)
+  const baseDrawerRef = useRef<AiPluginBaseDrawer | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
   const [editor] = useLexicalComposerContext()
   const [activeEditor, setActiveEditor] = useState(editor)
 
-  const handleApiReady = useCallback((api: AiPluginBaseApi) => {
-    baseApiRef.current = api
+  const handleOnDrawer = useCallback((drawer: AiPluginBaseDrawer) => {
+    baseDrawerRef.current = drawer
   }, [])
 
   const applyInstructionStateToEditor = useCallback(
@@ -86,7 +86,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         prompt,
         provider,
         model,
-        api,
+        sdk,
         isPending,
         setIsPending,
         setInstructionState,
@@ -116,7 +116,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
               type: 'structured',
               editorJson,
             },
-            api,
+            sdk,
             provider,
             model,
             output: {
@@ -181,7 +181,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         prompt,
         provider,
         model,
-        api,
+        sdk,
         isPending,
         setIsPending,
         setInstructionState,
@@ -214,7 +214,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
               type: 'structured',
               editorJson,
             },
-            api,
+            sdk,
             provider,
             model,
             output: {
@@ -367,7 +367,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       editor.registerCommand<null>(
         TOGGLE_AI_DRAWER_COMMAND,
         () => {
-          baseApiRef.current?.toggleOpen()
+          baseDrawerRef.current?.toggleOpen()
           return true
         },
         COMMAND_PRIORITY_NORMAL
@@ -420,7 +420,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       onSubmitStreaming={handleOnSubmitStreaming}
       onClear={handleOnClear}
       onDebug={handleOnDebug}
-      onApiReady={handleApiReady}
+      onDrawer={handleOnDrawer}
     />
   )
 })

@@ -1,4 +1,4 @@
-import { AI_APIS, type AiApi, PROVIDERS, type Provider } from '@infonomic/ai'
+import { PROVIDERS, type Provider, SDKS, type Sdk } from '@infonomic/ai'
 
 const STORAGE_KEY = 'editor-chat-configuration'
 
@@ -6,7 +6,7 @@ export interface ChatConfiguration {
   // mode: 'edit' | 'generate'
   provider: Provider
   model: string
-  api: AiApi
+  sdk: Sdk
 }
 
 const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
@@ -17,8 +17,8 @@ const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
     typeof v.provider === 'string' &&
     PROVIDERS.some((p) => p[0] === v.provider) &&
     typeof v.model === 'string' &&
-    typeof v.api === 'string' &&
-    AI_APIS.includes(v.api as AiApi)
+    typeof v.sdk === 'string' &&
+    SDKS.includes(v.sdk as Sdk)
   )
 }
 

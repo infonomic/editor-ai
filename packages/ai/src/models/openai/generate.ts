@@ -14,28 +14,28 @@ import {
   generateText as generateVercelText,
   generateTextStreaming as generateVercelTextStreaming,
 } from './generate-vercel'
-import type { AiApi } from '@/@types'
+import type { Sdk } from '@/@types'
 
-export const getGenerateDoc = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelDoc : generateNativeDoc
+export const getGenerateDoc = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelDoc : generateNativeDoc
 }
 
-export const getGenerateDocStreaming = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelDocStreaming : generateNativeDocStreaming
+export const getGenerateDocStreaming = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelDocStreaming : generateNativeDocStreaming
 }
 
-export const getGenerateHtml = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelHtml : generateNativeHtml
+export const getGenerateHtml = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelHtml : generateNativeHtml
 }
 
-export const getGenerateHtmlStreaming = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelHtmlStreaming : generateNativeHtmlStreaming
+export const getGenerateHtmlStreaming = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelHtmlStreaming : generateNativeHtmlStreaming
 }
 
-export const getGenerateText = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelText : generateNativeText
+export const getGenerateText = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelText : generateNativeText
 }
 
-export const getGenerateTextStreaming = (api: AiApi) => {
-  return api === 'vercel' ? generateVercelTextStreaming : generateNativeTextStreaming
+export const getGenerateTextStreaming = (sdk: Sdk) => {
+  return sdk === 'vercel' ? generateVercelTextStreaming : generateNativeTextStreaming
 }
