@@ -12,6 +12,8 @@
   background-color: #ffffff;
   max-height: 0;
   opacity: 0;
+  /* Prevents a layout shift when the drawer becomes visible */
+  padding: 0 8px;
   overflow: hidden;
   border-radius: 4px;
   transform: translateY(-4px);
@@ -21,7 +23,7 @@
 .ai-plugin__drawer--visible {
   margin-top: 6px;
   max-height: 500px;
-  padding: 8px;
+  padding: 8px 8px;
   opacity: 1;
   transform: translateY(0);
 }
