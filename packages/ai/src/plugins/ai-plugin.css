@@ -38,7 +38,6 @@
   align-items: center;
   flex-wrap: wrap;
   max-height: 0;
-  padding: 4px 0;
   opacity: 0;
   overflow: hidden;
   transform: translateY(-4px);
@@ -48,6 +47,7 @@
 }
 
 .ai-plugin__settings--visible {
+  padding: 4px 0;
   max-height: 100px;
   opacity: 1;
   transform: translateY(0);

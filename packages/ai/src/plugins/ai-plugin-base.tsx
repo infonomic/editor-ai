@@ -327,7 +327,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       <div className={`ai-plugin__settings ${settingsOpen ? 'ai-plugin__settings--visible' : ''}`}>
         <Select
           name="provider"
-          disabled={isPending === true}
+          disabled={isPending === true || settingsOpen === false}
           value={state.provider}
           onValueChange={handleOnProviderChange}
           variant="outlined"
@@ -338,7 +338,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         </Select>
         <Select
           name="model"
-          disabled={isPending === true}
+          disabled={isPending === true || settingsOpen === false}
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
@@ -354,7 +354,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           name="sdk"
           value={state.sdk}
           onValueChange={handleOnSdkChange}
-          disabled={isPending === true}
+          disabled={isPending === true || settingsOpen === false}
           variant="outlined"
         >
           <SelectItem value="native">Native</SelectItem>
@@ -364,7 +364,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           <Checkbox
             name="streaming"
             id="streaming"
-            disabled={isPending === true}
+            disabled={isPending === true || settingsOpen === false}
             checked={useStreaming}
             onCheckedChange={(checked) => {
               setUseStreaming(checked === true)
