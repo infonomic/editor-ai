@@ -8,8 +8,6 @@
 .ai-plugin__drawer {
   display: flex;
   flex-direction: column;
-  margin-top: 6px;
-  padding: 8px;
   border: 1px solid #cccccc;
   background-color: #ffffff;
   max-height: 0;
@@ -20,7 +18,9 @@
 }
 
 .ai-plugin__drawer--visible {
+  margin-top: 6px;
   max-height: 500px;
+  padding: 8px;
   opacity: 1;
   transform: translateY(0);
 }
@@ -43,10 +43,10 @@
   transform: translateY(-4px);
   transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
   gap: 8px;
-  margin-top: 8px;
 }
 
 .ai-plugin__settings--visible {
+  margin-top: 8px;
   padding: 4px 0;
   max-height: 100px;
   opacity: 1;

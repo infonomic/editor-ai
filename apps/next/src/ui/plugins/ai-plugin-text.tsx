@@ -1,21 +1,17 @@
 'use client'
 
 import type * as React from 'react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { AiPluginText as AiPluginTextRoot } from '@infonomic/ai/plugins/text'
 import { AiIcon, IconButton, Input } from '@infonomic/uikit/react'
 
 export function AiPluginText() {
   const [inputText, setInputText] = useState('')
-  const toggleOpenRef = useRef<(() => void) | null>(null)
+  const [open, setOpen] = useState(false)
 
   const handleToggleOpen = useCallback(() => {
-    toggleOpenRef.current?.()
-  }, [])
-
-  const handleOnDrawer = useCallback((drawer: { toggleOpen: () => void }) => {
-    toggleOpenRef.current = drawer.toggleOpen
+    setOpen((prevOpen) => !prevOpen)
   }, [])
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,8 +27,8 @@ export function AiPluginText() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-4">
-      <IconButton onClick={handleToggleOpen} variant='text' size="md" className='w-[28px] h-[28px] max-w-[28px] max-h-[28px] min-w-[28px] min-h-[28px] '>
+    <div className="ai-plugin-text">
+      <IconButton onClick={handleToggleOpen} variant="text" size="md" className="w-7 h-7 max-w-7 max-h-7 min-w-7 min-h-7">
         <AiIcon />
       </IconButton>
       <Input
@@ -49,7 +45,8 @@ export function AiPluginText() {
         inputText={inputText}
         onApplyResult={handleApplyResult}
         onClearInput={handleClearInput}
-        onDrawer={handleOnDrawer}
+        open={open}
+        onOpenChange={setOpen}
       />
     </div>
   )

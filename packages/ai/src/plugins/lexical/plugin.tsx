@@ -16,11 +16,7 @@ import {
   type SerializedEditorState,
 } from 'lexical'
 
-import {
-  AiPluginBase,
-  type AiPluginBaseDrawer,
-  type AiPluginSubmitContext,
-} from '../ai-plugin-base'
+import { AiPluginBase, type AiPluginSubmitContext } from '../ai-plugin-base'
 import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
 
@@ -35,14 +31,10 @@ const emptyInstructionState: InstructionState = {
 }
 
 export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element | undefined {
-  const baseDrawerRef = useRef<AiPluginBaseDrawer | null>(null)
   const submitEditorRef = useRef<LexicalEditor | null>(null)
   const [editor] = useLexicalComposerContext()
   const [activeEditor, setActiveEditor] = useState(editor)
-
-  const handleOnDrawer = useCallback((drawer: AiPluginBaseDrawer) => {
-    baseDrawerRef.current = drawer
-  }, [])
+  const [open, setOpen] = useState(false)
 
   const applyInstructionStateToEditor = useCallback(
     (
@@ -367,7 +359,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       editor.registerCommand<null>(
         TOGGLE_AI_DRAWER_COMMAND,
         () => {
-          baseDrawerRef.current?.toggleOpen()
+          setOpen((prevOpen) => !prevOpen)
           return true
         },
         COMMAND_PRIORITY_NORMAL
@@ -420,7 +412,8 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
       onSubmitStreaming={handleOnSubmitStreaming}
       onClear={handleOnClear}
       onDebug={handleOnDebug}
-      onDrawer={handleOnDrawer}
+      open={open}
+      onOpenChange={setOpen}
     />
   )
 })

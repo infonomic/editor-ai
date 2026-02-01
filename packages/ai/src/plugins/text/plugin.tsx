@@ -1,15 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 
 import type { ExecuteInstruction, InstructionState } from '@infonomic/ai'
 
-import {
-  AiPluginBase,
-  type AiPluginBaseDrawer,
-  type AiPluginSubmitContext,
-} from '../ai-plugin-base'
+import { AiPluginBase, type AiPluginSubmitContext } from '../ai-plugin-base'
 
 const emptyInstructionState: InstructionState = {
   prompt: '',
@@ -22,23 +18,15 @@ const emptyInstructionState: InstructionState = {
 export type AiPluginTextProps = {
   inputText: string
   onApplyResult?: (nextText: string) => void
-  onDrawer?: (drawer: AiPluginBaseDrawer) => void
   onClearInput?: () => void
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export const AiPluginText = React.memo(function AiPlugin(
   props: AiPluginTextProps
 ): React.JSX.Element | undefined {
-  const baseDrawerRef = useRef<AiPluginBaseDrawer | null>(null)
-
-  const handleOnDrawer = useCallback(
-    (drawer: AiPluginBaseDrawer) => {
-      baseDrawerRef.current = drawer
-      props.onDrawer?.(drawer)
-    },
-    [props.onDrawer]
-  )
-
   const applyResult = useCallback(
     (nextState: InstructionState) => {
       if (nextState.status !== 'success') return
@@ -358,7 +346,9 @@ export const AiPluginText = React.memo(function AiPlugin(
       onSubmitStreaming={handleOnSubmitStreaming}
       onClear={handleOnClear}
       onDebug={handleOnDebug}
-      onDrawer={handleOnDrawer}
+      open={props.open}
+      defaultOpen={props.defaultOpen}
+      onOpenChange={props.onOpenChange}
     />
   )
 })

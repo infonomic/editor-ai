@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { InstructionState, Provider, Sdk } from '@infonomic/ai'
 import { getDefaultModel, isProvider, normalizeSdk, PROVIDER_MODELS } from '@infonomic/ai'
@@ -51,20 +51,17 @@ export type AiPluginSubmitContext = {
   setUseStreaming: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export type AiPluginBaseDrawer = {
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>
-  toggleOpen: () => void
-}
-
 export type AiPluginBaseProps = {
   onSubmit: (context: AiPluginSubmitContext) => Promise<void> | void
   onSubmitStreaming?: (context: AiPluginSubmitContext) => Promise<void> | void
   onCancel?: () => void
   onClear?: () => void
   onDebug?: () => void
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
   helpTitle?: React.ReactNode
   helpContent?: React.ReactNode
-  onDrawer?: (drawer: AiPluginBaseDrawer) => void
 }
 
 const initialInstructionState: InstructionState = {
@@ -110,12 +107,8 @@ export const AiPluginBase = React.memo(function AiPluginBase(
   const abortControllerRef = useRef<AbortController | null>(null)
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
-  const [open, setOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-
-  const toggleOpen = useCallback(() => {
-    setOpen((prevOpen) => !prevOpen)
-  }, [])
+  const open = props.open ?? props.defaultOpen ?? false
 
   const resetStreamPreview = () => {
     streamPreviewAccumulatorRef.current = ''
@@ -240,10 +233,6 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     }
     saveChatConfiguration({ provider: state.provider, model: state.model, sdk: state.sdk })
   }, [state.provider, state.model, state.sdk])
-
-  useEffect(() => {
-    props.onDrawer?.({ setOpen, toggleOpen })
-  }, [props.onDrawer, toggleOpen])
 
   useEffect(() => {
     return () => {
