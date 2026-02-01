@@ -282,6 +282,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         <Button
           fullWidth={false}
           type="button"
+          size="sm"
           onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
           disabled={!prompt.trim() || isPending === true}
         >
@@ -289,6 +290,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         </Button>
         <Button
           className="py-0 px-4"
+          size="sm"
           title="Stop"
           aria-label="Stop"
           onClick={handleOnCancel}
@@ -300,6 +302,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         <Button
           fullWidth={false}
           type="button"
+          size="sm"
           onClick={props.onClear}
           disabled={isPending === true}
         >
@@ -316,6 +319,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       <div className={`ai-plugin__settings ${settingsOpen ? 'ai-plugin__settings--visible' : ''}`}>
         <Select
           name="provider"
+          size="sm"
           disabled={isPending === true || settingsOpen === false}
           value={state.provider}
           onValueChange={handleOnProviderChange}
@@ -328,6 +332,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         <Select
           name="model"
           disabled={isPending === true || settingsOpen === false}
+          size="sm"
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
@@ -342,6 +347,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           key={state.sdk}
           name="sdk"
           value={state.sdk}
+          size="sm"
           onValueChange={handleOnSdkChange}
           disabled={isPending === true || settingsOpen === false}
           variant="outlined"
@@ -352,6 +358,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         <div className="mr-2">
           <Checkbox
             name="streaming"
+            size="sm"
             id="streaming"
             disabled={isPending === true || settingsOpen === false}
             checked={useStreaming}
@@ -361,7 +368,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
             label="Streaming"
           />
         </div>
-        <Button variant="text" disabled={isPending === true} onClick={props.onDebug}>
+        <Button size="sm" variant="text" disabled={isPending === true} onClick={props.onDebug}>
           Debug
         </Button>
       </div>
