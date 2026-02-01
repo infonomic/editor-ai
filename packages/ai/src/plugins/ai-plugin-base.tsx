@@ -8,7 +8,6 @@ import { getDefaultModel, isProvider, normalizeSdk, PROVIDER_MODELS } from '@inf
 import {
   Button,
   Checkbox,
-  // Checkbox,
   CloseIcon,
   IconButton,
   InfoIcon,
@@ -17,6 +16,8 @@ import {
   ScrollArea,
   Select,
   SelectItem,
+  // Checkbox,
+  SettingsSlidersIcon,
   StopIcon,
   TextArea,
   useModal,
@@ -110,6 +111,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
   const hydratedRef = useRef(false)
   const skipPersistOnceRef = useRef(false)
   const [open, setOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const toggleOpen = useCallback(() => {
     setOpen((prevOpen) => !prevOpen)
@@ -278,6 +280,51 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           }`}
       />
       <div className="ai-plugin__actions">
+        <IconButton
+          aria-label="Help"
+          size="sm"
+          variant="text"
+          onClick={() => {
+            setSettingsOpen(!settingsOpen)
+          }}
+        >
+          <SettingsSlidersIcon />
+        </IconButton>
+        <Button
+          fullWidth={false}
+          type="button"
+          onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
+          disabled={!prompt.trim() || isPending === true}
+        >
+          {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
+        </Button>
+        <Button
+          className="py-0 px-4"
+          title="Stop"
+          aria-label="Stop"
+          onClick={handleOnCancel}
+          disabled={isPending === false}
+          type="button"
+        >
+          <StopIcon width="22px" height="22px" />
+        </Button>
+        <Button
+          fullWidth={false}
+          type="button"
+          onClick={props.onClear}
+          disabled={isPending === true}
+        >
+          Clear
+        </Button>
+      </div>
+      {instructionState?.status === 'success' && isPending === false && (
+        <p className="ai-plugin__messages--success-message">{instructionState.message}</p>
+      )}
+
+      {instructionState?.status === 'failed' && isPending === false && (
+        <p className="ai-plugin__messages--error-message">{instructionState.message}</p>
+      )}
+      <div className={`ai-plugin__settings ${settingsOpen ? 'ai-plugin__settings--visible' : ''}`}>
         <Select
           name="provider"
           disabled={isPending === true}
@@ -325,43 +372,10 @@ export const AiPluginBase = React.memo(function AiPluginBase(
             label="Streaming"
           />
         </div>
-        <Button
-          fullWidth={false}
-          type="button"
-          onClick={useStreaming ? handleOnSubmitStreaming : handleOnSubmit}
-          disabled={!prompt.trim() || isPending === true}
-        >
-          {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
-        </Button>
-        <Button
-          className="py-0 px-4"
-          title="Stop"
-          aria-label="Stop"
-          onClick={handleOnCancel}
-          disabled={isPending === false}
-          type="button"
-        >
-          <StopIcon width="22px" height="22px" />
-        </Button>
-        <Button
-          fullWidth={false}
-          type="button"
-          onClick={props.onClear}
-          disabled={isPending === true}
-        >
-          Clear
-        </Button>
         <Button variant="text" disabled={isPending === true} onClick={props.onDebug}>
           Debug
         </Button>
       </div>
-      {instructionState?.status === 'success' && isPending === false && (
-        <p className="ai-plugin__messages--success-message">{instructionState.message}</p>
-      )}
-
-      {instructionState?.status === 'failed' && isPending === false && (
-        <p className="ai-plugin__messages--error-message">{instructionState.message}</p>
-      )}
       <div className="ai-plugin__footer">
         <p className="ai-plugin__disclaimer">
           AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and

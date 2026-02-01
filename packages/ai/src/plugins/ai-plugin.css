@@ -33,6 +33,26 @@
   margin-top: 8px;
 }
 
+.ai-plugin__settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  max-height: 0;
+  padding: 4px 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ai-plugin__settings--visible {
+  max-height: 100px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .ai-plugin__stream-preview {
   max-height: 0;
   opacity: 0;
