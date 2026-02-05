@@ -1,6 +1,6 @@
 {
   "name": "@infonomic/ai",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -61,10 +61,18 @@
     "react-dom": "^19.0.0"
   },
   "peerDependenciesMeta": {
-    "@lexical/html": { "optional": true },
-    "@lexical/react": { "optional": true },
-    "@lexical/utils": { "optional": true },
-    "lexical": { "optional": true }
+    "@lexical/html": {
+      "optional": true
+    },
+    "@lexical/react": {
+      "optional": true
+    },
+    "@lexical/utils": {
+      "optional": true
+    },
+    "lexical": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.36",
