@@ -3,7 +3,7 @@ import { PROVIDERS, type Provider, SDKS, type Sdk } from '@infonomic/ai'
 const STORAGE_KEY = 'editor-chat-configuration'
 
 export interface ChatConfiguration {
-  // mode: 'edit' | 'generate'
+  mode: 'new' | 'new_with_context' | 'patch'
   provider: Provider
   model: string
   sdk: Sdk
@@ -13,7 +13,8 @@ const isChatConfiguration = (value: unknown): value is ChatConfiguration => {
   if (value == null || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
   return (
-    // typeof v.mode === 'string' &&
+    typeof v.mode === 'string' &&
+    ['new', 'new_with_context', 'patch'].includes(v.mode) &&
     typeof v.provider === 'string' &&
     PROVIDERS.some((p) => p[0] === v.provider) &&
     typeof v.model === 'string' &&

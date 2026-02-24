@@ -27,19 +27,21 @@ export type AiPluginTextProps = {
 export const AiPluginText = React.memo(function AiPlugin(
   props: AiPluginTextProps
 ): React.JSX.Element | undefined {
+  const { onApplyResult, onClearInput } = props
   const applyResult = useCallback(
     (nextState: InstructionState) => {
       if (nextState.status !== 'success') return
       if (typeof nextState.text !== 'string') return
-      props.onApplyResult?.(nextState.text)
+      onApplyResult?.(nextState.text)
     },
-    [props.onApplyResult]
+    [onApplyResult]
   )
 
   const handleOnSubmit = useCallback(
     async (context: AiPluginSubmitContext) => {
       const {
         prompt,
+        mode,
         provider,
         model,
         sdk,
@@ -66,6 +68,7 @@ export const AiPluginText = React.memo(function AiPlugin(
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
+            mode,
             input: {
               type: 'text',
               text: inputText,
@@ -135,6 +138,7 @@ export const AiPluginText = React.memo(function AiPlugin(
     async (context: AiPluginSubmitContext) => {
       const {
         prompt,
+        mode,
         provider,
         model,
         sdk,
@@ -164,6 +168,7 @@ export const AiPluginText = React.memo(function AiPlugin(
         const payload: ExecuteInstruction = {
           params: {
             prompt: prompt,
+            mode,
             input: {
               type: 'text',
               text: inputText,
@@ -298,7 +303,7 @@ export const AiPluginText = React.memo(function AiPlugin(
   // }
 
   const handleOnClear = () => {
-    props.onClearInput?.()
+    onClearInput?.()
   }
 
   const helpContent = (
@@ -318,12 +323,22 @@ export const AiPluginText = React.memo(function AiPlugin(
         <li>Write a haiku poem about the wind and trees.</li>
       </ul>
       <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-        <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> To generate new content
-        (and see correctly formatted results), you must submit your request with an empty editor.
-        You can clear the editor by clicking the “Clear” button. If you submit a request while
-        content is still present, the AI will attempt to edit the existing content instead of
-        generating new content.
+        <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> The AI operates in three modes:
       </p>
+      <ol style={{ margin: '0.5rem 0', fontSize: '16px' }}>
+        <li>
+          <strong>New:</strong> The AI will generate new content based solely on the prompt.
+        </li>
+        <li>
+          <strong>With Context:</strong> The AI will generate new content based on the prompt and
+          the existing content.
+        </li>
+        <li>
+          <strong>Modify:</strong> The AI will suggest modifications to the existing content based on
+          the prompt - preserving the original structure. Use this mode for translations, grammar,
+          clarity, and tone edits.
+        </li>
+      </ol>
       <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
         <strong style={{ color: 'var(--primary-500)' }}>Note:</strong> At the time of writing -
         2026-01-24 - OpenAI GPT-5.2 is likely the strongest all-round model for both generating new

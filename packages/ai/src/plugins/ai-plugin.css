@@ -121,6 +121,13 @@
   margin-top: 0;
 }
 
+.ai_plugin__mode-description {
+  font-size: 0.9rem;
+  line-height: 1.2;
+  color: var(--primary-200);
+  margin: 8px 0 8px 0;
+}
+
 .ai-plugin__disclaimer,
 .ai-plugin__disclaimer--modal {
   line-height: 1.2;

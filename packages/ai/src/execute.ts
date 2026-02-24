@@ -13,10 +13,10 @@ import {
 } from './generate'
 import { getLogger } from './lib/logger'
 import { patch, patchStreaming } from './patch'
-import { hasText } from './utils/has-text'
 import type {
   ExecuteInstructionOptions,
   ExecuteInstructionParams,
+  InstructionMode,
   InstructionSdk,
   InstructionState,
   OutputPreference,
@@ -27,6 +27,7 @@ import type { PatchStreamingResult } from './patch'
 
 type ValidatedInstruction = {
   sdk: InstructionSdk
+  mode: InstructionMode
   apiKey: string
   input: { type: 'structured' | 'text'; value: any | null }
   modelName: string
@@ -77,7 +78,7 @@ const validateInstructionFields = (
     }
   }
 
-  const { prompt, input, provider, model: modelName, sdk } = validatedFields.data
+  const { prompt, input, provider, model: modelName, sdk, mode } = validatedFields.data
   const output = validatedFields.data.output ?? ({ type: 'structured' } as const)
 
   // Validate that the appropriate API key exists for the selected provider
@@ -140,6 +141,7 @@ const validateInstructionFields = (
     ok: true,
     data: {
       sdk,
+      mode,
       apiKey,
       input: {
         type: input.type,
@@ -171,7 +173,15 @@ export async function executeInstruction(
     return withLastRun(validated.errorState)
   }
 
-  const { prompt, input, provider, modelName, sdk, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, sdk, apiKey, output, mode } = validated.data
+
+  // Resolve existing content as plain text for use as context in new_with_context / patch modes.
+  const contextText =
+    mode !== 'new'
+      ? input.type === 'structured'
+        ? JSON.stringify(input.value)
+        : String(input.value ?? '')
+      : undefined
 
   try {
     if (output.type === 'html') {
@@ -181,6 +191,7 @@ export async function executeInstruction(
         modelName,
         prompt,
         sdk,
+        inputText: contextText,
         signal: options?.signal,
       })
 
@@ -208,7 +219,7 @@ export async function executeInstruction(
         modelName,
         prompt,
         sdk,
-        inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
+        inputText: contextText,
         maxLength: output.maxLength,
         signal: options?.signal,
       })
@@ -239,10 +250,7 @@ export async function executeInstruction(
       })
     }
 
-    const documentHasContent = hasText(input.value)
-    // console.log(`Execute instruction hasText: ${documentHasContent}`)
-
-    if (documentHasContent) {
+    if (mode === 'patch') {
       const result = await patch({
         provider,
         apiKey,
@@ -270,12 +278,14 @@ export async function executeInstruction(
       })
     }
 
+    // mode === 'new' or mode === 'new_with_context'
     const result = await generateStructured({
       provider,
       apiKey,
       modelName,
       prompt,
       sdk,
+      inputText: contextText,
       signal: options?.signal,
     })
 
@@ -364,7 +374,15 @@ export function executeInstructionStreaming(
     }
   }
 
-  const { prompt, input, provider, modelName, sdk, apiKey, output } = validated.data
+  const { prompt, input, provider, modelName, sdk, apiKey, output, mode } = validated.data
+
+  // Resolve existing content as plain text for use as context in new_with_context / patch modes.
+  const contextText =
+    mode !== 'new'
+      ? input.type === 'structured'
+        ? JSON.stringify(input.value)
+        : String(input.value ?? '')
+      : undefined
 
   try {
     let streamResult: GenerateStreamingResult | PatchStreamingResult
@@ -376,6 +394,7 @@ export function executeInstructionStreaming(
         modelName,
         prompt,
         sdk,
+        inputText: contextText,
         signal: options?.signal,
       })
     } else if (output.type === 'text') {
@@ -385,7 +404,7 @@ export function executeInstructionStreaming(
         modelName,
         prompt,
         sdk,
-        inputText: input.type === 'text' ? String(input.value ?? '') : undefined,
+        inputText: contextText,
         maxLength: output.maxLength,
         signal: options?.signal,
       })
@@ -403,26 +422,28 @@ export function executeInstructionStreaming(
         }
       }
 
-      const documentHasContent = hasText(input.value)
-      // console.log(`Execute instruction streaming hasText: ${documentHasContent}`)
-      streamResult = documentHasContent
-        ? patchStreaming({
-            provider,
-            apiKey,
-            modelName,
-            prompt,
-            sdk,
-            editorState: input.value,
-            signal: options?.signal,
-          })
-        : generateStructuredStreaming({
-            provider,
-            apiKey,
-            modelName,
-            prompt,
-            sdk,
-            signal: options?.signal,
-          })
+      if (mode === 'patch') {
+        streamResult = patchStreaming({
+          provider,
+          apiKey,
+          modelName,
+          prompt,
+          sdk,
+          editorState: input.value,
+          signal: options?.signal,
+        })
+      } else {
+        // mode === 'new' or mode === 'new_with_context'
+        streamResult = generateStructuredStreaming({
+          provider,
+          apiKey,
+          modelName,
+          prompt,
+          sdk,
+          inputText: contextText,
+          signal: options?.signal,
+        })
+      }
     }
 
     const final = (async (): Promise<InstructionState> => {

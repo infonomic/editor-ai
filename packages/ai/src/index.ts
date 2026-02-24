@@ -1,3 +1,4 @@
+export { INSTRUCTION_MODES } from './@types'
 export { getAiServerConfig } from './config/ai-config'
 export { executeInstruction, executeInstructionStreaming } from './execute'
 export { generateStructured, generateStructuredStreaming } from './generate'
@@ -6,6 +7,7 @@ export type {
   ExecuteInstruction,
   ExecuteInstructionOptions,
   ExecuteInstructionParams,
+  InstructionMode,
   InstructionState,
   OutputPreference,
   Provider,

@@ -152,7 +152,7 @@ async function processGenerationResult(
 export async function generateStructured(
   options: GenerateOptions
 ): Promise<GenerateResult | GenerateError> {
-  const { provider, apiKey, modelName, prompt, sdk, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, inputText } = options
 
   const generateDoc =
     provider === 'openai'
@@ -161,7 +161,8 @@ export async function generateStructured(
         ? getGenerateGeminiDoc(sdk)
         : getGenerateAnthropicDoc(sdk)
 
-  const generated = await generateDoc({ apiKey, model: modelName, prompt, signal })
+  const composedPrompt = composeTextPrompt(prompt, inputText)
+  const generated = await generateDoc({ apiKey, model: modelName, prompt: composedPrompt, signal })
 
   return processGenerationResult(generated, options)
 }
@@ -170,7 +171,7 @@ export async function generateStructured(
  * Streams a Lexical document generation.
  */
 export function generateStructuredStreaming(options: GenerateOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, sdk, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, inputText } = options
 
   const generateDocStreaming =
     provider === 'openai'
@@ -179,10 +180,11 @@ export function generateStructuredStreaming(options: GenerateOptions): GenerateS
         ? getGenerateGeminiDocStreaming(sdk)
         : getGenerateAnthropicDocStreaming(sdk)
 
+  const composedPrompt = composeTextPrompt(prompt, inputText)
   const streamResult = generateDocStreaming({
     apiKey,
     model: modelName,
-    prompt,
+    prompt: composedPrompt,
     signal,
   })
 
@@ -197,7 +199,7 @@ export function generateStructuredStreaming(options: GenerateOptions): GenerateS
 export async function generateHtml(
   options: GenerateOptions
 ): Promise<Extract<GenerateResult, { format: 'html' }> | GenerateError> {
-  const { provider, apiKey, modelName, prompt, sdk, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, inputText } = options
 
   const generateHtml =
     provider === 'openai'
@@ -206,7 +208,8 @@ export async function generateHtml(
         ? getGenerateGeminiHtml(sdk)
         : getGenerateAnthropicHtml(sdk)
 
-  const html = await generateHtml({ apiKey, model: modelName, prompt, signal })
+  const composedPrompt = composeTextPrompt(prompt, inputText)
+  const html = await generateHtml({ apiKey, model: modelName, prompt: composedPrompt, signal })
   const trimmed = html?.trim() ?? ''
   if (trimmed.length === 0) {
     return {
@@ -225,7 +228,7 @@ export async function generateHtml(
 }
 
 export function generateHtmlStreaming(options: GenerateOptions): GenerateStreamingResult {
-  const { provider, apiKey, modelName, prompt, sdk, signal } = options
+  const { provider, apiKey, modelName, prompt, sdk, signal, inputText } = options
 
   const generateHtmlStreaming =
     provider === 'openai'
@@ -234,10 +237,11 @@ export function generateHtmlStreaming(options: GenerateOptions): GenerateStreami
         ? getGenerateGeminiHtmlStreaming(sdk)
         : getGenerateAnthropicHtmlStreaming(sdk)
 
+  const composedPrompt = composeTextPrompt(prompt, inputText)
   const streamResult = generateHtmlStreaming({
     apiKey,
     model: modelName,
-    prompt,
+    prompt: composedPrompt,
     signal,
   })
 

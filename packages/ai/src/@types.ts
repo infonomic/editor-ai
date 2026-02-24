@@ -2,6 +2,9 @@ import { z } from 'zod'
 
 export const PROVIDERS = ['openai', 'google', 'anthropic'] as const
 
+export const INSTRUCTION_MODES = ['new', 'new_with_context', 'patch'] as const
+export type InstructionMode = (typeof INSTRUCTION_MODES)[number]
+
 export type OutputPreference =
   | { type: 'structured' }
   | { type: 'html' }
@@ -13,6 +16,7 @@ export type ExecuteInstructionInput =
 
 export type ExecuteInstructionParams = {
   prompt: string
+  mode: InstructionMode
   input: ExecuteInstructionInput
   sdk: InstructionSdk
   provider: Provider
@@ -96,6 +100,9 @@ export const instructionSchema = z.object({
     })
     .transform((s) => s.trim())
     .refine((s) => s.length > 0, 'Prompt input cannot be empty.'),
+  mode: z.enum(INSTRUCTION_MODES, {
+    error: 'Mode must be one of new, new_with_context, or patch.',
+  }),
   input: inputSchema,
   provider: z.enum(PROVIDERS, {
     error: 'Provider must be one of openai, google, or anthropic.',

@@ -29,7 +29,7 @@ import { appendRollingPreviewText } from './streaming-preview'
 import './ai-plugin.css'
 
 type EditorChatState = {
-  // mode: 'edit' | 'generate'
+  mode: 'new' | 'new_with_context' | 'patch'
   sdk: Sdk
   provider: Provider
   model: string
@@ -37,6 +37,7 @@ type EditorChatState = {
 
 export type AiPluginSubmitContext = {
   prompt: string
+  mode: 'new' | 'new_with_context' | 'patch'
   provider: Provider
   model: string
   sdk: Sdk
@@ -73,7 +74,7 @@ const initialInstructionState: InstructionState = {
 }
 
 const initialEditorChatState: EditorChatState = {
-  // mode: 'edit',
+  mode: 'new',
   sdk: 'native',
   provider: 'openai',
   model: getDefaultModel('openai'),
@@ -133,6 +134,11 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     setPrompt(event.target.value)
   }
 
+  const handleOnModeChange = (value: "new" | "new_with_context" | "patch") => {
+    if (!value) return
+    setState((prev) => ({ ...prev, mode: value }))
+  }
+
   const handleOnProviderChange = (value: string) => {
     if (!isProvider(value)) return
     setState((prev) => ({
@@ -158,6 +164,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
 
   const buildSubmitContext = (): AiPluginSubmitContext => ({
     prompt,
+    mode: state.mode,
     provider: state.provider,
     model: state.model,
     sdk: state.sdk,
@@ -216,7 +223,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
 
       setState({
         sdk: normalizeSdk(config.sdk),
-        // mode: config.mode,
+        mode: config.mode,
         provider: config.provider,
         model,
       })
@@ -231,8 +238,8 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       skipPersistOnceRef.current = false
       return
     }
-    saveChatConfiguration({ provider: state.provider, model: state.model, sdk: state.sdk })
-  }, [state.provider, state.model, state.sdk])
+    saveChatConfiguration({ mode: state.mode, provider: state.provider, model: state.model, sdk: state.sdk })
+  }, [state.mode, state.provider, state.model, state.sdk])
 
   useEffect(() => {
     return () => {
@@ -279,6 +286,19 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         >
           <SettingsSlidersIcon />
         </IconButton>
+
+        <Select
+          name="mode"
+          size="sm"
+          disabled={isPending === true}
+          value={state.mode}
+          onValueChange={handleOnModeChange}
+        >
+          <SelectItem value="new">New</SelectItem>
+          <SelectItem value="new_with_context">With Context</SelectItem>
+          <SelectItem value="patch">Modify</SelectItem>
+        </Select>
+
         <Button
           fullWidth={false}
           type="button"
@@ -373,10 +393,19 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         </Button>
       </div>
       <div className="ai-plugin__footer">
-        <p className="ai-plugin__disclaimer">
-          AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
-          verify information from reliable sources.
-        </p>
+        <div className="ai_plugin_footer_text">
+          <p className="ai_plugin__mode-description">
+            {state.mode === 'new' && 'The AI will generate new content based solely on the prompt - replacing existing content.'}
+            {state.mode === 'new_with_context' &&
+              'The AI will generate new content based on the prompt and the existing content - replacing the existing content.'}
+            {state.mode === 'patch' &&
+              'The AI will modify the existing content based on the prompt - preserving the original structure. Use this mode for translations, grammar, clarity, and tone.'}
+          </p>
+          <p className="ai-plugin__disclaimer">
+            AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
+            verify information from reliable sources.
+          </p>
+        </div>
         <span className="ai-plugin__help">
           <IconButton
             aria-label="Help"
