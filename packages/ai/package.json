@@ -53,10 +53,10 @@
   ],
   "peerDependencies": {
     "@infonomic/uikit": "^5.33.0",
-    "@lexical/html": "^0.42.0",
-    "@lexical/react": "^0.42.0",
-    "@lexical/utils": "^0.42.0",
-    "lexical": "^0.42.0",
+    "@lexical/html": ">=0.42.0 <1.0.0",
+    "@lexical/react": ">=0.42.0 <1.0.0",
+    "@lexical/utils": ">=0.42.0 <1.0.0",
+    "lexical": ">=0.42.0 <1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
