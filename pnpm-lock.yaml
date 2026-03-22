@@ -142,6 +142,15 @@ importers:
       '@infonomic/schemas':
         specifier: ^2.4.0
         version: 2.4.0
+      '@lexical/html':
+        specifier: ^0.42.0
+        version: 0.42.0
+      '@lexical/react':
+        specifier: ^0.42.0
+        version: 0.42.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yjs@13.6.29)
+      '@lexical/utils':
+        specifier: ^0.42.0
+        version: 0.42.0
       ai:
         specifier: ^6.0.134
         version: 6.0.134(zod@4.3.6)
@@ -157,6 +166,9 @@ importers:
       json-schema:
         specifier: ^0.4.0
         version: 0.4.0
+      lexical:
+        specifier: ^0.42.0
+        version: 0.42.0
       openai:
         specifier: ^6.32.0
         version: 6.32.0(ws@8.19.0)(zod@4.3.6)
@@ -179,15 +191,6 @@ importers:
       '@infonomic/uikit':
         specifier: ^5.43.1
         version: 5.43.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@lexical/html':
-        specifier: ^0.42.0
-        version: 0.42.0
-      '@lexical/react':
-        specifier: ^0.42.0
-        version: 0.42.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yjs@13.6.29)
-      '@lexical/utils':
-        specifier: ^0.42.0
-        version: 0.42.0
       '@types/json-schema':
         specifier: ^7.0.15
         version: 7.0.15
@@ -215,9 +218,6 @@ importers:
       jsdom:
         specifier: ^29.0.1
         version: 29.0.1
-      lexical:
-        specifier: ^0.42.0
-        version: 0.42.0
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5

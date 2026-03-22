@@ -1,6 +1,6 @@
 {
   "name": "@infonomic/ai",
-  "version": "2.2.6",
+  "version": "2.2.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -53,26 +53,8 @@
   ],
   "peerDependencies": {
     "@infonomic/uikit": "^5.33.0",
-    "@lexical/html": ">=0.42.0 <1.0.0",
-    "@lexical/react": ">=0.42.0 <1.0.0",
-    "@lexical/utils": ">=0.42.0 <1.0.0",
-    "lexical": ">=0.42.0 <1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@lexical/html": {
-      "optional": true
-    },
-    "@lexical/react": {
-      "optional": true
-    },
-    "@lexical/utils": {
-      "optional": true
-    },
-    "lexical": {
-      "optional": true
-    }
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.63",
@@ -84,11 +66,15 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@google/genai": "^1.46.0",
     "@infonomic/schemas": "^2.4.0",
+    "@lexical/html": "^0.42.0",
+    "@lexical/react": "^0.42.0",
+    "@lexical/utils": "^0.42.0",
     "ai": "^6.0.134",
     "ajv": "^8.18.0",
     "classnames": "^2.5.1",
     "cross-env": "^10.1.0",
     "json-schema": "^0.4.0",
+    "lexical": "^0.42.0",
     "openai": "^6.32.0",
     "pino": "^10.3.1",
     "react-error-boundary": "^6.1.1",
@@ -98,9 +84,6 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
     "@infonomic/uikit": "^5.43.1",
-    "@lexical/html": "^0.42.0",
-    "@lexical/react": "^0.42.0",
-    "@lexical/utils": "^0.42.0",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^25.5.0",
     "@types/react": "19.2.14",
@@ -110,7 +93,6 @@
     "chokidar-cli": "^3.0.0",
     "dotenv": "^17.3.1",
     "jsdom": "^29.0.1",
-    "lexical": "^0.42.0",
     "npm-run-all": "^4.1.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
