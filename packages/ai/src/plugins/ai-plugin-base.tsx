@@ -134,12 +134,13 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     setPrompt(event.target.value)
   }
 
-  const handleOnModeChange = (value: "new" | "new_with_context" | "patch") => {
-    if (!value) return
+  const handleOnModeChange = (value: unknown, _eventDetails: unknown) => {
+    if (value !== 'new' && value !== 'new_with_context' && value !== 'patch') return
     setState((prev) => ({ ...prev, mode: value }))
   }
 
-  const handleOnProviderChange = (value: string) => {
+  const handleOnProviderChange = (value: unknown, _eventDetails: unknown) => {
+    if (typeof value !== 'string') return
     if (!isProvider(value)) return
     setState((prev) => ({
       ...prev,
@@ -148,15 +149,16 @@ export const AiPluginBase = React.memo(function AiPluginBase(
     }))
   }
 
-  const handleOnSdkChange = (value: 'native' | 'vercel') => {
+  const handleOnSdkChange = (value: unknown, _eventDetails: unknown) => {
+    if (value !== 'native' && value !== 'vercel') return
     setState((prev) => ({
       ...prev,
       sdk: value,
     }))
   }
 
-  const handleOnModelChange = (value: string) => {
-    if (!value) return
+  const handleOnModelChange = (value: unknown, _eventDetails: unknown) => {
+    if (typeof value !== 'string' || !value) return
     const modelsForProvider = PROVIDER_MODELS[state.provider] ?? []
     if (!modelsForProvider.includes(value)) return
     setState((prev) => ({ ...prev, model: value }))
@@ -293,6 +295,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           disabled={isPending === true}
           value={state.mode}
           onValueChange={handleOnModeChange}
+          items={{ new: 'New', new_with_context: 'With Context', patch: 'Modify' }}
         >
           <SelectItem value="new">New</SelectItem>
           <SelectItem value="new_with_context">With Context</SelectItem>
@@ -344,6 +347,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           value={state.provider}
           onValueChange={handleOnProviderChange}
           variant="outlined"
+          items={{ openai: 'OpenAI', google: 'Google', anthropic: 'Anthropic' }}
         >
           <SelectItem value="openai">OpenAI</SelectItem>
           <SelectItem value="google">Google</SelectItem>
@@ -356,6 +360,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
+          items={(PROVIDER_MODELS[state.provider] ?? []).map((m) => ({ label: m, value: m }))}
         >
           {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
             <SelectItem key={modelOption} value={modelOption}>
@@ -371,6 +376,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           onValueChange={handleOnSdkChange}
           disabled={isPending === true || settingsOpen === false}
           variant="outlined"
+          items={{ native: 'Native', vercel: 'Vercel' }}
         >
           <SelectItem value="native">Native</SelectItem>
           <SelectItem value="vercel">Vercel</SelectItem>
@@ -382,7 +388,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
             id="streaming"
             disabled={isPending === true || settingsOpen === false}
             checked={useStreaming}
-            onCheckedChange={(checked) => {
+            onCheckedChange={(checked, _eventDetails) => {
               setUseStreaming(checked === true)
             }}
             label="Streaming"

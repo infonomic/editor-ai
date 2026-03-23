@@ -25,11 +25,10 @@
     "release:npm": "turbo run build --filter=@infonomic/ai && changeset publish"
   },
   "license": "MIT",
-  "dependencies": {
-    "turbo": "^2.8.20",
-    "typescript": "5.9.3"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "turbo": "^2.8.20",
+    "typescript": "6.0.2",
     "@biomejs/biome": "2.4.8",
     "@changesets/cli": "^2.30.0"
   },

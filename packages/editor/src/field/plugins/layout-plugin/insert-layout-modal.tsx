@@ -88,8 +88,10 @@ export function InsertLayoutModal({
         <Modal.Content>
           <Select
             containerClassName="insert-layout-modal-select"
-            onValueChange={(value) => {
-              setLayout(value)
+            onValueChange={(value, _eventDetails) => {
+              if (value != null) {
+                setLayout(value as string)
+              }
             }}
             placeholder="Select a layout"
           >

@@ -57,7 +57,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@infonomic/uikit": "^5.43.1",
+    "@infonomic/uikit": "^6.0.5",
     "@lexical/clipboard": "^0.42.0",
     "@lexical/code": "^0.42.0",
     "@lexical/hashtag": "^0.42.0",
@@ -97,7 +97,7 @@
     "react-dom": "^19.2.4",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.0"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.1"
   }
 }
