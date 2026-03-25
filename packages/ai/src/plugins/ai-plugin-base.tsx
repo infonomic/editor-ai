@@ -15,7 +15,7 @@ import {
   Modal,
   ScrollArea,
   Select,
-  SelectItem,
+  type SelectValue,
   // Checkbox,
   SettingsSlidersIcon,
   StopIcon,
@@ -295,12 +295,12 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           disabled={isPending === true}
           value={state.mode}
           onValueChange={handleOnModeChange}
-          items={{ new: 'New', new_with_context: 'With Context', patch: 'Modify' }}
-        >
-          <SelectItem value="new">New</SelectItem>
-          <SelectItem value="new_with_context">With Context</SelectItem>
-          <SelectItem value="patch">Modify</SelectItem>
-        </Select>
+          items={[
+            { label: 'New', value: 'new' },
+            { label: 'With Context', value: 'new_with_context' },
+            { label: 'Modify', value: 'patch' },
+          ]}
+        />
 
         <Button
           fullWidth={false}
@@ -311,6 +311,7 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         >
           {isPending === true ? <LoaderEllipsis size={30} /> : <span>Submit</span>}
         </Button>
+
         <Button
           className="py-0 px-4"
           size="sm"
@@ -347,12 +348,13 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           value={state.provider}
           onValueChange={handleOnProviderChange}
           variant="outlined"
-          items={{ openai: 'OpenAI', google: 'Google', anthropic: 'Anthropic' }}
-        >
-          <SelectItem value="openai">OpenAI</SelectItem>
-          <SelectItem value="google">Google</SelectItem>
-          <SelectItem value="anthropic">Anthropic</SelectItem>
-        </Select>
+          items={[
+            { label: 'OpenAI', value: 'openai' },
+            { label: 'Google', value: 'google' },
+            { label: 'Anthropic', value: 'anthropic' },
+          ]}
+        />
+
         <Select
           name="model"
           disabled={isPending === true || settingsOpen === false}
@@ -360,14 +362,9 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
-          items={(PROVIDER_MODELS[state.provider] ?? []).map((m) => ({ label: m, value: m }))}
-        >
-          {(PROVIDER_MODELS[state.provider] ?? []).map((modelOption) => (
-            <SelectItem key={modelOption} value={modelOption}>
-              {modelOption}
-            </SelectItem>
-          ))}
-        </Select>
+          items={(PROVIDER_MODELS[state.provider] ?? []).map((m): SelectValue => ({ label: m, value: m }))}
+        />
+
         <Select
           key={state.sdk}
           name="sdk"
@@ -376,11 +373,12 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           onValueChange={handleOnSdkChange}
           disabled={isPending === true || settingsOpen === false}
           variant="outlined"
-          items={{ native: 'Native', vercel: 'Vercel' }}
-        >
-          <SelectItem value="native">Native</SelectItem>
-          <SelectItem value="vercel">Vercel</SelectItem>
-        </Select>
+          items={[
+            { label: 'Native', value: 'native' },
+            { label: 'Vercel', value: 'vercel' },
+          ]}
+        />
+
         <div className="mr-2">
           <Checkbox
             name="streaming"

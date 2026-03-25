@@ -31,7 +31,8 @@
     "test": "LOG_LEVEL=off tsx --env-file=.env --test $(find . -name \"*.test.ts\")",
     "test:one": "LOG_LEVEL=off tsx --no-warnings --env-file=.env --test",
     "test:vitest": "vitest run",
-    "test:vitest:node": "vitest run --mode node"
+    "test:vitest:node": "vitest run --mode node",
+    "list:models": "tsx --env-file=.env src/scripts/list-models.ts"
   },
   "exports": {
     ".": {
@@ -57,11 +58,11 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.63",
-    "@ai-sdk/google": "^3.0.52",
-    "@ai-sdk/openai": "^3.0.47",
+    "@ai-sdk/anthropic": "^3.0.64",
+    "@ai-sdk/google": "^3.0.53",
+    "@ai-sdk/openai": "^3.0.48",
     "@ai-sdk/provider-utils": "^4.0.21",
-    "@ai-sdk/react": "^3.0.138",
+    "@ai-sdk/react": "^3.0.140",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@anthropic-ai/sdk": "^0.80.0",
     "@google/genai": "^1.46.0",
@@ -69,7 +70,7 @@
     "@lexical/html": "^0.42.0",
     "@lexical/react": "^0.42.0",
     "@lexical/utils": "^0.42.0",
-    "ai": "^6.0.136",
+    "ai": "^6.0.138",
     "ajv": "^8.18.0",
     "classnames": "^2.5.1",
     "cross-env": "^10.1.0",
@@ -83,7 +84,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.8",
-    "@infonomic/uikit": "^6.0.5",
+    "@infonomic/uikit": "^6.2.2",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^25.5.0",
     "@types/react": "19.2.14",

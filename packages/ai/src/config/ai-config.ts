@@ -1,5 +1,26 @@
 import { z } from 'zod'
 
+import type { Provider } from '../@types'
+
+/**
+ * Curated model configuration per application version.
+ * These are the models suited to text generation for our
+ * text and lexical editors. Update this list when adding
+ * or retiring models between releases. Use `pnpm list:models`
+ * to discover available models from each provider.
+ */
+export const PROVIDER_MODELS: Record<Provider, string[]> = {
+  openai: ['gpt-5.4', 'gpt-5.4-pro', 'gpt-5.4-mini', 'gpt-5.4-nano'],
+  google: ['gemini-2.5-pro', 'gemini-2.5-flash'],
+  anthropic: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+}
+
+export const DEFAULT_MODELS: Record<Provider, string> = {
+  openai: 'gpt-5.4',
+  google: 'gemini-2.5-flash',
+  anthropic: 'claude-haiku-4-5-20251001',
+}
+
 /**
  * Server configuration schema and functions. Note that these
  * values are ONLY available on the server and NOT available

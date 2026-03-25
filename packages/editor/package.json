@@ -57,7 +57,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@infonomic/uikit": "^6.0.5",
+    "@infonomic/uikit": "^6.2.2",
     "@lexical/clipboard": "^0.42.0",
     "@lexical/code": "^0.42.0",
     "@lexical/hashtag": "^0.42.0",

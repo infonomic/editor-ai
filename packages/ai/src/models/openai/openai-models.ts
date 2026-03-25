@@ -2,17 +2,26 @@ import OpenAI from 'openai'
 
 import { getAiServerConfig as getServerConfig } from '../../config/ai-config'
 
-// This script lists all available OpenAI models along with their descriptions.
-// From apps/next run: tsx --env-file=.env src/scripts/openai-models.ts
+// Lists all available OpenAI models.
 // Requires OPENAI_API_KEY obtained from https://platform.openai.com/api-keys
 
-const openai = new OpenAI({ apiKey: getServerConfig().ai.openai.apiKey })
+export type ModelInfo = {
+  id: string
+  name: string
+  created: string
+}
 
-async function main() {
+export async function listAllModels(): Promise<ModelInfo[]> {
+  const openai = new OpenAI({ apiKey: getServerConfig().ai.openai.apiKey })
   const list = await openai.models.list()
 
+  const models: ModelInfo[] = []
   for await (const model of list) {
-    console.log(model)
+    models.push({
+      id: model.id,
+      name: model.id,
+      created: new Date(model.created * 1000).toISOString(),
+    })
   }
+  return models
 }
-main()

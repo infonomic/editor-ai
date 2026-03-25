@@ -2,9 +2,14 @@ import Anthropic from '@anthropic-ai/sdk'
 
 import { getAiServerConfig } from '../../config/ai-config'
 
-// This script lists all available Anthropic models along with their descriptions.
-// From apps/next run: tsx --env-file=.env src/scripts/anthropic-models.ts
-// Requires anthropic API key obtained from https://console.anthropic.com/api-keys
+// Lists all available Anthropic models.
+// Requires ANTHROPIC_API_KEY obtained from https://console.anthropic.com/api-keys
+
+export type ModelInfo = {
+  id: string
+  name: string
+  created: string
+}
 
 const isValidHttpUrl = (value: string | undefined): value is string => {
   if (value == null || value.trim().length === 0) return false
@@ -16,35 +21,25 @@ const isValidHttpUrl = (value: string | undefined): value is string => {
   }
 }
 
-const config = getAiServerConfig()
-const baseURL = isValidHttpUrl(config.ai.anthropic.baseUrl)
-  ? config.ai.anthropic.baseUrl
-  : 'https://api.anthropic.com'
+export async function listAllModels(): Promise<ModelInfo[]> {
+  const config = getAiServerConfig()
+  const baseURL = isValidHttpUrl(config.ai.anthropic.baseUrl)
+    ? config.ai.anthropic.baseUrl
+    : 'https://api.anthropic.com'
 
-// Make sure your ANTHROPIC_API_KEY environment variable is set
-const client = new Anthropic({
-  apiKey: config.ai.anthropic.apiKey,
-  // Explicitly set baseURL so we don't accidentally pick up an invalid
-  // ANTHROPIC_BASE_URL from the environment (e.g. a placeholder value).
-  baseURL,
-})
+  const client = new Anthropic({
+    apiKey: config.ai.anthropic.apiKey,
+    baseURL,
+  })
 
-async function listAllModels() {
-  console.log('Listing available models...')
-  try {
-    const modelsPager = await client.models.list()
-
-    // Iterate through the models using the Pager
-    for await (const model of modelsPager) {
-      console.log(`Model Name: ${model.display_name}`)
-      console.log(`Description: ${model.created_at}`)
-      console.log(`ID: ${model.id}`)
-      console.log(`Type: ${model.type}`)
-      console.log('---')
-    }
-  } catch (error) {
-    console.error('Failed to list models:', error)
+  const models: ModelInfo[] = []
+  const modelsPager = await client.models.list()
+  for await (const model of modelsPager) {
+    models.push({
+      id: model.id,
+      name: model.display_name,
+      created: model.created_at,
+    })
   }
+  return models
 }
-
-listAllModels()

@@ -2,31 +2,29 @@ import { GoogleGenAI } from '@google/genai'
 
 import { getAiServerConfig as getServerConfig } from '../../config/ai-config'
 
-// This script lists all available Google Generative AI models along with their descriptions.
-// From apps/next run: tsx --env-file=.env src/scripts/google-models.ts
-// Requires GEMINI_API_KEY obtained from https://console.cloud.google.com/apis/credentials or
+// Lists all available Google Generative AI models.
+// Requires GOOGLE_API_KEY obtained from https://console.cloud.google.com/apis/credentials or
 // https://aistudio.google.com/u/2/api-key
 
-// Make sure your GEMINI_API_KEY environment variable is set
-const ai = new GoogleGenAI({ apiKey: getServerConfig().ai.google.apiKey })
-
-async function listAllModels() {
-  console.log('Listing available models...')
-  try {
-    const modelsPager = await ai.models.list()
-
-    // Iterate through the models using the Pager
-    for await (const model of modelsPager) {
-      console.log(`Model Name: ${model.name}`)
-      console.log(`Description: ${model.description}`)
-      console.log(
-        `Supports generateContent: ${model?.supportedActions?.includes('generateContent')}`
-      )
-      console.log('---')
-    }
-  } catch (error) {
-    console.error('Failed to list models:', error)
-  }
+export type ModelInfo = {
+  id: string
+  name: string
+  description: string
 }
 
-listAllModels()
+export async function listAllModels(): Promise<ModelInfo[]> {
+  const ai = new GoogleGenAI({ apiKey: getServerConfig().ai.google.apiKey })
+
+  const models: ModelInfo[] = []
+  const modelsPager = await ai.models.list()
+  for await (const model of modelsPager) {
+    if (model?.supportedActions?.includes('generateContent')) {
+      models.push({
+        id: model.name ?? '',
+        name: model.displayName ?? model.name ?? '',
+        description: model.description ?? '',
+      })
+    }
+  }
+  return models
+}

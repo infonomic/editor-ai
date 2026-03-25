@@ -24,7 +24,7 @@
     "@infonomic/ai": "workspace:*",
     "@infonomic/editor": "workspace:*",
     "@infonomic/schemas": "^2.4.0",
-    "@infonomic/uikit": "^6.0.5",
+    "@infonomic/uikit": "^6.2.2",
     "classnames": "^2.5.1",
     "cross-env": "^10.1.0",
     "lexical": "0.42.0",
