@@ -3,6 +3,5 @@ pnpm changeset
 pnpm version-packages
 pnpm release:tag
 git push --tags
-pnpm login
-cd packages/payload-alternative-lexical-editor
-pnpm publish --access public --no-git-checks
+# then call the publish script
+./publish.sh
