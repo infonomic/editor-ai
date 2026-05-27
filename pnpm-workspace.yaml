@@ -1,11 +1,14 @@
 packages:
   - packages/**
   - apps/**
-  - '!apps/next/.next/**'
-
-onlyBuiltDependencies:
-  - '@biomejs/biome'
-  - esbuild
-  - protobufjs
-  - sharp
-  - unrs-resolver
+  - "!apps/next/.next/**"
+minimumReleaseAge: 0
+minimumReleaseAgeExclude:
+  - "@infonomic/*"
+allowBuilds:
+  "@biomejs/biome": true
+  "@google/genai": true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true

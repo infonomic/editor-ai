@@ -57,7 +57,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@infonomic/uikit": "^6.7.1",
+    "@infonomic/uikit": "^6.7.2",
     "@lexical/clipboard": "^0.44.0",
     "@lexical/code": "^0.44.0",
     "@lexical/hashtag": "^0.44.0",
@@ -75,29 +75,29 @@
     "@lexical/utils": "^0.44.0",
     "classnames": "^2.5.1",
     "cross-env": "^10.1.0",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "json-schema": "^0.4.0",
     "lexical": "^0.44.0",
-    "react-error-boundary": "^6.1.1",
+    "react-error-boundary": "^6.1.2",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.14",
+    "@biomejs/biome": "2.4.15",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^25.6.0",
-    "@types/react": "19.2.14",
+    "@types/node": "^25.9.1",
+    "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "chokidar": "^5.0.0",
     "chokidar-cli": "^3.0.0",
     "dotenv": "^17.4.2",
     "jsdom": "^29.1.1",
     "npm-run-all": "^4.1.5",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "tsc-alias": "^1.8.17",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.7"
   }
 }
