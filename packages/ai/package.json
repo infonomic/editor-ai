@@ -19,9 +19,6 @@
     "url": "git+https://github.com/infonomic/editor-ai.git",
     "directory": "packages/ai"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "sideEffects": false,
   "scripts": {
     "dev": "chokidar 'src/**/*' -c 'npm-run-all build'",
