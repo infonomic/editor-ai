@@ -8,26 +8,26 @@ pnpm publish --access public --no-git-checks
 
 # Build Docker with with private package.
 
-Building a Docker image with private npm packages involves ensuring your container has the necessary authentication credentials to access your private registry, typically via an .npmrc file [1]. 
+Building a Docker image with private npm packages involves ensuring your container has the necessary authentication credentials to access your private registry, typically via an .npmrc file [1].
 Here is a general approach:
 1. Prepare your .npmrc file
-You need an .npmrc file that contains the authentication token for your private registry. This token is usually a Personal Access Token (PAT) provided by your registry host (e.g., npm, GitHub, GitLab, Azure DevOps). 
+You need an .npmrc file that contains the authentication token for your private registry. This token is usually a Personal Access Token (PAT) provided by your registry host (e.g., npm, GitHub, GitLab, Azure DevOps).
 The file will look something like this:
 ini
 //registry.npmjs.org/:_authToken=YOUR_NPM_TOKEN
 # Or for GitHub Packages:
 # //://npm.pkg.github.com
 # @my-scope:registry=https://npm.pkg.github.com
-Security Note: Never hardcode your token directly in the Dockerfile. Store it securely as a secret. 
+Security Note: Never hardcode your token directly in the Dockerfile. Store it securely as a secret.
 
-2. Add the .npmrc to the Docker context 
-You can add this file to your project directory, but to maintain security, you should use Docker's built-in secrets management or pass it in during the build process rather than committing it to version control. 
+2. Add the .npmrc to the Docker context
+You can add this file to your project directory, but to maintain security, you should use Docker's built-in secrets management or pass it in during the build process rather than committing it to version control.
 
-3. Build using Docker's --secret feature (Recommended) 
-Docker provides a secure way to pass sensitive data like the .npmrc file during the build process without baking it into the final image layers [1]. 
+3. Build using Docker's --secret feature (Recommended)
+Docker provides a secure way to pass sensitive data like the .npmrc file during the build process without baking it into the final image layers [1].
 
 A. The Dockerfile
-Use the RUN --mount=type=secret syntax: 
+Use the RUN --mount=type=secret syntax:
 dockerfile
 # Use a base image with Node.js
 FROM node:20-alpine
@@ -52,4 +52,4 @@ CMD ["npm", "start"]
 B. The Build Command
 bash
 docker build --secret id=npmrc,src=./.npmrc -t my-app-image .
---secret id=npmrc,src=./.npmrc: Maps your local .npmrc file to the secret ID used in the Dockerfile. 
+--secret id=npmrc,src=./.npmrc: Maps your local .npmrc file to the secret ID used in the Dockerfile.
