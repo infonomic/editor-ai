@@ -1,5 +1,11 @@
 # @infonomic/ai
 
+## 2.4.2
+
+### Patch Changes
+
+- Updated deps
+
 ## 2.4.1
 
 ### Patch Changes
