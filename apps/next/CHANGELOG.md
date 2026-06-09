@@ -1,5 +1,14 @@
 # @infonomic/next
 
+## 2.4.3
+
+### Patch Changes
+
+- Updated deps
+- Updated dependencies
+  - @infonomic/editor@2.4.3
+  - @infonomic/ai@2.4.3
+
 ## 2.4.2
 
 ### Patch Changes
