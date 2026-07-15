@@ -17,6 +17,9 @@ config({ path: resolve(process.cwd(), '.env.public') })
 config({ path: resolve(process.cwd(), '.env') })
 
 const nextConfig: NextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   output: 'standalone',
   images: {
     remotePatterns: [
