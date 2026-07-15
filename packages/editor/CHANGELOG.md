@@ -1,5 +1,11 @@
 # @infonomic/editor
 
+## 2.4.4
+
+### Patch Changes
+
+- Updated deps
+
 ## 2.4.3
 
 ### Patch Changes
