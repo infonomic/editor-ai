@@ -15,11 +15,12 @@ type State = SerializedEditorState<SerializedLexicalNode>
 function rootState(children: SerializedRootNode['children']): State {
   return {
     root: {
+      children,
       direction: null,
-      format: "",
+      format: '',
       indent: 0,
-      type: "root",
-      version: 1
+      type: 'root',
+      version: 1,
     } as SerializedRootNode,
   }
 }
@@ -35,7 +36,7 @@ function emptyParagraph(
     type: 'paragraph',
     version: 1,
     textFormat: 0,
-    textStyle: ''
+    textStyle: '',
   } as SerializedParagraphNode
 }
 

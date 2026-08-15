@@ -25,10 +25,10 @@
     "build": "tsc -p tsconfig.json && tsc-alias && node copy-assets.js",
     "lint": "biome check --write --unsafe --diagnostic-level=error",
     "clean": "rimraf node_modules dist build .turbo",
-    "test": "LOG_LEVEL=off tsx --env-file=.env --test $(find . -name \"*.test.ts\")",
-    "test:one": "LOG_LEVEL=off tsx --no-warnings --env-file=.env --test",
+    "test": "cross-env LOG_LEVEL=off vitest run",
+    "test:one": "cross-env LOG_LEVEL=off vitest run",
     "test:vitest": "vitest run",
-    "test:vitest:node": "vitest run --mode node",
+    "test:vitest:node": "vitest run --mode node --passWithNoTests",
     "list:models": "tsx --env-file=.env src/scripts/list-models.ts"
   },
   "exports": {
@@ -97,6 +97,7 @@
     "tsc-alias": "^1.9.1",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
+    "vite": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
   }
