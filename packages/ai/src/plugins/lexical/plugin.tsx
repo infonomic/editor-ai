@@ -20,7 +20,7 @@ import { AiPluginBase, type AiPluginSubmitContext } from '../ai-plugin-base'
 import { createEmptyEditorState } from './create-empty-editor-state'
 import { importHtmlToSerializedEditorState } from './import-html'
 
-export const TOGGLE_AI_DRAWER_COMMAND = createCommand('TOGGLE_AI_DRAWER_COMMAND')
+export const TOGGLE_AI_DRAWER_COMMAND = createCommand<void>('TOGGLE_AI_DRAWER_COMMAND')
 
 const emptyInstructionState: InstructionState = {
   prompt: '',
@@ -360,7 +360,7 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
 
   useEffect(() => {
     return mergeRegister(
-      editor.registerCommand<null>(
+      editor.registerCommand<void>(
         TOGGLE_AI_DRAWER_COMMAND,
         () => {
           setOpen((prevOpen) => !prevOpen)

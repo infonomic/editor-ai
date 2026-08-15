@@ -111,8 +111,10 @@ export default function AdmonitionNodeComponent({
     [isSelected, nodeKey, setSelected]
   )
 
+  // KEY_ENTER_COMMAND carries a nullable payload - Lexical synthesises it with a
+  // null event when an IME composition ends in a newline.
   const onEnter = useCallback(
-    (event: KeyboardEvent) => {
+    (event: KeyboardEvent | null) => {
       const latestSelection = $getSelection()
       if (
         isSelected &&
@@ -120,7 +122,7 @@ export default function AdmonitionNodeComponent({
         latestSelection.getNodes().length === 1
       ) {
         $setSelection(null)
-        event.preventDefault()
+        event?.preventDefault()
         content.focus()
         return true
       }
