@@ -10,7 +10,9 @@ export default async function LexicalPage() {
     <main>
       <Section>
         <Container className="max-w-[960px] mx-auto">
-          <Link className="underline" href="/">Home</Link>
+          <Link className="underline" href="/">
+            Home
+          </Link>
           <div className="prose">
             <h1>Lexical AI Demo</h1>
           </div>

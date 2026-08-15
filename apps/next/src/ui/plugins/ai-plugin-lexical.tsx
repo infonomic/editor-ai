@@ -3,7 +3,10 @@
 import type * as React from 'react'
 import { useEffect } from 'react'
 
-import { AiPluginLexical as AiPluginLexicalRoot, TOGGLE_AI_DRAWER_COMMAND } from '@infonomic/ai/plugins/lexical'
+import {
+  AiPluginLexical as AiPluginLexicalRoot,
+  TOGGLE_AI_DRAWER_COMMAND,
+} from '@infonomic/ai/plugins/lexical'
 import { useToolbarExtensions } from '@infonomic/editor/toolbar-extensions'
 import { AiIcon } from '@infonomic/uikit/react'
 

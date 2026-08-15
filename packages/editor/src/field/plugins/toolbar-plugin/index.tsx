@@ -329,7 +329,7 @@ export function ToolbarPlugin(): React.JSX.Element {
   const [blockType, setBlockType] = useState<keyof typeof blockTypeToBlockName>('paragraph')
   const [rootType, setRootType] = useState<keyof typeof rootTypeToRootName>('root')
   const [selectedElementKey, setSelectedElementKey] = useState<NodeKey | null>(null)
-  const [toggleAiDrawerCommand, setToggleAiDrawerCommand] = useState<LexicalCommand<void> | null>(
+  const [_toggleAiDrawerCommand, _setToggleAiDrawerCommand] = useState<LexicalCommand<void> | null>(
     null
   )
 

@@ -11,7 +11,8 @@ const Page = () => {
             <h1>Make Stuff Happen</h1>
           </div>
           <p>
-            This is a demo of our AI plugins for Lexical, HTML, and Text. Try each by following the links below:
+            This is a demo of our AI plugins for Lexical, HTML, and Text. Try each by following the
+            links below:
           </p>
           <ul>
             <li>

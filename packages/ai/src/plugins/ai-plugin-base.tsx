@@ -240,7 +240,12 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       skipPersistOnceRef.current = false
       return
     }
-    saveChatConfiguration({ mode: state.mode, provider: state.provider, model: state.model, sdk: state.sdk })
+    saveChatConfiguration({
+      mode: state.mode,
+      provider: state.provider,
+      model: state.model,
+      sdk: state.sdk,
+    })
   }, [state.mode, state.provider, state.model, state.sdk])
 
   useEffect(() => {
@@ -274,8 +279,9 @@ export const AiPluginBase = React.memo(function AiPluginBase(
         onKeyDown={handleOnKeyDown}
         disabled={isPending === true}
         spellCheck={true}
-        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
-          }`}
+        helpText={`Enter your prompt (Cmd/Ctrl + Enter to submit). Last run: ${
+          instructionState?.lastRun == null ? 'never' : formatLastRun(instructionState.lastRun)
+        }`}
       />
       <div className="ai-plugin__actions">
         <IconButton
@@ -362,7 +368,9 @@ export const AiPluginBase = React.memo(function AiPluginBase(
           value={state.model}
           onValueChange={handleOnModelChange}
           variant="outlined"
-          items={(PROVIDER_MODELS[state.provider] ?? []).map((m): SelectValue => ({ label: m, value: m }))}
+          items={(PROVIDER_MODELS[state.provider] ?? []).map(
+            (m): SelectValue => ({ label: m, value: m })
+          )}
         />
 
         <Select
@@ -399,15 +407,16 @@ export const AiPluginBase = React.memo(function AiPluginBase(
       <div className="ai-plugin__footer">
         <div className="ai_plugin_footer_text">
           <p className="ai_plugin__mode-description">
-            {state.mode === 'new' && 'The AI will generate new content based solely on the prompt - replacing existing content.'}
+            {state.mode === 'new' &&
+              'The AI will generate new content based solely on the prompt - replacing existing content.'}
             {state.mode === 'new_with_context' &&
               'The AI will generate new content based on the prompt and the existing content - replacing the existing content.'}
             {state.mode === 'patch' &&
               'The AI will modify the existing content based on the prompt - preserving the original structure. Use this mode for translations, grammar, clarity, and tone.'}
           </p>
           <p className="ai-plugin__disclaimer">
-            AI-generated content may be inaccurate, incomplete, or misleading. Please use caution and
-            verify information from reliable sources.
+            AI-generated content may be inaccurate, incomplete, or misleading. Please use caution
+            and verify information from reliable sources.
           </p>
         </div>
         <span className="ai-plugin__help">

@@ -388,7 +388,8 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
         <li>Write a haiku poem about the wind and trees.</li>
       </ul>
       <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>
-        <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> The AI operates in three modes:
+        <strong style={{ color: 'var(--primary-500)' }}>Important:</strong> The AI operates in three
+        modes:
       </p>
       <ol style={{ margin: '0.5rem 0', fontSize: '16px' }}>
         <li>
@@ -399,9 +400,9 @@ export const AiPluginLexical = React.memo(function AiPlugin(): React.JSX.Element
           the existing content.
         </li>
         <li>
-          <strong>Modify:</strong> The AI will suggest modifications to the existing content based on
-          the prompt - preserving the original structure. Use this mode for translations, grammar,
-          clarity, and tone edits.
+          <strong>Modify:</strong> The AI will suggest modifications to the existing content based
+          on the prompt - preserving the original structure. Use this mode for translations,
+          grammar, clarity, and tone edits.
         </li>
       </ol>
       <p style={{ margin: '0.5rem 0', fontSize: '16px' }}>

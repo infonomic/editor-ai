@@ -48,16 +48,16 @@ export const RichTextField = ({
 
   const editorConfig = editorSettings
     ? {
-      ...defaultEditorConfig,
-      settings: {
-        ...defaultEditorConfig.settings,
-        ...editorSettings,
-        options: {
-          ...defaultEditorConfig.settings.options,
-          ...(editorSettings.options ?? {}),
+        ...defaultEditorConfig,
+        settings: {
+          ...defaultEditorConfig.settings,
+          ...editorSettings,
+          options: {
+            ...defaultEditorConfig.settings.options,
+            ...(editorSettings.options ?? {}),
+          },
         },
-      },
-    }
+      }
     : defaultEditorConfig
 
   const incomingValue = value // ?? fieldValue
