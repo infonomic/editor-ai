@@ -1,5 +1,11 @@
 # @infonomic/ai
 
+## 2.4.5
+
+### Patch Changes
+
+- Deps update. Fixups for lexical, classnames and lint.
+
 ## 2.4.4
 
 ### Patch Changes
