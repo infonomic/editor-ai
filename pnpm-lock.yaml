@@ -35,9 +35,9 @@ importers:
       '@infonomic/uikit':
         specifier: ^6.8.0
         version: 6.8.0(@date-fns/tz@1.5.0)(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      classnames:
-        specifier: ^2.5.1
-        version: 2.5.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -159,9 +159,9 @@ importers:
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
-      classnames:
-        specifier: ^2.5.1
-        version: 2.5.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -298,9 +298,9 @@ importers:
       '@lexical/utils':
         specifier: ^0.49.0
         version: 0.49.0(typescript@7.0.2)
-      classnames:
-        specifier: ^2.5.1
-        version: 2.5.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0

@@ -32,7 +32,7 @@
 // import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 // import { useLexicalNodeSelection } from '@lexical/react/useLexicalNodeSelection'
 // import { mergeRegister } from '@lexical/utils'
-// import cx from 'classnames'
+// import cx from 'clsx'
 // import {
 //   $getNodeByKey,
 //   $getSelection,

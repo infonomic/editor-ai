@@ -1,4 +1,4 @@
-import cx from 'classnames'
+import cx from 'clsx'
 import { jsx as _jsx } from 'react/jsx-runtime'
 import './tip-icon.css'
 export function TipIcon({ className, ...rest }) {

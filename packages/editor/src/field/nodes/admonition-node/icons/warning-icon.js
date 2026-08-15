@@ -1,4 +1,4 @@
-import cx from 'classnames'
+import cx from 'clsx'
 import { jsx as _jsx } from 'react/jsx-runtime'
 import './warning-icon.css'
 export function WarningIcon({ className, ...rest }) {
